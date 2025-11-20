@@ -370,7 +370,10 @@ export function ThreadList({
                             <p className="flex-1 truncate text-sm text-muted-foreground">
                               {thread.description}
                             </p>
-                            <div className="ml-2 flex-shrink-0">
+                            <div className="ml-2 flex items-center gap-2">
+                              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">
+                                {thread.messageCount} {thread.messageCount === 1 ? 'message' : 'messages'}
+                              </span>
                               <div
                                 className={cn(
                                   "h-2 w-2 rounded-full",
