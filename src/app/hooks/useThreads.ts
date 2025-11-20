@@ -9,6 +9,7 @@ export interface ThreadItem {
   status: Thread["status"];
   title: string;
   description: string;
+  messageCount: number;
   assistantId?: string;
 }
 
@@ -88,10 +89,16 @@ export function useThreads(props: {
       return threads.map((thread): ThreadItem => {
         let title = "Untitled Thread";
         let description = "";
+        let messageCount = 0;
 
         try {
           if (thread.values && typeof thread.values === "object") {
             const values = thread.values as any;
+            // Count messages
+            if (Array.isArray(values.messages)) {
+              messageCount = values.messages.length;
+            }
+            
             const firstHumanMessage = values.messages.find(
               (m: any) => m.type === "human"
             );
@@ -124,6 +131,7 @@ export function useThreads(props: {
           status: thread.status,
           title,
           description,
+          messageCount,
           assistantId,
         };
       });
