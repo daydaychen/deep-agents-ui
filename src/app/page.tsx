@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { ClientProvider, useClient } from "@/providers/ClientProvider";
 import { Settings, MessagesSquare, SquarePen } from "lucide-react";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -154,6 +155,7 @@ function HomePageInner({
               <SquarePen className="mr-2 h-4 w-4" />
               New Thread
             </Button>
+            <ModeToggle />
           </div>
         </header>
 
