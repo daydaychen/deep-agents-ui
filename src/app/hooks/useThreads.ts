@@ -1,7 +1,7 @@
-import useSWRInfinite from "swr/infinite";
+import { getConfig } from "@/lib/config";
 import type { Thread } from "@langchain/langgraph-sdk";
 import { Client } from "@langchain/langgraph-sdk";
-import { getConfig } from "@/lib/config";
+import useSWRInfinite from "swr/infinite";
 
 export interface ThreadItem {
   id: string;
@@ -133,4 +133,29 @@ export function useThreads(props: {
       revalidateOnFocus: true,
     }
   );
+}
+
+export function useDeleteThread() {
+  const config = getConfig();
+  const apiKey =
+    config?.langsmithApiKey ||
+    process.env.NEXT_PUBLIC_LANGSMITH_API_KEY ||
+    "";
+
+  if (!config || !apiKey) {
+    throw new Error("Configuration or API key not found");
+  }
+
+  return {
+    trigger: async ({ threadId }: { threadId: string }) => {
+      const client = new Client({
+        apiUrl: config.deploymentUrl,
+        defaultHeaders: {
+          "X-Api-Key": apiKey,
+        },
+      });
+
+      await client.threads.delete(threadId);
+    }
+  };
 }

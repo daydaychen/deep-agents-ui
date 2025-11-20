@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { format } from "date-fns";
-import { Loader2, MessageSquare, X } from "lucide-react";
+import { Loader2, MessageSquare, MoreHorizontal, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,9 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { ThreadItem } from "@/app/hooks/useThreads";
-import { useThreads } from "@/app/hooks/useThreads";
+import { useThreads, useDeleteThread } from "@/app/hooks/useThreads";
 
 type StatusFilter = "all" | "idle" | "busy" | "interrupted" | "error";
 
@@ -123,6 +129,19 @@ export function ThreadList({
   onClose,
   onInterruptCountChange,
 }: ThreadListProps) {
+  const { trigger: deleteThread } = useDeleteThread();
+
+  const handleDeleteThread = async (threadId: string) => {
+    try {
+      await deleteThread({ threadId });
+      // Trigger revalidation to update the list
+      if (mutateFn) {
+        mutateFn();
+      }
+    } catch (error) {
+      console.error("Failed to delete thread:", error);
+    }
+  };
   const [currentThreadId] = useQueryState("threadId");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
@@ -297,17 +316,16 @@ export function ThreadList({
                   </h4>
                   <div className="flex flex-col gap-1">
                     {groupThreads.map((thread) => (
-                      <button
+                      <div
                         key={thread.id}
-                        type="button"
-                        onClick={() => onThreadSelect(thread.id)}
                         className={cn(
-                          "grid w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-200",
+                          "grid w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-200 group",
                           "hover:bg-accent",
                           currentThreadId === thread.id
                             ? "border border-primary bg-accent hover:bg-accent"
                             : "border border-transparent bg-transparent"
                         )}
+                        onClick={() => onThreadSelect(thread.id)}
                         aria-current={currentThreadId === thread.id}
                       >
                         <div className="min-w-0 flex-1">
@@ -316,9 +334,36 @@ export function ThreadList({
                             <h3 className="truncate text-sm font-semibold">
                               {thread.title}
                             </h3>
-                            <span className="ml-2 flex-shrink-0 text-xs text-muted-foreground">
-                              {formatTime(thread.updatedAt)}
-                            </span>
+                            <div className="ml-2 flex-shrink-0 flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {formatTime(thread.updatedAt)}
+                              </span>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                    }}
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteThread(thread.id);
+                                    }}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    Delete Thread
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
                           {/* Description + Status Row */}
                           <div className="flex items-center justify-between">
@@ -335,7 +380,7 @@ export function ThreadList({
                             </div>
                           </div>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </div>
