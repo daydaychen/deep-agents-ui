@@ -36,12 +36,16 @@ export function ConfigDialog({
   const [langsmithApiKey, setLangsmithApiKey] = useState(
     initialConfig?.langsmithApiKey || ""
   );
+  const [recursionLimit, setRecursionLimit] = useState(
+    initialConfig?.recursionLimit?.toString() || "100"
+  );
 
   useEffect(() => {
     if (open && initialConfig) {
       setDeploymentUrl(initialConfig.deploymentUrl);
       setAssistantId(initialConfig.assistantId);
       setLangsmithApiKey(initialConfig.langsmithApiKey || "");
+      setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
     }
   }, [open, initialConfig]);
 
@@ -51,10 +55,17 @@ export function ConfigDialog({
       return;
     }
 
+    const parsedRecursionLimit = parseInt(recursionLimit, 10);
+    if (isNaN(parsedRecursionLimit) || parsedRecursionLimit < 1) {
+      alert("Recursion limit must be a positive number");
+      return;
+    }
+
     onSave({
       deploymentUrl,
       assistantId,
       langsmithApiKey: langsmithApiKey || undefined,
+      recursionLimit: parsedRecursionLimit,
     });
     onOpenChange(false);
   };
@@ -102,6 +113,20 @@ export function ConfigDialog({
               placeholder="lsv2_pt_..."
               value={langsmithApiKey}
               onChange={(e) => setLangsmithApiKey(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="recursionLimit">
+              Recursion Limit{" "}
+              <span className="text-muted-foreground">(Default: 100)</span>
+            </Label>
+            <Input
+              id="recursionLimit"
+              type="number"
+              min="1"
+              placeholder="100"
+              value={recursionLimit}
+              onChange={(e) => setRecursionLimit(e.target.value)}
             />
           </div>
         </div>

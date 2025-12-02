@@ -29,10 +29,12 @@ export function useChat({
   activeAssistant,
   onHistoryRevalidate,
   thread,
+  recursionLimit = 100,
 }: {
   activeAssistant: Assistant | null;
   onHistoryRevalidate?: () => void;
   thread?: UseStreamThread<StateType>;
+  recursionLimit?: number;
 }) {
   const [threadId, setThreadId] = useQueryState("threadId");
   const client = useClient();
@@ -60,8 +62,8 @@ export function useChat({
           optimisticValues: (prev) => ({
             messages: [...(prev.messages ?? []), newMessage],
           }),
-          config: { ...(activeAssistant?.config ?? {}), recursion_limit: 100 },
-          streamMode: ['updates'],
+          config: { ...(activeAssistant?.config ?? {}), recursion_limit: recursionLimit },
+          streamMode: ['messages', 'updates'],
           streamSubgraphs: true,
           streamResumable: true,
         }
@@ -69,7 +71,7 @@ export function useChat({
       // Update thread list immediately when sending a message
       onHistoryRevalidate?.();
     },
-    [stream, activeAssistant?.config, onHistoryRevalidate]
+    [stream, activeAssistant?.config, onHistoryRevalidate, recursionLimit]
   );
 
   const runSingleStep = useCallback(
@@ -86,7 +88,7 @@ export function useChat({
             : {}),
           config: activeAssistant?.config,
           checkpoint: checkpoint,
-          streamMode: ['updates'],
+          streamMode: ['messages', 'updates'],
           streamSubgraphs: true,
           streamResumable: true,
           ...(isRerunningSubagent
@@ -99,7 +101,7 @@ export function useChat({
           {
             config: activeAssistant?.config,
             interruptBefore: ["tools"],
-            streamMode: ['updates'],
+            streamMode: ['messages', 'updates'],
             streamSubgraphs: true,
             streamResumable: true,
           }
@@ -124,9 +126,9 @@ export function useChat({
       stream.submit(undefined, {
         config: {
           ...(activeAssistant?.config || {}),
-          recursion_limit: 100,
+          recursion_limit: recursionLimit,
         },
-        streamMode: ['updates'],
+        streamMode: ['messages', 'updates'],
         streamSubgraphs: true,
         streamResumable: true,
         ...(hasTaskToolCall
@@ -136,7 +138,7 @@ export function useChat({
       // Update thread list when continuing stream
       onHistoryRevalidate?.();
     },
-    [stream, activeAssistant?.config, onHistoryRevalidate]
+    [stream, activeAssistant?.config, onHistoryRevalidate, recursionLimit]
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
