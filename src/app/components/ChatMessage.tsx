@@ -95,6 +95,28 @@ export const ChatMessage = React.memo<ChatMessageProps>(
       }));
     }, []);
 
+    // 找出孤立的 action requests（在 actionRequestsMap 中但不在 toolCalls 中）
+    const orphanedActionRequests = useMemo(() => {
+      if (!actionRequestsMap || actionRequestsMap.size === 0) return [];
+
+      const toolCallNames = new Set(toolCalls.map((tc) => tc.name));
+      const orphaned: Array<{
+        actionRequest: ActionRequest;
+        reviewConfig?: ReviewConfig;
+      }> = [];
+
+      actionRequestsMap.forEach((actionRequest, toolName) => {
+        if (!toolCallNames.has(toolName)) {
+          orphaned.push({
+            actionRequest,
+            reviewConfig: reviewConfigsMap?.get(toolName),
+          });
+        }
+      });
+
+      return orphaned;
+    }, [actionRequestsMap, reviewConfigsMap, toolCalls]);
+
     // Get metadata for this message to check if it has a checkpoint
     const metadata = useMemo(() => {
       if (!getMessagesMetadata) return undefined;
@@ -250,6 +272,25 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                   )}
                 </div>
               ))}
+            </div>
+          )}
+          {!isUser && orphanedActionRequests.length > 0 && onResumeInterrupt && (
+            <div className="mt-4 flex w-full flex-col gap-4">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Pending Approvals (Subgraph)
+              </div>
+              {orphanedActionRequests.map(
+                ({ actionRequest, reviewConfig }, index) => (
+                  <div key={`orphaned-${actionRequest.name}-${index}`}>
+                    <ToolApprovalInterrupt
+                      actionRequest={actionRequest}
+                      reviewConfig={reviewConfig}
+                      onResume={onResumeInterrupt}
+                      isLoading={isLoading}
+                    />
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>
