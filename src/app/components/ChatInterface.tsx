@@ -237,7 +237,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
       interrupt?.value && (interrupt.value as any)["review_configs"];
     if (!reviewConfigs) return new Map<string, ReviewConfig>();
     return new Map(
-      reviewConfigs.map((rc: ReviewConfig) => [rc.actionName, rc])
+      reviewConfigs.map((rc: ReviewConfig) => [rc.action_name, rc])
     );
   }, [interrupt]);
 

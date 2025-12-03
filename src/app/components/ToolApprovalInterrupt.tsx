@@ -25,7 +25,7 @@ export function ToolApprovalInterrupt({
   const [editedArgs, setEditedArgs] = useState<Record<string, unknown>>({});
   const [showRejectionInput, setShowRejectionInput] = useState(false);
 
-  const allowedDecisions = reviewConfig?.allowedDecisions ?? [
+  const allowedDecisions = reviewConfig?.allowed_decisions ?? [
     "approve",
     "reject",
     "edit",
