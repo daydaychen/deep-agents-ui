@@ -149,7 +149,12 @@ export function useChat({
 
   const resumeInterrupt = useCallback(
     (value: any) => {
-      stream.submit(null, { command: { resume: value } });
+      stream.submit(null, { 
+        command: { resume: value },
+        streamMode: ['messages', 'updates'],
+        streamSubgraphs: true,
+        streamResumable: true,
+      });
       // Update thread list when resuming from interrupt
       onHistoryRevalidate?.();
     },
