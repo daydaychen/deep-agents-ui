@@ -4,6 +4,7 @@ import React, { useMemo, useState, useCallback } from "react";
 import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { MarkdownContent } from "@/app/components/MarkdownContent";
+import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
 import type {
   SubAgent,
   ToolCall,
@@ -206,26 +207,45 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                   </div>
                   {isSubAgentExpanded(subAgent.id) && (
                     <div className="w-full max-w-full">
-                      <div className="bg-surface border-border-light rounded-md border p-4">
-                        <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
-                          Input
-                        </h4>
-                        <div className="mb-4">
-                          <MarkdownContent
-                            content={extractSubAgentContent(subAgent.input)}
-                          />
-                        </div>
-                        {subAgent.output && (
-                          <>
-                            <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
-                              Output
-                            </h4>
-                            <MarkdownContent
-                              content={extractSubAgentContent(subAgent.output)}
+                      {(() => {
+                        const taskActionRequest = actionRequestsMap?.get("task");
+                        const taskReviewConfig = reviewConfigsMap?.get("task");
+                        const hasInterrupt = taskActionRequest && subAgent.status === "interrupted";
+
+                        if (hasInterrupt && onResumeInterrupt) {
+                          return (
+                            <ToolApprovalInterrupt
+                              actionRequest={taskActionRequest}
+                              reviewConfig={taskReviewConfig}
+                              onResume={onResumeInterrupt}
+                              isLoading={isLoading}
                             />
-                          </>
-                        )}
-                      </div>
+                          );
+                        }
+
+                        return (
+                          <div className="bg-surface border-border-light rounded-md border p-4">
+                            <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
+                              Input
+                            </h4>
+                            <div className="mb-4">
+                              <MarkdownContent
+                                content={extractSubAgentContent(subAgent.input)}
+                              />
+                            </div>
+                            {subAgent.output && (
+                              <>
+                                <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
+                                  Output
+                                </h4>
+                                <MarkdownContent
+                                  content={extractSubAgentContent(subAgent.output)}
+                                />
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
