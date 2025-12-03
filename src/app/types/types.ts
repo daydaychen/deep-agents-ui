@@ -12,7 +12,7 @@ export interface SubAgent {
   subAgentName: string;
   input: Record<string, unknown>;
   output?: Record<string, unknown>;
-  status: "pending" | "active" | "completed" | "error";
+  status: "pending" | "active" | "completed" | "error" | "interrupted";
 }
 
 export interface FileItem {
