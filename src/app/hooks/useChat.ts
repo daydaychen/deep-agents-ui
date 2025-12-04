@@ -178,6 +178,7 @@ export function useChat({
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,
     getMessagesMetadata: stream.getMessagesMetadata,
+    error: stream.error as string | undefined,
     sendMessage,
     runSingleStep,
     continueStream,
