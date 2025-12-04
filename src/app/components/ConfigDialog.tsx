@@ -136,7 +136,7 @@ export function ConfigDialog({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="userId">
-              Langfuse User ID{" "}
+              User ID{" "}
               <span className="text-muted-foreground">(Optional)</span>
             </Label>
             <Input
