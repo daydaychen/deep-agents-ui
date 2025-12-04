@@ -4,6 +4,7 @@ import { ReactNode, createContext, useContext } from "react";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { type StateType, useChat } from "@/app/hooks/useChat";
 import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
+import type { StandaloneConfig } from "@/lib/config";
 
 interface ChatProviderProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface ChatProviderProps {
   onHistoryRevalidate?: () => void;
   thread?: UseStreamThread<StateType>;
   recursionLimit?: number;
+  config: StandaloneConfig;
 }
 
 export function ChatProvider({
@@ -19,8 +21,9 @@ export function ChatProvider({
   onHistoryRevalidate,
   thread,
   recursionLimit,
+  config,
 }: ChatProviderProps) {
-  const chat = useChat({ activeAssistant, onHistoryRevalidate, thread, recursionLimit });
+  const chat = useChat({ activeAssistant, onHistoryRevalidate, thread, recursionLimit, config });
   return <ChatContext.Provider value={chat}>{children}</ChatContext.Provider>;
 }
 
