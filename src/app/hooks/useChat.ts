@@ -190,6 +190,7 @@ export function useChat({
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,
     getMessagesMetadata: stream.getMessagesMetadata,
+    error: stream.error as string | undefined,
     branch: stream.branch,
     setBranch: stream.setBranch,
     history: stream.history,
