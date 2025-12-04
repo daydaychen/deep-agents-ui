@@ -3,6 +3,7 @@ export interface StandaloneConfig {
   assistantId: string;
   langsmithApiKey?: string;
   recursionLimit?: number;
+  userId?: string;
 }
 
 const CONFIG_KEY = "deep-agent-config";

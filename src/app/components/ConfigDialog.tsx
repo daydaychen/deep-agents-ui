@@ -39,6 +39,9 @@ export function ConfigDialog({
   const [recursionLimit, setRecursionLimit] = useState(
     initialConfig?.recursionLimit?.toString() || "100"
   );
+  const [userId, setUserId] = useState(
+    initialConfig?.userId || ""
+  );
 
   useEffect(() => {
     if (open && initialConfig) {
@@ -46,6 +49,7 @@ export function ConfigDialog({
       setAssistantId(initialConfig.assistantId);
       setLangsmithApiKey(initialConfig.langsmithApiKey || "");
       setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
+      setUserId(initialConfig.userId || "");
     }
   }, [open, initialConfig]);
 
@@ -66,6 +70,7 @@ export function ConfigDialog({
       assistantId,
       langsmithApiKey: langsmithApiKey || undefined,
       recursionLimit: parsedRecursionLimit,
+      userId: userId || undefined,
     });
     onOpenChange(false);
   };
@@ -127,6 +132,18 @@ export function ConfigDialog({
               placeholder="100"
               value={recursionLimit}
               onChange={(e) => setRecursionLimit(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="userId">
+              Langfuse User ID{" "}
+              <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+            <Input
+              id="userId"
+              placeholder="user-identifier"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
             />
           </div>
         </div>
