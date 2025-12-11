@@ -7,8 +7,9 @@ import { ConfigDialog } from "@/app/components/ConfigDialog";
 import { Button } from "@/components/ui/button";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { ClientProvider, useClient } from "@/providers/ClientProvider";
-import { Settings, MessagesSquare, SquarePen } from "lucide-react";
+import { Settings, MessagesSquare, SquarePen, Database, X } from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { Memory } from "@/app/components/Memory";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -34,6 +35,7 @@ function HomePageInner({
   const client = useClient();
   const [threadId, setThreadId] = useQueryState("threadId");
   const [sidebar, setSidebar] = useQueryState("sidebar");
+  const [memorySidebar, setMemorySidebar] = useQueryState("memorySidebar");
 
   const [mutateThreads, setMutateThreads] = useState<(() => void) | null>(null);
   const [interruptCount, setInterruptCount] = useState(0);
@@ -133,6 +135,17 @@ function HomePageInner({
                 )}
               </Button>
             )}
+            {!memorySidebar && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMemorySidebar("1")}
+                className="rounded-md border border-border bg-card p-3 text-foreground hover:bg-accent"
+              >
+                <Database className="mr-2 h-4 w-4" />
+                Memory
+              </Button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <div className="text-sm text-muted-foreground">
@@ -188,10 +201,41 @@ function HomePageInner({
               </>
             )}
 
+            {memorySidebar && (
+              <>
+                <ResizablePanel
+                  id="memory-sidebar"
+                  order={sidebar ? 2 : 1}
+                  defaultSize={25}
+                  minSize={20}
+                  className="relative min-w-[380px]"
+                >
+                  <div className="absolute inset-0 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-border p-4">
+                      <h2 className="text-lg font-semibold tracking-tight">Memory</h2>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setMemorySidebar(null)}
+                        className="h-8 w-8"
+                        aria-label="关闭Memory侧边栏"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex-1 overflow-hidden p-4">
+                      <Memory />
+                    </div>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle />
+              </>
+            )}
+
             <ResizablePanel
               id="chat"
               className="relative flex flex-col"
-              order={2}
+              order={sidebar && memorySidebar ? 3 : sidebar || memorySidebar ? 2 : 1}
             >
               <ChatProvider
                 activeAssistant={assistant}
