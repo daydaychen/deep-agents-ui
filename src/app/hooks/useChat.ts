@@ -63,10 +63,8 @@ export function useChat({
           config: { ...(activeAssistant?.config ?? {}), recursion_limit: 100 },
         }
       );
-      // Update thread list immediately when sending a message
-      onHistoryRevalidate?.();
     },
-    [stream, activeAssistant?.config, onHistoryRevalidate]
+    [stream, activeAssistant?.config]
   );
 
   const runSingleStep = useCallback(
@@ -118,25 +116,19 @@ export function useChat({
           ? { interruptAfter: ["tools"] }
           : { interruptBefore: ["tools"] }),
       });
-      // Update thread list when continuing stream
-      onHistoryRevalidate?.();
     },
-    [stream, activeAssistant?.config, onHistoryRevalidate]
+    [stream, activeAssistant?.config]
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
     stream.submit(null, { command: { goto: "__end__", update: null } });
-    // Update thread list when marking thread as resolved
-    onHistoryRevalidate?.();
-  }, [stream, onHistoryRevalidate]);
+  }, [stream]);
 
   const resumeInterrupt = useCallback(
     (value: any) => {
       stream.submit(null, { command: { resume: value } });
-      // Update thread list when resuming from interrupt
-      onHistoryRevalidate?.();
     },
-    [stream, onHistoryRevalidate]
+    [stream]
   );
 
   const stopStream = useCallback(() => {
