@@ -1,31 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { format } from "date-fns";
-import { Loader2, MessageSquare, MoreHorizontal, X } from "lucide-react";
-import { useQueryState } from "nuqs";
+import type { ThreadItem } from "@/app/hooks/useThreads";
+import { useDeleteThread, useMarkThreadAsResolved, useThreads } from "@/app/hooks/useThreads";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import type { ThreadItem } from "@/app/hooks/useThreads";
-import { useThreads, useDeleteThread } from "@/app/hooks/useThreads";
+import { format } from "date-fns";
+import { Loader2, MessageSquare, MoreHorizontal, X } from "lucide-react";
+import { useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type StatusFilter = "all" | "idle" | "busy" | "interrupted" | "error";
 
@@ -130,6 +130,7 @@ export function ThreadList({
   onInterruptCountChange,
 }: ThreadListProps) {
   const { trigger: deleteThread } = useDeleteThread();
+  const { trigger: markThreadAsResolved } = useMarkThreadAsResolved();
 
   const handleDeleteThread = async (threadId: string) => {
     try {
@@ -140,6 +141,18 @@ export function ThreadList({
       }
     } catch (error) {
       console.error("Failed to delete thread:", error);
+    }
+  };
+
+  const handleMarkAsResolved = async (threadId: string, assistantId?: string) => {
+    try {
+      await markThreadAsResolved({ threadId, assistantId });
+      // Trigger revalidation to update the list
+      if (mutateFn) {
+        mutateFn();
+      }
+    } catch (error) {
+      console.error("Failed to mark thread as resolved:", error);
     }
   };
   const [currentThreadId] = useQueryState("threadId");
@@ -352,6 +365,14 @@ export function ThreadList({
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleMarkAsResolved(thread.id, thread.assistantId);
+                                    }}
+                                  >
+                                    Make as Resolved
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
