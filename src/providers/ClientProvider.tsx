@@ -13,14 +13,12 @@ interface ClientProviderProps {
   children: ReactNode;
   deploymentUrl: string;
   apiKey: string;
-  maxRetries?: number;
 }
 
 export function ClientProvider({
   children,
   deploymentUrl,
   apiKey,
-  maxRetries = 6,
 }: ClientProviderProps) {
   const client = useMemo(() => {
     return new Client({
@@ -29,11 +27,8 @@ export function ClientProvider({
         "Content-Type": "application/json",
         "X-Api-Key": apiKey,
       },
-      callerOptions: {
-        maxRetries,
-      },
     });
-  }, [deploymentUrl, apiKey, maxRetries]);
+  }, [deploymentUrl, apiKey]);
 
   const value = useMemo(() => ({ client }), [client]);
 

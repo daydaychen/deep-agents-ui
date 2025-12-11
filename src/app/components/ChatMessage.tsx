@@ -11,14 +11,19 @@ import type {
   ReviewConfig,
 } from "@/app/types/types";
 import { Message } from "@langchain/langgraph-sdk";
+import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import {
   extractSubAgentContent,
   extractStringFromMessageContent,
 } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
+import type { StateType } from "@/app/hooks/useChat";
 
 interface ChatMessageProps {
   message: Message;
+  messageIndex: number;
   toolCalls: ToolCall[];
   isLoading?: boolean;
   actionRequestsMap?: Map<string, ActionRequest>;
@@ -26,12 +31,15 @@ interface ChatMessageProps {
   ui?: any[];
   stream?: any;
   onResumeInterrupt?: (value: any) => void;
+  onRetry?: (message: Message, index: number) => void;
+  getMessagesMetadata?: (message: Message, index?: number) => MessageMetadata<StateType> | undefined;
   graphId?: string;
 }
 
 export const ChatMessage = React.memo<ChatMessageProps>(
   ({
     message,
+    messageIndex,
     toolCalls,
     isLoading,
     actionRequestsMap,
@@ -39,6 +47,8 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     ui,
     stream,
     onResumeInterrupt,
+    onRetry,
+    getMessagesMetadata,
     graphId,
   }) => {
     const isUser = message.type === "human";
@@ -84,6 +94,19 @@ export const ChatMessage = React.memo<ChatMessageProps>(
       }));
     }, []);
 
+    // Get metadata for this message to check if it has a checkpoint
+    const metadata = useMemo(() => {
+      if (!getMessagesMetadata) return undefined;
+      return getMessagesMetadata(message, messageIndex);
+    }, [getMessagesMetadata, message, messageIndex]);
+
+    const canRetry = !isUser && metadata?.firstSeenState?.checkpoint && onRetry;
+    const handleRetry = useCallback(() => {
+      if (onRetry) {
+        onRetry(message, messageIndex);
+      }
+    }, [onRetry, message, messageIndex]);
+
     return (
       <div
         className={cn(
@@ -98,7 +121,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           )}
         >
           {hasContent && (
-            <div className={cn("relative flex items-end gap-0")}>
+            <div className={cn("relative flex flex-col gap-2")}>
               <div
                 className={cn(
                   "mt-4 overflow-hidden break-words text-sm font-normal leading-[150%]",
@@ -120,6 +143,24 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                   <MarkdownContent content={messageContent} />
                 ) : null}
               </div>
+              {canRetry && !isLoading && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRetry}
+                    className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Retry from here
+                  </Button>
+                  {metadata?.branch && metadata.branch !== "main" && (
+                    <span className="text-xs text-muted-foreground">
+                      Branch: {metadata.branch}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {hasToolCalls && (

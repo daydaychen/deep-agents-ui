@@ -2,7 +2,6 @@ export interface StandaloneConfig {
   deploymentUrl: string;
   assistantId: string;
   langsmithApiKey?: string;
-  maxRetries?: number;
 }
 
 const CONFIG_KEY = "deep-agent-config";
