@@ -110,6 +110,8 @@ function HomePageInner({
         onOpenChange={setConfigDialogOpen}
         onSave={handleSaveConfig}
         initialConfig={config}
+        currentDeploymentUrl={config.deploymentUrl}
+        currentApiKey={config.langsmithApiKey}
       />
       <div className="flex h-screen flex-col">
         <header className="flex h-16 items-center justify-between border-b border-border px-6">
