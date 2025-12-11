@@ -167,3 +167,41 @@ export function useDeleteThread() {
     }
   };
 }
+
+export function useMarkThreadAsResolved() {
+  const config = getConfig();
+  const apiKey =
+    config?.langsmithApiKey ||
+    process.env.NEXT_PUBLIC_LANGSMITH_API_KEY ||
+    "";
+
+  if (!config || !apiKey) {
+    throw new Error("Configuration or API key not found");
+  }
+
+  return {
+    trigger: async ({ threadId, assistantId }: { threadId: string; assistantId?: string }) => {
+      const client = new Client({
+        apiUrl: config.deploymentUrl,
+        defaultHeaders: {
+          "X-Api-Key": apiKey,
+        },
+      });
+
+      // Get the assistant ID from config if not provided
+      const finalAssistantId = assistantId || config.assistantId;
+
+      // Mark thread as resolved by sending a goto command
+      await client.runs.create(
+        threadId,
+        finalAssistantId,
+        {
+          command: { goto: "__end__", update: null },
+          metadata: {
+            langfuse_user_id: config.userId || 'user',
+          },
+        }
+      );
+    }
+  };
+}
