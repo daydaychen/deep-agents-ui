@@ -55,3 +55,11 @@ export interface ToolApprovalInterruptData {
   action_requests: ActionRequest[];
   review_configs?: ReviewConfig[];
 }
+
+export interface MemoryItem {
+  namespace: string[];
+  key: string;
+  value: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
