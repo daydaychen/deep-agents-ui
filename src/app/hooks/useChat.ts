@@ -153,11 +153,8 @@ export function useChat({
       
       // Submit from the checkpoint to re-execute from that point
       stream.submit(undefined, {
+        config: activeAssistant?.config,
         checkpoint: metadata.firstSeenState.checkpoint,
-        config: {
-          ...(activeAssistant?.config || {}),
-          recursion_limit: 100,
-        },
       });
       
       // Update thread list when retrying
