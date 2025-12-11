@@ -86,6 +86,21 @@ You can run your Deep Agents in Debug Mode, which will execute the agent step by
 
 You can also turn off Debug Mode to run the full agent end-to-end.
 
+### Message Retry and Branching
+
+The application supports message-level retry using LangChain's checkpoint mechanism:
+
+- **Retry from Checkpoint**: Click the "Retry from here" button on any AI message to re-execute the agent from that point
+- **Branching Support**: When you retry from a checkpoint, you can create alternate execution paths (branches)
+- **Branch Display**: Messages show which branch they belong to when not on the main branch
+- **Checkpoint Persistence**: Each message's checkpoint is stored, allowing you to go back to any point in the conversation
+
+This feature is useful for:
+- Testing different agent responses to the same prompt
+- Recovering from errors by retrying from a previous checkpoint
+- Exploring alternate execution paths without losing the original conversation
+- Debugging agent behavior at specific points in the execution
+
 ### 📚 Resources
 
 If the term "Deep Agents" is new to you, check out these videos!
