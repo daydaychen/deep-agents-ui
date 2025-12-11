@@ -267,6 +267,7 @@ function HomePageContent() {
     <ClientProvider
       deploymentUrl={config.deploymentUrl}
       apiKey={langsmithApiKey}
+      maxRetries={config.maxRetries}
     >
       <HomePageInner
         config={config}

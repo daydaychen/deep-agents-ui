@@ -36,12 +36,16 @@ export function ConfigDialog({
   const [langsmithApiKey, setLangsmithApiKey] = useState(
     initialConfig?.langsmithApiKey || ""
   );
+  const [maxRetries, setMaxRetries] = useState(
+    initialConfig?.maxRetries?.toString() || "6"
+  );
 
   useEffect(() => {
     if (open && initialConfig) {
       setDeploymentUrl(initialConfig.deploymentUrl);
       setAssistantId(initialConfig.assistantId);
       setLangsmithApiKey(initialConfig.langsmithApiKey || "");
+      setMaxRetries(initialConfig.maxRetries?.toString() || "6");
     }
   }, [open, initialConfig]);
 
@@ -51,10 +55,17 @@ export function ConfigDialog({
       return;
     }
 
+    const retriesNum = parseInt(maxRetries, 10);
+    if (isNaN(retriesNum) || retriesNum < 0) {
+      alert("Max retries must be a non-negative number");
+      return;
+    }
+
     onSave({
       deploymentUrl,
       assistantId,
       langsmithApiKey: langsmithApiKey || undefined,
+      maxRetries: retriesNum,
     });
     onOpenChange(false);
   };
@@ -103,6 +114,23 @@ export function ConfigDialog({
               value={langsmithApiKey}
               onChange={(e) => setLangsmithApiKey(e.target.value)}
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="maxRetries">
+              Max Retries{" "}
+              <span className="text-muted-foreground">(Default: 6)</span>
+            </Label>
+            <Input
+              id="maxRetries"
+              type="number"
+              min="0"
+              placeholder="6"
+              value={maxRetries}
+              onChange={(e) => setMaxRetries(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Maximum number of retry attempts for failed requests with exponential backoff
+            </p>
           </div>
         </div>
         <DialogFooter>
