@@ -57,7 +57,7 @@ You can get the Deployment URL and Assistant ID from the terminal output and `la
 - [Optional] **LangSmith API Key**: Your LangSmith API key (format: `lsv2_pt_...`). This may be required for accessing deployed LangGraph applications. You can also provide this via the `NEXT_PUBLIC_LANGSMITH_API_KEY` environment variable.
 - [Optional] **Max Retries**: The maximum number of retry attempts for failed requests (default: 6). The retry mechanism uses exponential backoff to handle transient network errors or rate limiting gracefully.
 
-**Usagee**
+**Usage**
 
 You can interact with the deployment via the chat interface and can edit settings at any time by clicking on the Settings button in the header.
 

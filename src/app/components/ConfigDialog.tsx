@@ -65,7 +65,7 @@ export function ConfigDialog({
       deploymentUrl,
       assistantId,
       langsmithApiKey: langsmithApiKey || undefined,
-      maxRetries: retriesNum,
+      maxRetries: retriesNum !== 6 ? retriesNum : undefined,
     });
     onOpenChange(false);
   };
