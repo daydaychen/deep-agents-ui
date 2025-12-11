@@ -79,9 +79,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     isLoading,
     isThreadLoading,
     interrupt,
+    getMessagesMetadata,
     sendMessage,
     stopStream,
     resumeInterrupt,
+    retryFromMessage,
   } = useChatContext();
 
   const submitDisabled = isLoading || !assistant;
@@ -266,6 +268,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                   <ChatMessage
                     key={data.message.id}
                     message={data.message}
+                    messageIndex={index}
                     toolCalls={data.toolCalls}
                     isLoading={isLoading}
                     actionRequestsMap={
@@ -277,6 +280,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                     ui={messageUi}
                     stream={stream}
                     onResumeInterrupt={resumeInterrupt}
+                    onRetry={retryFromMessage}
+                    getMessagesMetadata={getMessagesMetadata}
                     graphId={assistant?.graph_id}
                   />
                 );

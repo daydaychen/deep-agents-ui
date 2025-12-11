@@ -135,6 +135,26 @@ export function useChat({
     stream.stop();
   }, [stream]);
 
+  const retryFromMessage = useCallback(
+    (message: Message, index: number) => {
+      const metadata = stream.getMessagesMetadata(message, index);
+      if (!metadata?.firstSeenState?.checkpoint) {
+        console.warn("No checkpoint found for message", message.id);
+        return;
+      }
+      
+      // Submit from the checkpoint to re-execute from that point
+      stream.submit(undefined, {
+        config: activeAssistant?.config,
+        checkpoint: metadata.firstSeenState.checkpoint,
+      });
+      
+      // Update thread list when retrying
+      onHistoryRevalidate?.();
+    },
+    [stream, activeAssistant?.config, onHistoryRevalidate]
+  );
+
   return {
     stream,
     todos: stream.values.todos ?? [],
@@ -147,11 +167,15 @@ export function useChat({
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,
     getMessagesMetadata: stream.getMessagesMetadata,
+    branch: stream.branch,
+    setBranch: stream.setBranch,
+    history: stream.history,
     sendMessage,
     runSingleStep,
     continueStream,
     stopStream,
     markCurrentThreadAsResolved,
     resumeInterrupt,
+    retryFromMessage,
   };
 }

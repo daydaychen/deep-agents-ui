@@ -56,7 +56,7 @@ You can get the Deployment URL and Assistant ID from the terminal output and `la
 - **Assistant ID**: The ID of the assistant or agent you want to use
 - [Optional] **LangSmith API Key**: Your LangSmith API key (format: `lsv2_pt_...`). This may be required for accessing deployed LangGraph applications. You can also provide this via the `NEXT_PUBLIC_LANGSMITH_API_KEY` environment variable.
 
-**Usagee**
+**Usage**
 
 You can interact with the deployment via the chat interface and can edit settings at any time by clicking on the Settings button in the header.
 
@@ -85,6 +85,21 @@ NEXT_PUBLIC_LANGSMITH_API_KEY="lsv2_xxxx"
 You can run your Deep Agents in Debug Mode, which will execute the agent step by step. This will allow you to re-run the specific steps of the agent. This is intended to be used alongside the optimizer.
 
 You can also turn off Debug Mode to run the full agent end-to-end.
+
+### Message Retry and Branching
+
+The application supports message-level retry using LangChain's checkpoint mechanism:
+
+- **Retry from Checkpoint**: Click the "Retry from here" button on any AI message to re-execute the agent from that point
+- **Branching Support**: When you retry from a checkpoint, you can create alternate execution paths (branches)
+- **Branch Display**: Messages show which branch they belong to when not on the main branch
+- **Checkpoint Persistence**: Each message's checkpoint is stored, allowing you to go back to any point in the conversation
+
+This feature is useful for:
+- Testing different agent responses to the same prompt
+- Recovering from errors by retrying from a previous checkpoint
+- Exploring alternate execution paths without losing the original conversation
+- Debugging agent behavior at specific points in the execution
 
 ### 📚 Resources
 
