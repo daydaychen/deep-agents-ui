@@ -55,6 +55,7 @@ You can get the Deployment URL and Assistant ID from the terminal output and `la
 - **Deployment URL**: The URL for the LangGraph deployment you are connecting to
 - **Assistant ID**: The ID of the assistant or agent you want to use
 - [Optional] **LangSmith API Key**: Your LangSmith API key (format: `lsv2_pt_...`). This may be required for accessing deployed LangGraph applications. You can also provide this via the `NEXT_PUBLIC_LANGSMITH_API_KEY` environment variable.
+- [Optional] **Max Retries**: The maximum number of retry attempts for failed requests (default: 6). The retry mechanism uses exponential backoff to handle transient network errors or rate limiting gracefully.
 
 **Usagee**
 
@@ -85,6 +86,21 @@ NEXT_PUBLIC_LANGSMITH_API_KEY="lsv2_xxxx"
 You can run your Deep Agents in Debug Mode, which will execute the agent step by step. This will allow you to re-run the specific steps of the agent. This is intended to be used alongside the optimizer.
 
 You can also turn off Debug Mode to run the full agent end-to-end.
+
+### Retry Configuration
+
+The application supports automatic retry of failed requests with exponential backoff. This helps handle:
+
+- **Transient network errors**: Temporary connectivity issues
+- **Rate limiting**: API throttling from the backend
+- **Service interruptions**: Brief service outages
+
+Configure the retry behavior in the Settings dialog:
+- **Max Retries**: Number of retry attempts (default: 6)
+- Each retry uses exponential backoff to progressively increase wait time between attempts
+- Set to 0 to disable retries
+
+The retry configuration is saved in your browser's local storage and applies to all API requests made through the LangGraph SDK client.
 
 ### 📚 Resources
 
