@@ -98,7 +98,7 @@ export function useThreads(props: {
             if (Array.isArray(values.messages)) {
               messageCount = values.messages.length;
             }
-            
+
             const firstHumanMessage = values.messages.find(
               (m: any) => m.type === "human"
             );
@@ -146,9 +146,7 @@ export function useThreads(props: {
 export function useDeleteThread() {
   const config = getConfig();
   const apiKey =
-    config?.langsmithApiKey ||
-    process.env.NEXT_PUBLIC_LANGSMITH_API_KEY ||
-    "";
+    config?.langsmithApiKey || process.env.NEXT_PUBLIC_LANGSMITH_API_KEY || "";
 
   if (!config || !apiKey) {
     throw new Error("Configuration or API key not found");
@@ -164,23 +162,27 @@ export function useDeleteThread() {
       });
 
       await client.threads.delete(threadId);
-    }
+    },
   };
 }
 
 export function useMarkThreadAsResolved() {
   const config = getConfig();
   const apiKey =
-    config?.langsmithApiKey ||
-    process.env.NEXT_PUBLIC_LANGSMITH_API_KEY ||
-    "";
+    config?.langsmithApiKey || process.env.NEXT_PUBLIC_LANGSMITH_API_KEY || "";
 
   if (!config || !apiKey) {
     throw new Error("Configuration or API key not found");
   }
 
   return {
-    trigger: async ({ threadId, assistantId }: { threadId: string; assistantId?: string }) => {
+    trigger: async ({
+      threadId,
+      assistantId,
+    }: {
+      threadId: string;
+      assistantId?: string;
+    }) => {
       const client = new Client({
         apiUrl: config.deploymentUrl,
         defaultHeaders: {
@@ -192,16 +194,12 @@ export function useMarkThreadAsResolved() {
       const finalAssistantId = assistantId || config.assistantId;
 
       // Mark thread as resolved by sending a goto command
-      await client.runs.create(
-        threadId,
-        finalAssistantId,
-        {
-          command: { goto: "__end__", update: null },
-          metadata: {
-            langfuse_user_id: config.userId || 'user',
-          },
-        }
-      );
-    }
+      await client.runs.create(threadId, finalAssistantId, {
+        command: { goto: "__end__", update: null },
+        metadata: {
+          langfuse_user_id: config.userId || "user",
+        },
+      });
+    },
   };
 }

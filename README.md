@@ -96,6 +96,7 @@ The application supports message-level retry using LangChain's checkpoint mechan
 - **Checkpoint Persistence**: Each message's checkpoint is stored, allowing you to go back to any point in the conversation
 
 This feature is useful for:
+
 - Testing different agent responses to the same prompt
 - Recovering from errors by retrying from a previous checkpoint
 - Exploring alternate execution paths without losing the original conversation

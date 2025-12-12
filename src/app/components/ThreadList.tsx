@@ -1,7 +1,11 @@
 "use client";
 
 import type { ThreadItem } from "@/app/hooks/useThreads";
-import { useDeleteThread, useMarkThreadAsResolved, useThreads } from "@/app/hooks/useThreads";
+import {
+  useDeleteThread,
+  useMarkThreadAsResolved,
+  useThreads,
+} from "@/app/hooks/useThreads";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -144,7 +148,10 @@ export function ThreadList({
     }
   };
 
-  const handleMarkAsResolved = async (threadId: string, assistantId?: string) => {
+  const handleMarkAsResolved = async (
+    threadId: string,
+    assistantId?: string
+  ) => {
     try {
       await markThreadAsResolved({ threadId, assistantId });
       // Trigger revalidation to update the list
@@ -332,7 +339,7 @@ export function ThreadList({
                       <div
                         key={thread.id}
                         className={cn(
-                          "grid w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-200 group",
+                          "group grid w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-200",
                           "hover:bg-accent",
                           currentThreadId === thread.id
                             ? "border border-primary bg-accent hover:bg-accent"
@@ -347,7 +354,7 @@ export function ThreadList({
                             <h3 className="truncate text-sm font-semibold">
                               {thread.title}
                             </h3>
-                            <div className="ml-2 flex-shrink-0 flex items-center gap-2">
+                            <div className="ml-2 flex flex-shrink-0 items-center gap-2">
                               <span className="text-xs text-muted-foreground">
                                 {formatTime(thread.updatedAt)}
                               </span>
@@ -356,7 +363,7 @@ export function ThreadList({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                     }}
@@ -368,7 +375,10 @@ export function ThreadList({
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleMarkAsResolved(thread.id, thread.assistantId);
+                                      handleMarkAsResolved(
+                                        thread.id,
+                                        thread.assistantId
+                                      );
                                     }}
                                   >
                                     Make as Resolved
@@ -392,8 +402,11 @@ export function ThreadList({
                               {thread.description}
                             </p>
                             <div className="ml-2 flex items-center gap-2">
-                              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                                {thread.messageCount} {thread.messageCount === 1 ? 'message' : 'messages'}
+                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
+                                {thread.messageCount}{" "}
+                                {thread.messageCount === 1
+                                  ? "message"
+                                  : "messages"}
                               </span>
                               <div
                                 className={cn(

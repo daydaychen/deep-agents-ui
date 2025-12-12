@@ -52,9 +52,7 @@ export function ConfigDialog({
   const [recursionLimit, setRecursionLimit] = useState(
     initialConfig?.recursionLimit?.toString() || "100"
   );
-  const [userId, setUserId] = useState(
-    initialConfig?.userId || ""
-  );
+  const [userId, setUserId] = useState(initialConfig?.userId || "");
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   const [loadingAssistants, setLoadingAssistants] = useState(false);
   const [useCustomId, setUseCustomId] = useState(false);
@@ -100,7 +98,13 @@ export function ConfigDialog({
     };
 
     fetchAssistants();
-  }, [deploymentUrl, currentDeploymentUrl, langsmithApiKey, currentApiKey, open]);
+  }, [
+    deploymentUrl,
+    currentDeploymentUrl,
+    langsmithApiKey,
+    currentApiKey,
+    open,
+  ]);
 
   const handleSave = () => {
     if (!deploymentUrl || !assistantId) {
@@ -157,7 +161,11 @@ export function ConfigDialog({
                   disabled={loadingAssistants}
                 >
                   <SelectTrigger id="assistantId">
-                    <SelectValue placeholder={loadingAssistants ? "加载中..." : "选择 Assistant"} />
+                    <SelectValue
+                      placeholder={
+                        loadingAssistants ? "加载中..." : "选择 Assistant"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {assistants.map((assistant) => (
@@ -165,7 +173,8 @@ export function ConfigDialog({
                         key={assistant.assistant_id}
                         value={assistant.assistant_id}
                       >
-                        {assistant.name || assistant.graph_id} ({assistant.assistant_id.slice(0, 8)}...)
+                        {assistant.name || assistant.graph_id} (
+                        {assistant.assistant_id.slice(0, 8)}...)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -231,8 +240,7 @@ export function ConfigDialog({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="userId">
-              User ID{" "}
-              <span className="text-muted-foreground">(Optional)</span>
+              User ID <span className="text-muted-foreground">(Optional)</span>
             </Label>
             <Input
               id="userId"

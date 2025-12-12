@@ -13,7 +13,11 @@ import useSWRMutation from "swr/mutation";
 
 export const MemoryItemDialog = React.memo<{
   item: MemoryItem | null;
-  onSaveItem: (namespace: string[], key: string, value: Record<string, unknown>) => Promise<void>;
+  onSaveItem: (
+    namespace: string[],
+    key: string,
+    value: Record<string, unknown>
+  ) => Promise<void>;
   onClose: () => void;
   editDisabled: boolean;
 }>(({ item, onSaveItem, onClose, editDisabled }) => {
@@ -94,7 +98,10 @@ export const MemoryItemDialog = React.memo<{
   }, [namespace, itemKey, itemValue]);
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
+    <Dialog
+      open={true}
+      onOpenChange={onClose}
+    >
       <DialogContent className="flex h-[80vh] max-h-[80vh] min-w-[60vw] flex-col p-6">
         <DialogTitle className="sr-only">
           {item ? `${item.namespace.join(".")}.${item.key}` : "新建项目"}
@@ -135,7 +142,10 @@ export const MemoryItemDialog = React.memo<{
                   className="h-8 px-2"
                   disabled={editDisabled}
                 >
-                  <Edit size={16} className="mr-1" />
+                  <Edit
+                    size={16}
+                    className="mr-1"
+                  />
                   编辑
                 </Button>
                 <Button
@@ -144,7 +154,10 @@ export const MemoryItemDialog = React.memo<{
                   size="sm"
                   className="h-8 px-2"
                 >
-                  <Copy size={16} className="mr-1" />
+                  <Copy
+                    size={16}
+                    className="mr-1"
+                  />
                   复制
                 </Button>
                 <Button
@@ -153,7 +166,10 @@ export const MemoryItemDialog = React.memo<{
                   size="sm"
                   className="h-8 px-2"
                 >
-                  <Download size={16} className="mr-1" />
+                  <Download
+                    size={16}
+                    className="mr-1"
+                  />
                   下载
                 </Button>
               </>
@@ -186,8 +202,15 @@ export const MemoryItemDialog = React.memo<{
         </div>
         {isEditingMode && (
           <div className="mt-4 flex justify-end gap-2 border-t border-border pt-4">
-            <Button onClick={handleCancel} variant="outline" size="sm">
-              <X size={16} className="mr-1" />
+            <Button
+              onClick={handleCancel}
+              variant="outline"
+              size="sm"
+            >
+              <X
+                size={16}
+                className="mr-1"
+              />
               取消
             </Button>
             <Button
@@ -196,9 +219,15 @@ export const MemoryItemDialog = React.memo<{
               disabled={itemUpdate.isMutating || !isValid}
             >
               {itemUpdate.isMutating ? (
-                <Loader2 size={16} className="mr-1 animate-spin" />
+                <Loader2
+                  size={16}
+                  className="mr-1 animate-spin"
+                />
               ) : (
-                <Save size={16} className="mr-1" />
+                <Save
+                  size={16}
+                  className="mr-1"
+                />
               )}
               保存
             </Button>

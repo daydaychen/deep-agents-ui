@@ -23,7 +23,9 @@ export const Memory = React.memo(() => {
     mutateNamespaces,
   } = useMemory();
 
-  const [selectedNamespace, setSelectedNamespace] = useState<string[] | null>(null);
+  const [selectedNamespace, setSelectedNamespace] = useState<string[] | null>(
+    null
+  );
   const [namespaceItems, setNamespaceItems] = useState<Item[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MemoryItem | null>(null);
@@ -52,7 +54,11 @@ export const Memory = React.memo(() => {
   );
 
   const handleSaveItem = useCallback(
-    async (namespace: string[], key: string, value: Record<string, unknown>) => {
+    async (
+      namespace: string[],
+      key: string,
+      value: Record<string, unknown>
+    ) => {
       try {
         await putItem({ namespace, key, value });
         toast.success("项目已保存");
@@ -119,14 +125,20 @@ export const Memory = React.memo(() => {
           className="h-8 px-2"
           disabled={isPuttingItem || isDeletingItem}
         >
-          <Plus size={14} className="mr-1" />
+          <Plus
+            size={14}
+            className="mr-1"
+          />
           新建项目
         </Button>
       </div>
       <ScrollArea className="h-full">
         {isLoadingNamespaces ? (
           <div className="flex h-full items-center justify-center p-4">
-            <Loader2 size={20} className="animate-spin text-muted-foreground" />
+            <Loader2
+              size={20}
+              className="animate-spin text-muted-foreground"
+            />
           </div>
         ) : namespaces.length === 0 ? (
           <div className="flex h-full items-center justify-center p-4 text-center">
@@ -139,13 +151,19 @@ export const Memory = React.memo(() => {
               const isExpanded = selectedNamespace?.join(".") === namespaceStr;
 
               return (
-                <div key={namespaceStr} className="space-y-2">
+                <div
+                  key={namespaceStr}
+                  className="space-y-2"
+                >
                   <button
                     onClick={() => handleNamespaceClick(ns.namespace)}
                     className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm font-medium transition-colors hover:bg-muted"
                   >
                     <div className="flex items-center gap-2">
-                      <Database size={14} className="text-muted-foreground" />
+                      <Database
+                        size={14}
+                        className="text-muted-foreground"
+                      />
                       <span className="text-foreground">{namespaceStr}</span>
                     </div>
                     <ChevronDown
@@ -161,7 +179,10 @@ export const Memory = React.memo(() => {
                     <div className="ml-4 space-y-2">
                       {isLoadingItems ? (
                         <div className="flex items-center justify-center py-4">
-                          <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                          <Loader2
+                            size={16}
+                            className="animate-spin text-muted-foreground"
+                          />
                         </div>
                       ) : namespaceItems.length === 0 ? (
                         <p className="px-2 py-2 text-xs text-muted-foreground">
@@ -193,11 +214,18 @@ export const Memory = React.memo(() => {
                                   size="sm"
                                   className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
                                   onClick={(e) =>
-                                    handleDeleteItem(item.namespace, item.key, e)
+                                    handleDeleteItem(
+                                      item.namespace,
+                                      item.key,
+                                      e
+                                    )
                                   }
                                   disabled={isDeletingItem}
                                 >
-                                  <Trash2 size={14} className="text-destructive" />
+                                  <Trash2
+                                    size={14}
+                                    className="text-destructive"
+                                  />
                                 </Button>
                               </div>
                               <div className="space-y-1">
@@ -206,24 +234,32 @@ export const Memory = React.memo(() => {
                                 </span>
                                 {item.createdAt && (
                                   <p className="text-[10px] text-muted-foreground">
-                                    创建: {new Date(item.createdAt).toLocaleString('zh-CN', {
-                                      year: 'numeric',
-                                      month: '2-digit',
-                                      day: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
+                                    创建:{" "}
+                                    {new Date(item.createdAt).toLocaleString(
+                                      "zh-CN",
+                                      {
+                                        year: "numeric",
+                                        month: "2-digit",
+                                        day: "2-digit",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
                                   </p>
                                 )}
                                 {item.updatedAt && (
                                   <p className="text-[10px] text-muted-foreground">
-                                    更新: {new Date(item.updatedAt).toLocaleString('zh-CN', {
-                                      year: 'numeric',
-                                      month: '2-digit',
-                                      day: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
+                                    更新:{" "}
+                                    {new Date(item.updatedAt).toLocaleString(
+                                      "zh-CN",
+                                      {
+                                        year: "numeric",
+                                        month: "2-digit",
+                                        day: "2-digit",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
                                   </p>
                                 )}
                               </div>

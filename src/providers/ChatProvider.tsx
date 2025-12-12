@@ -23,7 +23,13 @@ export function ChatProvider({
   recursionLimit,
   config,
 }: ChatProviderProps) {
-  const chat = useChat({ activeAssistant, onHistoryRevalidate, thread, recursionLimit, config });
+  const chat = useChat({
+    activeAssistant,
+    onHistoryRevalidate,
+    thread,
+    recursionLimit,
+    config,
+  });
   return <ChatContext.Provider value={chat}>{children}</ChatContext.Provider>;
 }
 

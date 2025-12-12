@@ -25,10 +25,12 @@ export function useMemory() {
         limit: 100,
         offset: 0,
       });
-      return result.namespaces.map((ns): Namespace => ({
-        namespace: ns,
-        count: 0, // Note: The API doesn't return count, we'll need to fetch items to get accurate count
-      }));
+      return result.namespaces.map(
+        (ns): Namespace => ({
+          namespace: ns,
+          count: 0, // Note: The API doesn't return count, we'll need to fetch items to get accurate count
+        })
+      );
     },
     {
       revalidateOnFocus: false,

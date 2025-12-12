@@ -212,7 +212,9 @@ function HomePageInner({
                 >
                   <div className="absolute inset-0 flex flex-col">
                     <div className="flex items-center justify-between border-b border-border p-4">
-                      <h2 className="text-lg font-semibold tracking-tight">Memory</h2>
+                      <h2 className="text-lg font-semibold tracking-tight">
+                        Memory
+                      </h2>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -235,7 +237,9 @@ function HomePageInner({
             <ResizablePanel
               id="chat"
               className="relative flex flex-col"
-              order={sidebar && memorySidebar ? 3 : sidebar || memorySidebar ? 2 : 1}
+              order={
+                sidebar && memorySidebar ? 3 : sidebar || memorySidebar ? 2 : 1
+              }
             >
               <ChatProvider
                 activeAssistant={assistant}
