@@ -591,6 +591,7 @@ export function useChat({
       let messageBranchOptions = metadata?.branchOptions || streamBranches;
 
       // First try to get branch info from messageBranchInfo using checkpoint
+
       if (
         branchTreeInfo.messageBranchInfo &&
         metadata?.firstSeenState?.checkpoint
@@ -624,13 +625,51 @@ export function useChat({
         }
       }
 
+      // Ensure we always have at least the stream branch
+
+      if (!messageBranch && stream?.branch) {
+        messageBranch = stream.branch;
+      }
+
+      // Ensure we always have branch options
+
+      if (!messageBranchOptions || messageBranchOptions.length === 0) {
+        messageBranchOptions = streamBranches;
+      }
+
+      // Format branch names: convert UUIDs to meaningful names like "分支1", "分支2"
+      const formatBranchName = (branch: string): string => {
+        if (branch === "main") return "主分支";
+
+        // Check if it's a UUID-like string
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(branch)) {
+          // Generate a deterministic number from the UUID
+          const hash = branch.split("").reduce((acc, char) => {
+            return acc + char.charCodeAt(0);
+          }, 0);
+          const branchNumber = (hash % 100) + 1;
+          return `分支${branchNumber}`;
+        }
+
+        return branch;
+      };
+
+      const formatBranchOptions = (options: string[]): string[] => {
+        return options.map(formatBranchName);
+      };
+
       return {
-        branch: messageBranch,
-        branchOptions: messageBranchOptions,
+        branch: formatBranchName(messageBranch || "main"),
+
+        branchOptions: formatBranchOptions(messageBranchOptions),
+
         canRetry:
           metadata?.firstSeenState?.parent_checkpoint && retryFromMessage,
       };
     },
+
     [stream, streamBranches, branchTreeInfo, retryFromMessage]
   );
 

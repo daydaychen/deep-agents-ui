@@ -83,8 +83,8 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     const hasActions =
       (hasContent && !isLoading) ||
       showRetry ||
-      (messageBranch && messageBranch !== "main") ||
-      showBranchSwitcher;
+      showBranchSwitcher ||
+      (messageBranch && messageBranch !== "main");
 
     if (!hasActions) {
       return null;
@@ -165,7 +165,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
               isUser && "flex-row-reverse"
             )}
           >
-            {messageBranch && messageBranch !== "main" && (
+            {messageBranch && (
               <span className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground">
                 Branch: {messageBranch}
               </span>

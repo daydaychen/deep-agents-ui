@@ -363,7 +363,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                           branchTree={branchTree}
                           activeBranchPath={activeBranchPath}
                           onSelectBranch={setBranch}
-                          showBranchSwitcher={!!setBranch && !!messageBranch}
+                          showBranchSwitcher={!!setBranch && !!messageBranchOptions && messageBranchOptions.length > 1}
                           className="px-2"
                           message={data.message}
                           messageIndex={index}
