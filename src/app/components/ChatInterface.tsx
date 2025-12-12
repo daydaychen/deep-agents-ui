@@ -9,11 +9,7 @@ import React, {
   Fragment,
 } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Square,
   ArrowUp,
@@ -24,6 +20,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { ChatMessage } from "@/app/components/ChatMessage";
+import { MessageToolbar } from "@/app/components/MessageToolbar";
 import type {
   TodoItem,
   ToolCall,
@@ -91,6 +88,14 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     stopStream,
     resumeInterrupt,
     retryFromMessage,
+    setBranch,
+    editMessage,
+    streamBranches,
+    branchMap,
+    messageBranchInfo,
+    activeBranchPath,
+    branchTree,
+    getMessageBranchInfo,
   } = useChatContext();
 
   const submitDisabled = isLoading || !assistant;
@@ -267,12 +272,13 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
           ) : (
             <>
               {error && (
-                <Alert variant="destructive" className="mb-4">
+                <Alert
+                  variant="destructive"
+                  className="mb-4"
+                >
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>错误</AlertTitle>
-                  <AlertDescription>
-                    {error}
-                  </AlertDescription>
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
               {processedMessages.map((data, index) => {
@@ -280,26 +286,91 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                   (u: any) => u.metadata?.message_id === data.message.id
                 );
                 const isLastMessage = index === processedMessages.length - 1;
+                const messageContent = extractStringFromMessageContent(
+                  data.message
+                );
+                const isUser = data.message.type === "human";
+
+                // Get branch information for this message using the new helper function
+                const branchInfo = getMessageBranchInfo?.(data.message, index);
+                const messageBranch = branchInfo?.branch;
+                const messageBranchOptions =
+                  branchInfo?.branchOptions || streamBranches;
+                const canRetry = branchInfo?.canRetry;
+
                 return (
-                  <ChatMessage
+                  <div
                     key={data.message.id}
-                    message={data.message}
-                    messageIndex={index}
-                    toolCalls={data.toolCalls}
-                    isLoading={isLoading}
-                    actionRequestsMap={
-                      isLastMessage ? actionRequestsMap : undefined
-                    }
-                    reviewConfigsMap={
-                      isLastMessage ? reviewConfigsMap : undefined
-                    }
-                    ui={messageUi}
-                    stream={stream}
-                    onResumeInterrupt={resumeInterrupt}
-                    onRetry={retryFromMessage}
-                    getMessagesMetadata={getMessagesMetadata}
-                    graphId={assistant?.graph_id}
-                  />
+                    className="flex flex-col gap-1"
+                  >
+                    <ChatMessage
+                      message={data.message}
+                      messageIndex={index}
+                      toolCalls={data.toolCalls}
+                      isLoading={isLoading}
+                      actionRequestsMap={
+                        isLastMessage ? actionRequestsMap : undefined
+                      }
+                      reviewConfigsMap={
+                        isLastMessage ? reviewConfigsMap : undefined
+                      }
+                      ui={messageUi}
+                      stream={stream}
+                      onResumeInterrupt={resumeInterrupt}
+                      onRetry={retryFromMessage}
+                      getMessagesMetadata={getMessagesMetadata}
+                      setBranch={setBranch}
+                      onEditMessage={editMessage}
+                      streamBranches={streamBranches}
+                      branchMap={branchMap}
+                      messageBranchInfo={messageBranchInfo}
+                      activeBranchPath={activeBranchPath}
+                      branchTree={branchTree}
+                      graphId={assistant?.graph_id}
+                    />
+                    {/* Message Toolbar - placed below the message, aligned with message type */}
+                    <div
+                      className={cn(
+                        "flex w-full max-w-full overflow-x-hidden",
+                        isUser && "flex-row-reverse"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "min-w-0 max-w-full",
+                          isUser ? "max-w-[70%]" : "w-full"
+                        )}
+                      >
+                        <MessageToolbar
+                          messageContent={messageContent}
+                          isUser={isUser}
+                          isLoading={isLoading}
+                          onRetry={
+                            canRetry
+                              ? () => retryFromMessage(data.message, index)
+                              : undefined
+                          }
+                          showRetry={!!canRetry}
+                          onEdit={
+                            editMessage
+                              ? (editedMessage) =>
+                                  editMessage(editedMessage, index)
+                              : undefined
+                          }
+                          showEdit={!!editMessage && isUser}
+                          messageBranch={messageBranch}
+                          messageBranchOptions={messageBranchOptions}
+                          branchTree={branchTree}
+                          activeBranchPath={activeBranchPath}
+                          onSelectBranch={setBranch}
+                          showBranchSwitcher={!!setBranch && !!messageBranch}
+                          className="px-2"
+                          message={data.message}
+                          messageIndex={index}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </>

@@ -1,26 +1,24 @@
 "use client";
 
-import React, { useMemo, useState, useCallback } from "react";
-import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
-import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { MarkdownContent } from "@/app/components/MarkdownContent";
+import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
+import { ToolCallBox } from "@/app/components/ToolCallBox";
+import type { StateType } from "@/app/hooks/useChat";
 import type {
-  SubAgent,
-  ToolCall,
   ActionRequest,
   ReviewConfig,
+  SubAgent,
+  ToolCall,
 } from "@/app/types/types";
-import { Message } from "@langchain/langgraph-sdk";
-import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import {
-  extractSubAgentContent,
   extractStringFromMessageContent,
+  extractSubAgentContent,
 } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
-import type { StateType } from "@/app/hooks/useChat";
+import { Message } from "@langchain/langgraph-sdk";
+import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
+import React, { useCallback, useMemo, useState } from "react";
 
 interface ChatMessageProps {
   message: Message;
@@ -33,7 +31,17 @@ interface ChatMessageProps {
   stream?: any;
   onResumeInterrupt?: (value: any) => void;
   onRetry?: (message: Message, index: number) => void;
-  getMessagesMetadata?: (message: Message, index?: number) => MessageMetadata<StateType> | undefined;
+  getMessagesMetadata?: (
+    message: Message,
+    index?: number
+  ) => MessageMetadata<StateType> | undefined;
+  setBranch?: (branch: string) => void;
+  onEditMessage?: (message: Message, index: number) => void;
+  streamBranches?: string[];
+  branchMap?: Map<string, { branch: string; branchOptions: string[] }>;
+  messageBranchInfo?: Map<string, { branch: string; branchOptions: string[] }>;
+  activeBranchPath?: string[];
+  branchTree?: any;
   graphId?: string;
 }
 
@@ -50,6 +58,13 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     onResumeInterrupt,
     onRetry,
     getMessagesMetadata,
+    setBranch,
+    onEditMessage,
+    streamBranches,
+    branchMap,
+    messageBranchInfo,
+    activeBranchPath,
+    branchTree,
     graphId,
   }) => {
     const isUser = message.type === "human";
@@ -117,18 +132,13 @@ export const ChatMessage = React.memo<ChatMessageProps>(
       return orphaned;
     }, [actionRequestsMap, reviewConfigsMap, toolCalls]);
 
-    // Get metadata for this message to check if it has a checkpoint
+    // Get metadata for this message to check if it has a parent checkpoint
     const metadata = useMemo(() => {
       if (!getMessagesMetadata) return undefined;
       return getMessagesMetadata(message, messageIndex);
     }, [getMessagesMetadata, message, messageIndex]);
 
-    const canRetry = !isUser && metadata?.firstSeenState?.checkpoint && onRetry;
-    const handleRetry = useCallback(() => {
-      if (onRetry) {
-        onRetry(message, messageIndex);
-      }
-    }, [onRetry, message, messageIndex]);
+    const canRetry = metadata?.firstSeenState?.parent_checkpoint && onRetry;
 
     return (
       <div
@@ -159,31 +169,15 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                 }
               >
                 {isUser ? (
-                  <p className="m-0 whitespace-pre-wrap break-words text-sm leading-relaxed">
-                    {messageContent}
-                  </p>
+                  <div className="flex flex-col gap-2">
+                    <p className="m-0 whitespace-pre-wrap break-words text-sm leading-relaxed">
+                      {messageContent}
+                    </p>
+                  </div>
                 ) : hasContent ? (
                   <MarkdownContent content={messageContent} />
                 ) : null}
               </div>
-              {canRetry && !isLoading && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRetry}
-                    className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    Retry from here
-                  </Button>
-                  {metadata?.branch && metadata.branch !== "main" && (
-                    <span className="text-xs text-muted-foreground">
-                      Branch: {metadata.branch}
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           )}
           {hasToolCalls && (
@@ -230,9 +224,12 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                   {isSubAgentExpanded(subAgent.id) && (
                     <div className="w-full max-w-full">
                       {(() => {
-                        const taskActionRequest = actionRequestsMap?.get("task");
+                        const taskActionRequest =
+                          actionRequestsMap?.get("task");
                         const taskReviewConfig = reviewConfigsMap?.get("task");
-                        const hasInterrupt = taskActionRequest && subAgent.status === "interrupted";
+                        const hasInterrupt =
+                          taskActionRequest &&
+                          subAgent.status === "interrupted";
 
                         if (hasInterrupt && onResumeInterrupt) {
                           return (
@@ -261,7 +258,9 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                                   Output
                                 </h4>
                                 <MarkdownContent
-                                  content={extractSubAgentContent(subAgent.output)}
+                                  content={extractSubAgentContent(
+                                    subAgent.output
+                                  )}
                                 />
                               </>
                             )}
@@ -274,25 +273,27 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               ))}
             </div>
           )}
-          {!isUser && orphanedActionRequests.length > 0 && onResumeInterrupt && (
-            <div className="mt-4 flex w-full flex-col gap-4">
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Pending Approvals (Subgraph)
+          {!isUser &&
+            orphanedActionRequests.length > 0 &&
+            onResumeInterrupt && (
+              <div className="mt-4 flex w-full flex-col gap-4">
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Pending Approvals (Subgraph)
+                </div>
+                {orphanedActionRequests.map(
+                  ({ actionRequest, reviewConfig }, index) => (
+                    <div key={`orphaned-${actionRequest.name}-${index}`}>
+                      <ToolApprovalInterrupt
+                        actionRequest={actionRequest}
+                        reviewConfig={reviewConfig}
+                        onResume={onResumeInterrupt}
+                        isLoading={isLoading}
+                      />
+                    </div>
+                  )
+                )}
               </div>
-              {orphanedActionRequests.map(
-                ({ actionRequest, reviewConfig }, index) => (
-                  <div key={`orphaned-${actionRequest.name}-${index}`}>
-                    <ToolApprovalInterrupt
-                      actionRequest={actionRequest}
-                      reviewConfig={reviewConfig}
-                      onResume={onResumeInterrupt}
-                      isLoading={isLoading}
-                    />
-                  </div>
-                )
-              )}
-            </div>
-          )}
+            )}
         </div>
       </div>
     );

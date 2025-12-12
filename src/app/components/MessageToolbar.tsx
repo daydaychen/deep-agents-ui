@@ -1,0 +1,190 @@
+"use client";
+
+import { BranchSwitcher } from "@/app/components/BranchSwitcher";
+import { EditMessage } from "@/app/components/EditMessage";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Check, Copy, RotateCcw } from "lucide-react";
+import React, { useCallback, useState } from "react";
+
+interface MessageToolbarProps {
+  // Message content
+  messageContent: string;
+  isUser: boolean;
+  isLoading?: boolean;
+
+  // Copy functionality
+  onCopy?: () => void;
+
+  // Edit functionality
+  onEdit?: (message: any) => void;
+  showEdit?: boolean;
+
+  // Retry functionality
+  onRetry?: () => void;
+  showRetry?: boolean;
+
+  // Branch functionality
+  messageBranch?: string;
+  messageBranchOptions?: string[];
+  branchTree?: any;
+  activeBranchPath?: string[];
+  onSelectBranch?: (branch: string) => void;
+  showBranchSwitcher?: boolean;
+
+  // UI customization
+  className?: string;
+  // For EditMessage component
+  message?: any;
+  messageIndex?: number;
+}
+
+export const MessageToolbar = React.memo<MessageToolbarProps>(
+  ({
+    messageContent,
+    isUser,
+    isLoading = false,
+    onCopy,
+    onEdit,
+    showEdit = false,
+    onRetry,
+    showRetry = false,
+    messageBranch,
+    messageBranchOptions = ["main"],
+    branchTree,
+    activeBranchPath,
+    onSelectBranch,
+    showBranchSwitcher = false,
+    className,
+    message,
+    messageIndex,
+  }) => {
+    const hasContent = messageContent && messageContent.trim() !== "";
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    const handleCopy = useCallback(() => {
+      if (messageContent && onCopy) {
+        onCopy();
+      } else if (messageContent) {
+        navigator.clipboard
+          .writeText(messageContent)
+          .then(() => {
+            setCopySuccess(true);
+            // Reset success state after 2 seconds
+            setTimeout(() => setCopySuccess(false), 2000);
+          })
+          .catch((err) => {
+            console.error("Failed to copy message:", err);
+          });
+      }
+    }, [messageContent, onCopy]);
+
+    // Only show toolbar if there's at least one action available
+    const hasActions =
+      (hasContent && !isLoading) ||
+      showRetry ||
+      (messageBranch && messageBranch !== "main") ||
+      showBranchSwitcher;
+
+    if (!hasActions) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        <div
+          className={cn(
+            "flex items-center gap-2",
+            isUser ? "flex-row-reverse justify-between" : "justify-between"
+          )}
+        >
+          {/* Action buttons - order depends on message type */}
+          <div
+            className={cn(
+              "flex items-center gap-1",
+              isUser && "flex-row-reverse"
+            )}
+          >
+            {/* Copy button - always visible for messages with content */}
+            {hasContent && !isLoading && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopy}
+                className={`group h-7 gap-1 px-2 text-xs transition-all duration-200 hover:bg-accent/50 ${
+                  copySuccess
+                    ? "text-success hover:text-success"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title={copySuccess ? "Copied!" : "Copy message"}
+              >
+                {copySuccess ? (
+                  <Check className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
+                ) : (
+                  <Copy className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
+                )}
+                <span className="transition-all duration-200">
+                  {copySuccess ? "Copied" : "Copy"}
+                </span>
+              </Button>
+            )}
+
+            {/* Edit button - only visible for user messages when editing is enabled */}
+            {isUser &&
+              showEdit &&
+              hasContent &&
+              !isLoading &&
+              onEdit &&
+              message && (
+                <EditMessage
+                  message={message}
+                  onEdit={onEdit}
+                  className="self-start"
+                />
+              )}
+
+            {/* Retry button - only visible when retry is available */}
+            {showRetry && !isLoading && onRetry && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRetry}
+                className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground"
+                title="Retry from this message"
+              >
+                <RotateCcw className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
+                <span className="transition-all duration-200">Retry</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Branch info and switcher */}
+          <div
+            className={cn(
+              "flex items-center gap-2",
+              isUser && "flex-row-reverse"
+            )}
+          >
+            {messageBranch && messageBranch !== "main" && (
+              <span className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground">
+                Branch: {messageBranch}
+              </span>
+            )}
+            {showBranchSwitcher && onSelectBranch && messageBranch && (
+              <BranchSwitcher
+                branch={messageBranch}
+                branchOptions={messageBranchOptions}
+                branchTree={branchTree}
+                activeBranchPath={activeBranchPath}
+                onSelect={onSelectBranch}
+                className={cn("ml-2", isUser && "ml-0 mr-2")}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+MessageToolbar.displayName = "MessageToolbar";
