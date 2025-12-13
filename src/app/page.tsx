@@ -18,6 +18,13 @@ import {
 import { ThreadList } from "@/app/components/ThreadList";
 import { ChatProvider } from "@/providers/ChatProvider";
 import { ChatInterface } from "@/app/components/ChatInterface";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface HomePageInnerProps {
   config: StandaloneConfig;
@@ -106,7 +113,7 @@ function HomePageInner({
   }, [fetchAssistant]);
 
   return (
-    <>
+    <TooltipProvider>
       <ConfigDialog
         open={configDialogOpen}
         onOpenChange={setConfigDialogOpen}
@@ -118,33 +125,42 @@ function HomePageInner({
       <div className="flex h-screen flex-col">
         <header className="flex h-16 items-center justify-between border-b border-border px-6">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold">Deep Agent UI</h1>
+            <h1 className="text-xl font-semibold">Databus Pilot</h1>
             {!sidebar && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebar("1")}
-                className="rounded-md border border-border bg-card p-3 text-foreground hover:bg-accent"
-              >
-                <MessagesSquare className="mr-2 h-4 w-4" />
-                Threads
-                {interruptCount > 0 && (
-                  <span className="ml-2 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] text-destructive-foreground">
-                    {interruptCount}
-                  </span>
-                )}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSidebar("1")}
+                    className="relative"
+                  >
+                    <MessagesSquare className="h-4 w-4" />
+                    {interruptCount > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                        {interruptCount}
+                      </span>
+                    )}
+                    <span className="sr-only">Threads</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Threads</TooltipContent>
+              </Tooltip>
             )}
             {!memorySidebar && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMemorySidebar("1")}
-                className="rounded-md border border-border bg-card p-3 text-foreground hover:bg-accent"
-              >
-                <Database className="mr-2 h-4 w-4" />
-                Memory
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setMemorySidebar("1")}
+                  >
+                    <Database className="h-4 w-4" />
+                    <span className="sr-only">Memory</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Memory</TooltipContent>
+              </Tooltip>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -161,11 +177,10 @@ function HomePageInner({
               Settings
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() => setThreadId(null)}
               disabled={!threadId}
-              className="border-[#2F6868] bg-[#2F6868] text-white hover:bg-[#2F6868]/80"
             >
               <SquarePen className="mr-2 h-4 w-4" />
               New Thread
@@ -253,7 +268,7 @@ function HomePageInner({
           </ResizablePanelGroup>
         </div>
       </div>
-    </>
+    </TooltipProvider>
   );
 }
 
@@ -336,8 +351,15 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="flex h-screen items-center justify-center p-4">
+          <div className="flex flex-col items-center gap-4 w-full max-w-md">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="flex gap-2 w-full justify-center mt-4">
+               <Skeleton className="h-10 w-24" />
+               <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
         </div>
       }
     >
