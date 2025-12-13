@@ -37,11 +37,6 @@ interface ChatMessageProps {
   ) => MessageMetadata<StateType> | undefined;
   setBranch?: (branch: string) => void;
   onEditMessage?: (message: Message, index: number) => void;
-  streamBranches?: string[];
-  branchMap?: Map<string, { branch: string; branchOptions: string[] }>;
-  messageBranchInfo?: Map<string, { branch: string; branchOptions: string[] }>;
-  activeBranchPath?: string[];
-  branchTree?: any;
   graphId?: string;
 }
 
@@ -60,11 +55,6 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     getMessagesMetadata,
     setBranch,
     onEditMessage,
-    streamBranches,
-    branchMap,
-    messageBranchInfo,
-    activeBranchPath,
-    branchTree,
     graphId,
   }) => {
     const isUser = message.type === "human";

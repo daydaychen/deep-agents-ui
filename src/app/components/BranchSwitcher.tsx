@@ -8,21 +8,12 @@ import { cn } from "@/lib/utils";
 interface BranchSwitcherProps {
   branch: string | undefined;
   branchOptions: string[] | undefined;
-  branchTree?: any;
-  activeBranchPath?: string[];
   onSelect: (branch: string) => void;
   className?: string;
 }
 
 export const BranchSwitcher = React.memo<BranchSwitcherProps>(
-  ({
-    branch,
-    branchOptions,
-    branchTree,
-    activeBranchPath,
-    onSelect,
-    className,
-  }) => {
+  ({ branch, branchOptions, onSelect, className }) => {
     // Use provided branchOptions directly - they should be calculated in useChat
     const effectiveBranchOptions = branchOptions || (branch ? [branch] : []);
 

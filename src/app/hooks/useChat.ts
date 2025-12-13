@@ -372,8 +372,6 @@ export function useChat({
     };
   }, [stream]);
 
-  const streamBranches = branchTreeInfo.branches;
-
   const sendMessage = useCallback(
     (content: string) => {
       const newMessage: Message = { id: uuidv4(), type: "human", content };
@@ -586,9 +584,9 @@ export function useChat({
       const metadata = stream.getMessagesMetadata?.(message, index);
 
       // Get branch information for this message
-      // Priority: messageBranchInfo (from experimental_branchTree) > branchMap > metadata.branchOptions > streamBranches > ["main"]
+      // Priority: messageBranchInfo (from experimental_branchTree) > branchMap > metadata.branchOptions > ["main"]
       let messageBranch = metadata?.branch || stream?.branch;
-      let messageBranchOptions = metadata?.branchOptions || streamBranches;
+      let messageBranchOptions = metadata?.branchOptions || ["main"];
 
       // First try to get branch info from messageBranchInfo using checkpoint
 
@@ -634,7 +632,7 @@ export function useChat({
       // Ensure we always have branch options
 
       if (!messageBranchOptions || messageBranchOptions.length === 0) {
-        messageBranchOptions = streamBranches;
+        messageBranchOptions = ["main"];
       }
 
       // Format branch names: convert UUIDs to meaningful names like "分支1", "分支2"
@@ -669,8 +667,7 @@ export function useChat({
           metadata?.firstSeenState?.parent_checkpoint && retryFromMessage,
       };
     },
-
-    [stream, streamBranches, branchTreeInfo, retryFromMessage]
+    [stream, branchTreeInfo, retryFromMessage]
   );
 
   return {
@@ -689,11 +686,6 @@ export function useChat({
     branch: stream.branch,
     setBranch: stream.setBranch,
     history: stream.history,
-    streamBranches,
-    branchMap: branchTreeInfo.branchMap,
-    messageBranchInfo: branchTreeInfo.messageBranchInfo,
-    activeBranchPath: branchTreeInfo.activePath,
-    branchTree: branchTreeInfo.treeStructure,
     getMessageBranchInfo,
     sendMessage,
     runSingleStep,

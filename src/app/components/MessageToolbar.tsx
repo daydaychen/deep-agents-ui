@@ -27,8 +27,6 @@ interface MessageToolbarProps {
   // Branch functionality
   messageBranch?: string;
   messageBranchOptions?: string[];
-  branchTree?: any;
-  activeBranchPath?: string[];
   onSelectBranch?: (branch: string) => void;
   showBranchSwitcher?: boolean;
 
@@ -51,8 +49,6 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     showRetry = false,
     messageBranch,
     messageBranchOptions = ["main"],
-    branchTree,
-    activeBranchPath,
     onSelectBranch,
     showBranchSwitcher = false,
     className,
@@ -174,8 +170,6 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
               <BranchSwitcher
                 branch={messageBranch}
                 branchOptions={messageBranchOptions}
-                branchTree={branchTree}
-                activeBranchPath={activeBranchPath}
                 onSelect={onSelectBranch}
                 className={cn("ml-2", isUser && "ml-0 mr-2")}
               />

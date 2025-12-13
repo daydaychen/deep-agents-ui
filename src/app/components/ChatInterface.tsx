@@ -90,11 +90,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     retryFromMessage,
     setBranch,
     editMessage,
-    streamBranches,
-    branchMap,
-    messageBranchInfo,
-    activeBranchPath,
-    branchTree,
     getMessageBranchInfo,
   } = useChatContext();
 
@@ -295,7 +290,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                 const branchInfo = getMessageBranchInfo?.(data.message, index);
                 const messageBranch = branchInfo?.branch;
                 const messageBranchOptions =
-                  branchInfo?.branchOptions || streamBranches;
+                  branchInfo?.branchOptions || ["main"];
                 const canRetry = branchInfo?.canRetry;
 
                 return (
@@ -321,11 +316,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                       getMessagesMetadata={getMessagesMetadata}
                       setBranch={setBranch}
                       onEditMessage={editMessage}
-                      streamBranches={streamBranches}
-                      branchMap={branchMap}
-                      messageBranchInfo={messageBranchInfo}
-                      activeBranchPath={activeBranchPath}
-                      branchTree={branchTree}
                       graphId={assistant?.graph_id}
                     />
                     {/* Message Toolbar - placed below the message, aligned with message type */}
@@ -360,8 +350,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                           showEdit={!!editMessage && isUser}
                           messageBranch={messageBranch}
                           messageBranchOptions={messageBranchOptions}
-                          branchTree={branchTree}
-                          activeBranchPath={activeBranchPath}
                           onSelectBranch={setBranch}
                           showBranchSwitcher={!!setBranch && !!messageBranchOptions && messageBranchOptions.length > 1}
                           className="px-2"
