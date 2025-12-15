@@ -11,8 +11,9 @@ import {
 import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { usePersistedMessages } from "./usePersistedMessages";
 
 export type StateType = {
   messages: Message[];
@@ -86,6 +87,50 @@ export function useChat({
     fetchStateHistory: true,
     experimental_thread: thread,
   });
+
+  // Use persisted messages to maintain continuity during interrupt/history refetch
+  const { saveMessages, loadMessages, mergeWithHistory } =
+    usePersistedMessages(threadId);
+  const [mergedMessages, setMergedMessages] = useState<Message[]>([]);
+  const isInitialLoadRef = useRef(true);
+
+  // Load persisted messages on mount and merge with stream messages
+  useEffect(() => {
+    const loadAndMerge = async () => {
+      if (!threadId) {
+        setMergedMessages(stream.messages);
+        return;
+      }
+
+      // On initial load, load cached messages
+      if (isInitialLoadRef.current) {
+        const cachedMessages = await loadMessages();
+        if (cachedMessages.length > 0 && stream.messages.length === 0) {
+          // If we have cached messages and stream hasn't loaded yet, show cached
+          setMergedMessages(cachedMessages);
+        }
+        isInitialLoadRef.current = false;
+      }
+
+      // When stream messages update, merge with cached and save
+      if (stream.messages.length > 0) {
+        const cachedMessages = await loadMessages();
+        const merged = mergeWithHistory(stream.messages, cachedMessages);
+        setMergedMessages(merged);
+        
+        // Save the current messages to cache for future use
+        await saveMessages(stream.messages);
+      }
+    };
+
+    loadAndMerge();
+  }, [stream.messages, threadId, loadMessages, mergeWithHistory, saveMessages]);
+
+  // Reset on thread change
+  useEffect(() => {
+    isInitialLoadRef.current = true;
+    setMergedMessages([]);
+  }, [threadId]);
 
   // Compute branch information from experimental_branchTree
   // Parse experimental_branchTree for advanced branch management
@@ -677,7 +722,7 @@ export function useChat({
     email: stream.values.email,
     ui: stream.values.ui,
     setFiles,
-    messages: stream.messages,
+    messages: mergedMessages.length > 0 ? mergedMessages : stream.messages,
     isLoading: stream.isLoading,
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,
