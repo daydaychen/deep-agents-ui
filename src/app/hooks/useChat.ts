@@ -92,6 +92,9 @@ export function useChat({
   const { saveMessages, loadMessages, mergeWithHistory } =
     usePersistedMessages(threadId);
   const [mergedMessages, setMergedMessages] = useState<Message[]>([]);
+  const [cacheOnlyMessageIds, setCacheOnlyMessageIds] = useState<Set<string>>(
+    new Set()
+  );
   const isInitialLoadRef = useRef(true);
   const lastStreamMessagesLengthRef = useRef(0);
 
@@ -100,24 +103,33 @@ export function useChat({
     const loadAndMerge = async () => {
       if (!threadId) {
         setMergedMessages(stream.messages);
+        setCacheOnlyMessageIds(new Set());
         return;
       }
 
       const currentStreamLength = stream.messages.length;
-      
+
       // On initial load, load cached messages atomically
       if (isInitialLoadRef.current) {
         const cachedMessages = await loadMessages();
         // Use snapshot of stream.messages at this point to avoid race conditions
         const streamMessagesSnapshot = [...stream.messages];
-        
+
         if (cachedMessages.length > 0 && streamMessagesSnapshot.length === 0) {
           // If we have cached messages and stream hasn't loaded yet, show cached
+          // All messages are cache-only at this point
           setMergedMessages(cachedMessages);
+          setCacheOnlyMessageIds(
+            new Set(cachedMessages.map((msg) => msg.id).filter(Boolean))
+          );
         } else if (streamMessagesSnapshot.length > 0) {
           // If stream already loaded, merge immediately
-          const merged = mergeWithHistory(streamMessagesSnapshot, cachedMessages);
-          setMergedMessages(merged);
+          const { messages, cacheOnlyMessageIds: cacheIds } = mergeWithHistory(
+            streamMessagesSnapshot,
+            cachedMessages
+          );
+          setMergedMessages(messages);
+          setCacheOnlyMessageIds(cacheIds);
           await saveMessages(streamMessagesSnapshot);
         }
         isInitialLoadRef.current = false;
@@ -126,12 +138,19 @@ export function useChat({
       }
 
       // When stream messages update, merge with cached and save
-      if (currentStreamLength > 0 && currentStreamLength !== lastStreamMessagesLengthRef.current) {
+      if (
+        currentStreamLength > 0 &&
+        currentStreamLength !== lastStreamMessagesLengthRef.current
+      ) {
         const cachedMessages = await loadMessages();
         const streamMessagesSnapshot = [...stream.messages];
-        const merged = mergeWithHistory(streamMessagesSnapshot, cachedMessages);
-        setMergedMessages(merged);
-        
+        const { messages, cacheOnlyMessageIds: cacheIds } = mergeWithHistory(
+          streamMessagesSnapshot,
+          cachedMessages
+        );
+        setMergedMessages(messages);
+        setCacheOnlyMessageIds(cacheIds);
+
         // Save the current messages to cache for future use
         await saveMessages(streamMessagesSnapshot);
         lastStreamMessagesLengthRef.current = currentStreamLength;
@@ -146,6 +165,7 @@ export function useChat({
     isInitialLoadRef.current = true;
     lastStreamMessagesLengthRef.current = 0;
     setMergedMessages([]);
+    setCacheOnlyMessageIds(new Set());
   }, [threadId]);
 
   // Compute branch information from experimental_branchTree
@@ -719,16 +739,24 @@ export function useChat({
         return options.map(formatBranchName);
       };
 
+      // Check if this message is cache-only (not in server history)
+      const isCacheOnly = message.id && cacheOnlyMessageIds.has(message.id);
+
       return {
         branch: formatBranchName(messageBranch || "main"),
 
         branchOptions: formatBranchOptions(messageBranchOptions),
 
+        // Can only retry messages that:
+        // 1. Have a parent checkpoint (exist in server history)
+        // 2. Are NOT cache-only messages (exist in server, not just local cache)
         canRetry:
-          metadata?.firstSeenState?.parent_checkpoint && retryFromMessage,
+          !isCacheOnly &&
+          metadata?.firstSeenState?.parent_checkpoint &&
+          retryFromMessage,
       };
     },
-    [stream, branchTreeInfo, retryFromMessage]
+    [stream, branchTreeInfo, retryFromMessage, cacheOnlyMessageIds]
   );
 
   return {

@@ -160,19 +160,32 @@ export function usePersistedMessages(threadId: string | null) {
 
   // Merge server history with local cached messages
   const mergeWithHistory = useCallback(
-    (serverMessages: Message[], cachedMessages: Message[]): Message[] => {
+    (
+      serverMessages: Message[],
+      cachedMessages: Message[]
+    ): { messages: Message[]; cacheOnlyMessageIds: Set<string> } => {
       // Create a map of server messages by ID for quick lookup
       const serverMessageMap = new Map(
         serverMessages.map((msg) => [msg.id, msg])
       );
 
+      // Track which messages are cache-only (not in server history)
+      const cacheOnlyMessageIds = new Set<string>();
+
       // Create a map to track unique messages with their source and order
-      const mergedMap = new Map<string, { message: Message; serverIndex: number; cachedIndex: number }>();
+      const mergedMap = new Map<
+        string,
+        { message: Message; serverIndex: number; cachedIndex: number }
+      >();
 
       // Add all server messages first (they are the source of truth)
       serverMessages.forEach((msg, index) => {
         if (msg.id) {
-          mergedMap.set(msg.id, { message: msg, serverIndex: index, cachedIndex: -1 });
+          mergedMap.set(msg.id, {
+            message: msg,
+            serverIndex: index,
+            cachedIndex: -1,
+          });
         }
       });
 
@@ -180,7 +193,13 @@ export function usePersistedMessages(threadId: string | null) {
       // This preserves streaming messages that haven't been saved to backend
       cachedMessages.forEach((msg, index) => {
         if (msg.id && !serverMessageMap.has(msg.id)) {
-          mergedMap.set(msg.id, { message: msg, serverIndex: -1, cachedIndex: index });
+          mergedMap.set(msg.id, {
+            message: msg,
+            serverIndex: -1,
+            cachedIndex: index,
+          });
+          // Track this as a cache-only message
+          cacheOnlyMessageIds.add(msg.id);
         }
       });
 
@@ -201,7 +220,10 @@ export function usePersistedMessages(threadId: string | null) {
         return 0;
       });
 
-      return merged.map(item => item.message);
+      return {
+        messages: merged.map((item) => item.message),
+        cacheOnlyMessageIds,
+      };
     },
     []
   );
