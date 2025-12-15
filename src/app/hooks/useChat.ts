@@ -93,6 +93,7 @@ export function useChat({
     usePersistedMessages(threadId);
   const [mergedMessages, setMergedMessages] = useState<Message[]>([]);
   const isInitialLoadRef = useRef(true);
+  const lastStreamMessagesLengthRef = useRef(0);
 
   // Load persisted messages on mount and merge with stream messages
   useEffect(() => {
@@ -102,24 +103,38 @@ export function useChat({
         return;
       }
 
-      // On initial load, load cached messages
+      const currentStreamLength = stream.messages.length;
+      
+      // On initial load, load cached messages atomically
       if (isInitialLoadRef.current) {
         const cachedMessages = await loadMessages();
-        if (cachedMessages.length > 0 && stream.messages.length === 0) {
+        // Use snapshot of stream.messages at this point to avoid race conditions
+        const streamMessagesSnapshot = [...stream.messages];
+        
+        if (cachedMessages.length > 0 && streamMessagesSnapshot.length === 0) {
           // If we have cached messages and stream hasn't loaded yet, show cached
           setMergedMessages(cachedMessages);
+        } else if (streamMessagesSnapshot.length > 0) {
+          // If stream already loaded, merge immediately
+          const merged = mergeWithHistory(streamMessagesSnapshot, cachedMessages);
+          setMergedMessages(merged);
+          await saveMessages(streamMessagesSnapshot);
         }
         isInitialLoadRef.current = false;
+        lastStreamMessagesLengthRef.current = currentStreamLength;
+        return;
       }
 
       // When stream messages update, merge with cached and save
-      if (stream.messages.length > 0) {
+      if (currentStreamLength > 0 && currentStreamLength !== lastStreamMessagesLengthRef.current) {
         const cachedMessages = await loadMessages();
-        const merged = mergeWithHistory(stream.messages, cachedMessages);
+        const streamMessagesSnapshot = [...stream.messages];
+        const merged = mergeWithHistory(streamMessagesSnapshot, cachedMessages);
         setMergedMessages(merged);
         
         // Save the current messages to cache for future use
-        await saveMessages(stream.messages);
+        await saveMessages(streamMessagesSnapshot);
+        lastStreamMessagesLengthRef.current = currentStreamLength;
       }
     };
 
@@ -129,6 +144,7 @@ export function useChat({
   // Reset on thread change
   useEffect(() => {
     isInitialLoadRef.current = true;
+    lastStreamMessagesLengthRef.current = 0;
     setMergedMessages([]);
   }, [threadId]);
 

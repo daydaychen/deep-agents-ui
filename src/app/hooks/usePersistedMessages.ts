@@ -77,7 +77,10 @@ export function usePersistedMessages(threadId: string | null) {
         const store = transaction.objectStore(STORE_NAME);
 
         for (const message of messages) {
-          if (!message.id) continue;
+          if (!message.id) {
+            console.warn("Message without ID skipped during persistence:", message);
+            continue;
+          }
 
           const persistedMessage: PersistedMessage = {
             threadId,
@@ -163,28 +166,42 @@ export function usePersistedMessages(threadId: string | null) {
         serverMessages.map((msg) => [msg.id, msg])
       );
 
-      // Create a map to track unique messages
-      const mergedMap = new Map<string, Message>();
+      // Create a map to track unique messages with their source and order
+      const mergedMap = new Map<string, { message: Message; serverIndex: number; cachedIndex: number }>();
 
       // Add all server messages first (they are the source of truth)
-      serverMessages.forEach((msg) => {
+      serverMessages.forEach((msg, index) => {
         if (msg.id) {
-          mergedMap.set(msg.id, msg);
+          mergedMap.set(msg.id, { message: msg, serverIndex: index, cachedIndex: -1 });
         }
       });
 
       // Add cached messages that are not in server history
       // This preserves streaming messages that haven't been saved to backend
-      cachedMessages.forEach((msg) => {
+      cachedMessages.forEach((msg, index) => {
         if (msg.id && !serverMessageMap.has(msg.id)) {
-          mergedMap.set(msg.id, msg);
+          mergedMap.set(msg.id, { message: msg, serverIndex: -1, cachedIndex: index });
         }
       });
 
-      // Convert back to array and sort by timestamp/order
-      // Note: This is a simplified sort - you may need more sophisticated logic
-      // depending on how messages should be ordered
-      return Array.from(mergedMap.values());
+      // Convert back to array and sort by original order
+      // Server messages maintain their order, cached messages are inserted at the end
+      const merged = Array.from(mergedMap.values()).sort((a, b) => {
+        // If both are from server, maintain server order
+        if (a.serverIndex >= 0 && b.serverIndex >= 0) {
+          return a.serverIndex - b.serverIndex;
+        }
+        // If both are cached only, maintain cached order
+        if (a.cachedIndex >= 0 && b.cachedIndex >= 0) {
+          return a.cachedIndex - b.cachedIndex;
+        }
+        // Server messages come first
+        if (a.serverIndex >= 0) return -1;
+        if (b.serverIndex >= 0) return 1;
+        return 0;
+      });
+
+      return merged.map(item => item.message);
     },
     []
   );
