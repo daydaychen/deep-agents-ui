@@ -84,7 +84,7 @@ export function useChat({
     onError: onHistoryRevalidate,
     onCreated: onHistoryRevalidate,
     fetchStateHistory: true,
-    experimental_thread: thread,
+    thread: thread,
   });
 
   // Compute branch information from experimental_branchTree
