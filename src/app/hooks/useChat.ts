@@ -120,7 +120,7 @@ export function useChat({
           // All messages are cache-only at this point
           setMergedMessages(cachedMessages);
           setCacheOnlyMessageIds(
-            new Set(cachedMessages.map((msg) => msg.id).filter(Boolean))
+            new Set(cachedMessages.map((msg) => msg.id).filter((id) => id != null))
           );
         } else if (streamMessagesSnapshot.length > 0) {
           // If stream already loaded, merge immediately
@@ -741,19 +741,21 @@ export function useChat({
 
       // Check if this message is cache-only (not in server history)
       const isCacheOnly = message.id && cacheOnlyMessageIds.has(message.id);
+      
+      // Determine if this message can be retried
+      // Messages can only be retried if they:
+      // 1. Exist in server history (not cache-only)
+      // 2. Have a parent checkpoint to retry from
+      // 3. Have retry functionality available
+      const hasParentCheckpoint = !!metadata?.firstSeenState?.parent_checkpoint;
+      const canRetry = !isCacheOnly && hasParentCheckpoint && !!retryFromMessage;
 
       return {
         branch: formatBranchName(messageBranch || "main"),
 
         branchOptions: formatBranchOptions(messageBranchOptions),
 
-        // Can only retry messages that:
-        // 1. Have a parent checkpoint (exist in server history)
-        // 2. Are NOT cache-only messages (exist in server, not just local cache)
-        canRetry:
-          !isCacheOnly &&
-          metadata?.firstSeenState?.parent_checkpoint &&
-          retryFromMessage,
+        canRetry,
       };
     },
     [stream, branchTreeInfo, retryFromMessage, cacheOnlyMessageIds]
