@@ -43,7 +43,6 @@ interface ChatMessageProps {
 export const ChatMessage = React.memo<ChatMessageProps>(
   ({
     message,
-    messageIndex,
     toolCalls,
     isLoading,
     actionRequestsMap,
@@ -51,10 +50,6 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     ui,
     stream,
     onResumeInterrupt,
-    onRetry,
-    getMessagesMetadata,
-    setBranch,
-    onEditMessage,
     graphId,
   }) => {
     const isUser = message.type === "human";
@@ -123,12 +118,6 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     }, [actionRequestsMap, reviewConfigsMap, toolCalls]);
 
     // Get metadata for this message to check if it has a parent checkpoint
-    const metadata = useMemo(() => {
-      if (!getMessagesMetadata) return undefined;
-      return getMessagesMetadata(message, messageIndex);
-    }, [getMessagesMetadata, message, messageIndex]);
-
-    const canRetry = metadata?.firstSeenState?.parent_checkpoint && onRetry;
 
     return (
       <div
