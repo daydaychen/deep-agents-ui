@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowUp, Square } from "lucide-react";
-import React, { FormEvent, useCallback } from "react";
+import React, { FormEvent, useCallback, useRef } from "react";
 
 interface ChatInputProps {
   input: string;
@@ -15,10 +15,12 @@ interface ChatInputProps {
 
 export const ChatInput = React.memo<ChatInputProps>(
   ({ input, setInput, isLoading, submitDisabled, onSubmit, onStop }) => {
+    const isComposingRef = useRef(false);
+
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (submitDisabled) return;
-        if (e.key === "Enter" && !e.shiftKey) {
+        if (e.key === "Enter" && !e.shiftKey && !isComposingRef.current) {
           e.preventDefault();
           onSubmit();
         }
@@ -35,6 +37,12 @@ export const ChatInput = React.memo<ChatInputProps>(
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          onCompositionStart={() => {
+            isComposingRef.current = true;
+          }}
+          onCompositionEnd={() => {
+            isComposingRef.current = false;
+          }}
           placeholder={isLoading ? "Running..." : "Write your message..."}
           className="font-inherit field-sizing-content flex-1 resize-none border-0 bg-transparent px-[18px] pb-[13px] pt-[14px] text-sm leading-7 text-primary outline-none placeholder:text-tertiary"
           rows={1}
