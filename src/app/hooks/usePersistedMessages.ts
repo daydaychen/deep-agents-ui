@@ -207,97 +207,74 @@ export function usePersistedMessages(
     }
   }, [threadId]);
 
-  // Merge server messages with cached messages
-  // IMPORTANT: According to LangChain docs, stream.messages already filters to show
-  // only the current branch. So we should NOT merge cache messages from other branches.
-  // The server messages (streamMessages) are the source of truth for the current branch.
-  const mergeWithHistory = useCallback((
-    serverMessages: Message[],
-    cachedMessages: Message[],
-    cachedMetadataMap: Map<string, MessageMetadata<any> | null>
-  ): {
-    messages: Message[];
-    metadataMap: Map<string, MessageMetadata<any> | null>;
-    cacheOnlyMessageIds: Set<string>;
-  } => {
-    // Server messages are the source of truth - they already contain only the current branch
-    // We only add cache messages that are NOT yet in server history but belong to current branch
-    const serverMessageIds = new Set(
-      serverMessages.map((msg) => msg.id).filter((id) => id != null)
-    );
+  const mergeWithHistory = useCallback(
+    (
+      serverMessages: Message[],
+      cachedMessages: Message[],
+      cachedMetadataMap: Map<string, MessageMetadata<any> | null>
+    ): {
+      messages: Message[];
+      metadataMap: Map<string, MessageMetadata<any> | null>;
+      cacheOnlyMessageIds: Set<string>;
+    } => {
+      // Server messages are the source of truth - they already contain only the current branch
+      const serverMessageIds = new Set(
+        serverMessages.map((msg) => msg.id).filter((id) => id != null)
+      );
 
-    const cacheOnlyIds = new Set<string>();
-    const mergedMetadataMap = new Map<string, MessageMetadata<any> | null>();
+      const cacheOnlyIds = new Set<string>();
+      const mergedMetadataMap = new Map<string, MessageMetadata<any> | null>();
 
-    // Build a set of all checkpoint IDs present in server messages by querying their metadata
-    // This helps us identify which branch the server is currently on
-    const serverCheckpoints = new Set<string>();
-    if (getMessagesMetadata) {
-      serverMessages.forEach((msg, index) => {
-        const metadata = getMessagesMetadata(msg, index);
-        const checkpointId =
-          metadata?.firstSeenState?.checkpoint?.checkpoint_id;
-        if (checkpointId) {
-          serverCheckpoints.add(checkpointId);
-        }
-        // Also add parent checkpoint to handle branch chain
-        const parentCheckpointId =
-          metadata?.firstSeenState?.parent_checkpoint?.checkpoint_id;
-        if (parentCheckpointId) {
-          serverCheckpoints.add(parentCheckpointId);
+      // Get the checkpoint of the LAST server message - this is the current branch tip
+      // Only cache messages that are direct continuations of this tip should be merged
+      let lastServerCheckpointId: string | null = null;
+      if (getMessagesMetadata && serverMessages.length > 0) {
+        const lastMsg = serverMessages[serverMessages.length - 1];
+        const lastMetadata = getMessagesMetadata(
+          lastMsg,
+          serverMessages.length - 1
+        );
+        lastServerCheckpointId =
+          lastMetadata?.firstSeenState?.checkpoint?.checkpoint_id || null;
+      }
+
+      // Find cache-only messages that are direct continuations of the current branch tip
+      const cacheOnlyMessages: Message[] = [];
+      cachedMessages.forEach((msg) => {
+        if (msg.id && !serverMessageIds.has(msg.id)) {
+          const cachedMetadata = cachedMetadataMap.get(msg.id);
+          const cachedParentCheckpoint =
+            cachedMetadata?.firstSeenState?.parent_checkpoint?.checkpoint_id;
+
+          // Only add cache message if:
+          // 1. We have a last server checkpoint to compare against
+          // 2. The cache message's PARENT checkpoint equals the last server checkpoint
+          //    (meaning this message is a direct child of the current branch tip)
+          if (
+            lastServerCheckpointId &&
+            cachedParentCheckpoint === lastServerCheckpointId
+          ) {
+            cacheOnlyMessages.push(msg);
+            cacheOnlyIds.add(msg.id);
+
+            if (cachedMetadata) {
+              mergedMetadataMap.set(msg.id, cachedMetadata);
+            }
+          }
+          // If no server messages yet, don't add any cache messages
+          // (cache will be shown via the initial load effect)
         }
       });
-    }
 
-    // Find cache-only messages that belong to the current branch
-    // These are messages that were streamed but haven't been synced to server history yet
-    const cacheOnlyMessages: Message[] = [];
-    cachedMessages.forEach((msg) => {
-      if (msg.id && !serverMessageIds.has(msg.id)) {
-        // Check if this cached message's metadata indicates it's from the current branch
-        const cachedMetadata = cachedMetadataMap.get(msg.id);
-        const cachedCheckpoint =
-          cachedMetadata?.firstSeenState?.checkpoint?.checkpoint_id;
-        const cachedParentCheckpoint =
-          cachedMetadata?.firstSeenState?.parent_checkpoint?.checkpoint_id;
-
-        // If we have server messages, validate that the cached message belongs to the current branch
-        if (serverMessages.length > 0 && serverCheckpoints.size > 0) {
-          // A cached message belongs to the current branch if:
-          // 1. Its checkpoint is in the server checkpoints, OR
-          // 2. Its parent checkpoint is in the server checkpoints (meaning it extends the current branch)
-          const belongsToCurrentBranch =
-            (cachedCheckpoint && serverCheckpoints.has(cachedCheckpoint)) ||
-            (cachedParentCheckpoint &&
-              serverCheckpoints.has(cachedParentCheckpoint));
-
-          // Skip cache messages from different branches (e.g., old messages before retry)
-          if (
-            !belongsToCurrentBranch &&
-            (cachedCheckpoint || cachedParentCheckpoint)
-          ) {
-            return;
-          }
-        }
-
-        cacheOnlyMessages.push(msg);
-        cacheOnlyIds.add(msg.id);
-
-        // Preserve cached metadata for cache-only messages (especially subagent messages)
-        if (cachedMetadata) {
-          mergedMetadataMap.set(msg.id, cachedMetadata);
-        }
-      }
-    });
-
-    // Return server messages followed by cache-only messages
-    // Server messages maintain their order, cache-only messages are appended at the end
-    return {
-      messages: [...serverMessages, ...cacheOnlyMessages],
-      metadataMap: mergedMetadataMap,
-      cacheOnlyMessageIds: cacheOnlyIds,
-    };
-  }, [getMessagesMetadata]);
+      // Return server messages followed by cache-only messages
+      return {
+        messages: [...serverMessages, ...cacheOnlyMessages],
+        metadataMap: mergedMetadataMap,
+        cacheOnlyMessageIds: cacheOnlyIds,
+      };
+    },
+    [getMessagesMetadata]
+  );
 
   // Priority 1: Load cache immediately when thread changes
   // NOTE: We load ALL cached messages initially, but when server data arrives,
