@@ -34,7 +34,6 @@ interface MessageToolbarProps {
   className?: string;
   // For EditMessage component
   message?: any;
-  messageIndex?: number;
 }
 
 export const MessageToolbar = React.memo<MessageToolbarProps>(
@@ -53,7 +52,6 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     showBranchSwitcher = false,
     className,
     message,
-    messageIndex,
   }) => {
     const hasContent = messageContent && messageContent.trim() !== "";
     const [copySuccess, setCopySuccess] = useState(false);
@@ -75,12 +73,13 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
       }
     }, [messageContent, onCopy]);
 
-    // Only show toolbar if there's at least one action available
-    const hasActions =
-      (hasContent && !isLoading) ||
-      showRetry ||
-      showBranchSwitcher ||
-      (messageBranch && messageBranch !== "main");
+    // Check if we have any visible actions (for showing placeholder when none exist)
+    const hasVisibleCopyButton = hasContent && !isLoading;
+    const hasVisibleEditButton =
+      isUser && showEdit && hasContent && !isLoading && onEdit && message;
+    const hasVisibleRetryButton = showRetry && !isLoading && onRetry;
+    const hasAnyVisibleAction =
+      hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton;
 
     return (
       <div className={className}>
@@ -97,16 +96,14 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
               isUser && "flex-row-reverse"
             )}
           >
-            {!hasActions && (
+            {!hasAnyVisibleAction && (
               <Button
                 variant="ghost"
                 size="sm"
                 disabled
                 className="h-7 gap-1 px-2 text-xs opacity-0"
                 aria-hidden="true"
-              >
-                <span>Placeholder</span>
-              </Button>
+              ></Button>
             )}
 
             {/* Copy button - always visible for messages with content */}
@@ -162,27 +159,29 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
             )}
           </div>
 
-          {/* Branch info and switcher */}
-          <div
-            className={cn(
-              "flex items-center gap-2",
-              isUser && "flex-row-reverse"
-            )}
-          >
-            {messageBranch && (
-              <span className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground">
-                Branch: {messageBranch}
-              </span>
-            )}
-            {showBranchSwitcher && onSelectBranch && messageBranch && (
-              <BranchSwitcher
-                branch={messageBranch}
-                branchOptions={messageBranchOptions}
-                onSelect={onSelectBranch}
-                className={cn("ml-2", isUser && "ml-0 mr-2")}
-              />
-            )}
-          </div>
+          {/* Branch info and switcher - only show when multiple branches exist */}
+          {messageBranchOptions.length > 1 && (
+            <div
+              className={cn(
+                "flex items-center gap-2",
+                isUser && "flex-row-reverse"
+              )}
+            >
+              {messageBranch && (
+                <span className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground">
+                  Branch: {messageBranch}
+                </span>
+              )}
+              {showBranchSwitcher && onSelectBranch && messageBranch && (
+                <BranchSwitcher
+                  branch={messageBranch}
+                  branchOptions={messageBranchOptions}
+                  onSelect={onSelectBranch}
+                  className={cn("ml-2", isUser && "ml-0 mr-2")}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
