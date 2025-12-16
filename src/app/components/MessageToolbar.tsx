@@ -25,8 +25,8 @@ interface MessageToolbarProps {
   showRetry?: boolean;
 
   // Branch functionality
-  messageBranch?: string;
-  messageBranchOptions?: string[];
+  branchOptions?: string[];
+  currentBranchIndex: number;
   onSelectBranch?: (branch: string) => void;
   showBranchSwitcher?: boolean;
 
@@ -46,8 +46,8 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     showEdit = false,
     onRetry,
     showRetry = false,
-    messageBranch,
-    messageBranchOptions = ["main"],
+    branchOptions = [],
+    currentBranchIndex,
     onSelectBranch,
     showBranchSwitcher = false,
     className,
@@ -159,28 +159,14 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
             )}
           </div>
 
-          {/* Branch info and switcher - only show when multiple branches exist */}
-          {messageBranchOptions.length > 1 && (
-            <div
-              className={cn(
-                "flex items-center gap-2",
-                isUser && "flex-row-reverse"
-              )}
-            >
-              {messageBranch && (
-                <span className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground">
-                  Branch: {messageBranch}
-                </span>
-              )}
-              {showBranchSwitcher && onSelectBranch && messageBranch && (
-                <BranchSwitcher
-                  branch={messageBranch}
-                  branchOptions={messageBranchOptions}
-                  onSelect={onSelectBranch}
-                  className={cn("ml-2", isUser && "ml-0 mr-2")}
-                />
-              )}
-            </div>
+          {/* Branch switcher - only show when multiple branches exist */}
+          {showBranchSwitcher && onSelectBranch && branchOptions.length > 1 && (
+            <BranchSwitcher
+              branchOptions={branchOptions}
+              currentIndex={currentBranchIndex}
+              onSelect={onSelectBranch}
+              className={cn("ml-2", isUser && "ml-0 mr-2")}
+            />
           )}
         </div>
       </div>

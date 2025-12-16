@@ -146,10 +146,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
                 // Get branch information for this message using the new helper function
                 const branchInfo = getMessageBranchInfo?.(data.message, index);
-                const messageBranch = branchInfo?.branch;
-                const messageBranchOptions = branchInfo?.branchOptions || [
-                  "main",
-                ];
+                const branchOptions = branchInfo?.branchOptions || [];
+                const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
                 const canRetry = branchInfo?.canRetry;
 
                 return (
@@ -207,13 +205,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                               : undefined
                           }
                           showEdit={!!editMessage && isUser}
-                          messageBranch={messageBranch}
-                          messageBranchOptions={messageBranchOptions}
+                          branchOptions={branchOptions}
+                          currentBranchIndex={currentBranchIndex}
                           onSelectBranch={setBranch}
                           showBranchSwitcher={
-                            !!setBranch &&
-                            !!messageBranchOptions &&
-                            messageBranchOptions.length > 1
+                            !!setBranch && branchOptions.length > 1
                           }
                           className="px-2"
                           message={data.message}

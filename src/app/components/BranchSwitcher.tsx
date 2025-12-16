@@ -1,52 +1,38 @@
 "use client";
 
-import React from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from "react";
 
 interface BranchSwitcherProps {
-  branch: string | undefined;
   branchOptions: string[] | undefined;
+  currentIndex: number;
   onSelect: (branch: string) => void;
   className?: string;
 }
 
 export const BranchSwitcher = React.memo<BranchSwitcherProps>(
-  ({ branch, branchOptions, onSelect, className }) => {
-    // Use provided branchOptions directly - they should be calculated in useChat
-    const effectiveBranchOptions = branchOptions || (branch ? [branch] : []);
+  ({ branchOptions, currentIndex, onSelect, className }) => {
+    const options = branchOptions || [];
 
-    if (!branch || effectiveBranchOptions.length <= 1) {
+    if (options.length <= 1) {
       return null;
     }
 
-    const currentIndex = effectiveBranchOptions.indexOf(branch);
-    const isFirst = currentIndex === 0;
-    const isLast = currentIndex === effectiveBranchOptions.length - 1;
+    const effectiveIndex = currentIndex >= 0 ? currentIndex : 0;
+    const isFirst = effectiveIndex === 0;
+    const isLast = effectiveIndex === options.length - 1;
+
     const handlePrev = () => {
-      if (!isFirst) {
-        const prevBranch = effectiveBranchOptions[currentIndex - 1];
-        console.debug("BranchSwitcher: Switching to previous branch", {
-          currentBranch: branch,
-          prevBranch,
-          allBranches: effectiveBranchOptions,
-          currentIndex,
-        });
-        onSelect(prevBranch);
+      if (!isFirst && effectiveIndex > 0) {
+        onSelect(options[effectiveIndex - 1]);
       }
     };
 
     const handleNext = () => {
-      if (!isLast) {
-        const nextBranch = effectiveBranchOptions[currentIndex + 1];
-        console.debug("BranchSwitcher: Switching to next branch", {
-          currentBranch: branch,
-          nextBranch,
-          allBranches: effectiveBranchOptions,
-          currentIndex,
-        });
-        onSelect(nextBranch);
+      if (!isLast && effectiveIndex < options.length - 1) {
+        onSelect(options[effectiveIndex + 1]);
       }
     };
 
@@ -62,7 +48,7 @@ export const BranchSwitcher = React.memo<BranchSwitcherProps>(
           <ChevronLeft className="h-3 w-3" />
         </Button>
         <span className="text-xs text-muted-foreground">
-          {currentIndex + 1} / {effectiveBranchOptions.length}
+          {effectiveIndex + 1} / {options.length}
         </span>
         <Button
           variant="ghost"
