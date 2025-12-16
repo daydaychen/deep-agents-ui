@@ -83,7 +83,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             />
           )}
           {hasToolCalls && (
-            <div className="mt-4 flex w-full flex-col">
+            <div className="mt-4 flex w-full flex-col gap-3">
               {toolCalls.map((toolCall: ToolCall) => {
                 if (toolCall.name === "task") return null;
                 const toolCallGenUiComponent = ui?.find(

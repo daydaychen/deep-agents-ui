@@ -32,12 +32,15 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
     if (subAgents.length === 0) return null;
 
     return (
-      <div className="flex w-fit max-w-full flex-col gap-4">
-        {subAgents.map((subAgent) => (
+      <div className="mt-6 flex w-fit max-w-full flex-col gap-6">
+        {subAgents.map((subAgent, index) => (
           <div
             key={subAgent.id}
             className="flex w-full flex-col gap-2"
           >
+            {index > 0 && (
+              <div className="border-border/30 -mt-3 mb-3 border-t" />
+            )}
             <div className="flex items-end gap-2">
               <div className="w-[calc(100%-100px)]">
                 <SubAgentIndicator

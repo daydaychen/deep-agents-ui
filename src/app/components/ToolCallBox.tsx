@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  Terminal,
-  AlertCircle,
-  Loader2,
-  CircleCheckBigIcon,
-  StopCircle,
-} from "lucide-react";
+import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
+import { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
 import { Button } from "@/components/ui/button";
-import { ToolCall, ActionRequest, ReviewConfig } from "@/app/types/types";
 import { cn } from "@/lib/utils";
 import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
-import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  CircleCheckBigIcon,
+  Loader2,
+  StopCircle,
+  Terminal,
+} from "lucide-react";
+import React, { useCallback, useMemo, useState } from "react";
 
 interface ToolCallBoxProps {
   toolCall: ToolCall;
@@ -57,7 +57,12 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     const statusIcon = useMemo(() => {
       switch (status) {
         case "completed":
-          return <CircleCheckBigIcon />;
+          return (
+            <CircleCheckBigIcon
+              size={14}
+              className="text-green-600"
+            />
+          );
         case "error":
           return (
             <AlertCircle
@@ -69,7 +74,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           return (
             <Loader2
               size={14}
-              className="animate-spin"
+              className="animate-spin text-blue-600"
             />
           );
         case "interrupted":
@@ -89,6 +94,21 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       }
     }, [status]);
 
+    const getStatusBorderColor = useMemo(() => {
+      switch (status) {
+        case "completed":
+          return "border-l-green-600";
+        case "error":
+          return "border-l-destructive";
+        case "pending":
+          return "border-l-blue-600";
+        case "interrupted":
+          return "border-l-orange-500";
+        default:
+          return "border-l-border";
+      }
+    }, [status]);
+
     const toggleExpanded = useCallback(() => {
       setIsExpanded((prev) => !prev);
     }, []);
@@ -105,8 +125,9 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     return (
       <div
         className={cn(
-          "w-full overflow-hidden rounded-lg border-none shadow-none outline-none transition-colors duration-200 hover:bg-accent",
-          isExpanded && hasContent && "bg-accent"
+          "w-full overflow-hidden rounded-lg border border-l-[3px] border-border shadow-sm outline-none transition-all duration-200 hover:shadow-md",
+          getStatusBorderColor,
+          isExpanded && hasContent && "bg-accent/50"
         )}
       >
         <Button

@@ -18,7 +18,7 @@ export const MessageContent = React.memo<MessageContentProps>(
             "mt-4 overflow-hidden break-words text-sm font-normal leading-[150%]",
             isUser
               ? "rounded-xl rounded-br-none border border-border px-3 py-2 text-foreground"
-              : "text-primary"
+              : "rounded-lg bg-accent/30 px-4 py-3 text-primary"
           )}
           style={
             isUser
