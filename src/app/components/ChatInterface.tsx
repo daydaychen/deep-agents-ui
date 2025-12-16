@@ -405,9 +405,15 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             "mx-auto w-[calc(100%-32px)] max-w-[1024px] transition-colors duration-200 ease-in-out"
           )}
         >
-          {(hasTasks || hasFiles) && (
-            <div className="flex max-h-72 flex-col overflow-y-auto border-b border-border bg-sidebar empty:hidden">
-              {!metaOpen && (
+          <div
+            className={cn(
+              "flex flex-col overflow-y-auto border-b border-border bg-sidebar transition-all duration-300 ease-in-out",
+              hasTasks || hasFiles ? "max-h-72" : "max-h-0 border-b-0"
+            )}
+          >
+            {(hasTasks || hasFiles) && (
+              <>
+                {!metaOpen && (
                 <>
                   {(() => {
                     const activeTask = todos.find(
@@ -610,8 +616,9 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                   </div>
                 </>
               )}
-            </div>
+            </>
           )}
+          </div>
           <form
             onSubmit={handleSubmit}
             className="flex flex-col"

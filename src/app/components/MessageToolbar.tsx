@@ -82,10 +82,6 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
       showBranchSwitcher ||
       (messageBranch && messageBranch !== "main");
 
-    if (!hasActions) {
-      return null;
-    }
-
     return (
       <div className={className}>
         <div
@@ -101,6 +97,18 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
               isUser && "flex-row-reverse"
             )}
           >
+            {!hasActions && (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled
+                className="h-7 gap-1 px-2 text-xs opacity-0"
+                aria-hidden="true"
+              >
+                <span>Placeholder</span>
+              </Button>
+            )}
+
             {/* Copy button - always visible for messages with content */}
             {hasContent && !isLoading && (
               <Button
