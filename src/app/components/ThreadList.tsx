@@ -1,93 +1,25 @@
 "use client";
 
-import type { ThreadItem } from "@/app/hooks/useThreads";
+import { ThreadGroup } from "@/app/components/thread/ThreadGroup";
+import {
+  ThreadStatusFilter,
+  type StatusFilter,
+} from "@/app/components/thread/ThreadStatusFilter";
+import {
+  getThreadGroupKeys,
+  useThreadGrouping,
+} from "@/app/hooks/thread/useThreadGrouping";
 import {
   useDeleteThread,
   useMarkThreadAsResolved,
   useThreads,
 } from "@/app/hooks/useThreads";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { Loader2, MessageSquare, MoreHorizontal, X } from "lucide-react";
+import { Loader2, MessageSquare, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type StatusFilter = "all" | "idle" | "busy" | "interrupted" | "error";
-
-const GROUP_LABELS = {
-  interrupted: "Requiring Attention",
-  today: "Today",
-  yesterday: "Yesterday",
-  week: "This Week",
-  older: "Older",
-} as const;
-
-const STATUS_COLORS: Record<ThreadItem["status"], string> = {
-  idle: "bg-green-500",
-  busy: "bg-blue-500",
-  interrupted: "bg-orange-500",
-  error: "bg-red-600",
-};
-
-function getThreadColor(status: ThreadItem["status"]): string {
-  return STATUS_COLORS[status] ?? "bg-gray-400";
-}
-
-function formatTime(date: Date, now = new Date()): string {
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  if (days === 0) return format(date, "HH:mm");
-  if (days === 1) return "Yesterday";
-  if (days < 7) return format(date, "EEEE");
-  return format(date, "MM/dd");
-}
-
-function StatusFilterItem({
-  status,
-  label,
-  badge,
-}: {
-  status: ThreadItem["status"];
-  label: string;
-  badge?: number;
-}) {
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span
-        className={cn(
-          "inline-block size-2 rounded-full",
-          getThreadColor(status)
-        )}
-      />
-      {label}
-      {badge !== undefined && badge > 0 && (
-        <span className="ml-1 inline-flex items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold leading-none text-white">
-          {badge}
-        </span>
-      )}
-    </span>
-  );
-}
 
 function ErrorState({ message }: { message: string }) {
   return (
@@ -183,39 +115,8 @@ export function ThreadList({
   const isEmpty = threads.data?.at(0)?.length === 0;
   const isReachingEnd = isEmpty || (threads.data?.at(-1)?.length ?? 0) < 20;
 
-  // Group threads by time and status
-  const grouped = useMemo(() => {
-    const now = new Date();
-    const groups: Record<keyof typeof GROUP_LABELS, ThreadItem[]> = {
-      interrupted: [],
-      today: [],
-      yesterday: [],
-      week: [],
-      older: [],
-    };
-
-    flattened.forEach((thread) => {
-      if (thread.status === "interrupted") {
-        groups.interrupted.push(thread);
-        return;
-      }
-
-      const diff = now.getTime() - thread.updatedAt.getTime();
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-      if (days === 0) {
-        groups.today.push(thread);
-      } else if (days === 1) {
-        groups.yesterday.push(thread);
-      } else if (days < 7) {
-        groups.week.push(thread);
-      } else {
-        groups.older.push(thread);
-      }
-    });
-
-    return groups;
-  }, [flattened]);
+  // Group threads by time and status using the custom hook
+  const grouped = useThreadGrouping(flattened);
 
   const interruptedCount = useMemo(() => {
     return flattened.filter((t) => t.status === "interrupted").length;
@@ -255,50 +156,11 @@ export function ThreadList({
       <div className="grid flex-shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-b border-border p-4">
         <h2 className="text-lg font-semibold tracking-tight">Threads</h2>
         <div className="flex items-center gap-2">
-          <Select
+          <ThreadStatusFilter
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-          >
-            <SelectTrigger className="w-fit">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectSeparator />
-              <SelectGroup>
-                <SelectLabel>Active</SelectLabel>
-                <SelectItem value="idle">
-                  <StatusFilterItem
-                    status="idle"
-                    label="Idle"
-                  />
-                </SelectItem>
-                <SelectItem value="busy">
-                  <StatusFilterItem
-                    status="busy"
-                    label="Busy"
-                  />
-                </SelectItem>
-              </SelectGroup>
-              <SelectSeparator />
-              <SelectGroup>
-                <SelectLabel>Attention</SelectLabel>
-                <SelectItem value="interrupted">
-                  <StatusFilterItem
-                    status="interrupted"
-                    label="Interrupted"
-                    badge={interruptedCount}
-                  />
-                </SelectItem>
-                <SelectItem value="error">
-                  <StatusFilterItem
-                    status="error"
-                    label="Error"
-                  />
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            onChange={setStatusFilter}
+            interruptedCount={interruptedCount}
+          />
           {onClose && (
             <Button
               variant="ghost"
@@ -324,109 +186,17 @@ export function ThreadList({
 
         {!threads.error && !isEmpty && (
           <div className="box-border w-full max-w-full overflow-hidden p-2">
-            {(
-              Object.keys(GROUP_LABELS) as Array<keyof typeof GROUP_LABELS>
-            ).map((group) => {
-              const groupThreads = grouped[group];
-              if (groupThreads.length === 0) return null;
-
-              return (
-                <div
-                  key={group}
-                  className="mb-4"
-                >
-                  <h4 className="m-0 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {GROUP_LABELS[group]}
-                  </h4>
-                  <div className="flex flex-col gap-1">
-                    {groupThreads.map((thread) => (
-                      <div
-                        key={thread.id}
-                        className={cn(
-                          "group grid w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-200",
-                          "hover:bg-accent",
-                          currentThreadId === thread.id
-                            ? "border border-primary bg-accent hover:bg-accent"
-                            : "border border-transparent bg-transparent"
-                        )}
-                        onClick={() => onThreadSelect(thread.id)}
-                        aria-current={currentThreadId === thread.id}
-                      >
-                        <div className="min-w-0 flex-1">
-                          {/* Title + Timestamp Row */}
-                          <div className="mb-1 flex items-center justify-between">
-                            <h3 className="truncate text-sm font-semibold">
-                              {thread.title}
-                            </h3>
-                            <div className="ml-2 flex flex-shrink-0 items-center gap-2">
-                              <span className="text-xs text-muted-foreground">
-                                {formatTime(thread.updatedAt)}
-                              </span>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                    }}
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleMarkAsResolved(
-                                        thread.id,
-                                        thread.assistantId
-                                      );
-                                    }}
-                                  >
-                                    Make as Resolved
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteThread(thread.id);
-                                    }}
-                                    className="text-destructive focus:text-destructive"
-                                  >
-                                    Delete Thread
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </div>
-                          {/* Description + Status Row */}
-                          <div className="flex items-center justify-between">
-                            <p className="flex-1 truncate text-sm text-muted-foreground">
-                              {thread.description}
-                            </p>
-                            <div className="ml-2 flex items-center gap-2">
-                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
-                                {thread.messageCount}{" "}
-                                {thread.messageCount === 1
-                                  ? "message"
-                                  : "messages"}
-                              </span>
-                              <div
-                                className={cn(
-                                  "h-2 w-2 rounded-full",
-                                  getThreadColor(thread.status)
-                                )}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {getThreadGroupKeys().map((groupType) => (
+              <ThreadGroup
+                key={groupType}
+                groupType={groupType}
+                threads={grouped[groupType]}
+                currentThreadId={currentThreadId}
+                onThreadSelect={onThreadSelect}
+                onMarkAsResolved={handleMarkAsResolved}
+                onDeleteThread={handleDeleteThread}
+              />
+            ))}
 
             {!isReachingEnd && (
               <div className="flex justify-center py-4">
