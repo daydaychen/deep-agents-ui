@@ -293,16 +293,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             </div>
           ) : (
             <>
-              {error && (
-                <Alert
-                  variant="destructive"
-                  className="mb-4"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>错误</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
               {processedMessages.map((data, index) => {
                 const messageUi = ui?.filter(
                   (u: any) => u.metadata?.message_id === data.message.id
@@ -393,6 +383,16 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                   </div>
                 );
               })}
+              {error && (
+                <Alert
+                  variant="destructive"
+                  className="mb-4"
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>错误</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
             </>
           )}
         </div>
