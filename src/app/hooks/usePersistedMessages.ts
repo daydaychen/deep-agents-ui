@@ -284,6 +284,15 @@ export function usePersistedMessages(
 
       // Server data arrived
       if (streamMessages.length > 0) {
+        if (isLoading) {
+          // During streaming, show stream messages directly
+          setMergedMessages(streamMessages);
+          setCacheOnlyMessageIds(new Set()); // No cache-only messages during streaming
+          pendingSaveMessagesRef.current = streamMessages;
+          return;
+        }
+
+        // Only merge with cache when stream is idle (isLoading === false)
         const cachedMessages = await loadMessages();
         const streamSnapshot = [...streamMessages];
         const { messages, cacheOnlyMessageIds: cacheIds } = mergeWithHistory(
@@ -328,6 +337,7 @@ export function usePersistedMessages(
     cacheOnlyMessageIds,
     mergedMessages,
     loadMessages,
+    isLoading,
   ]);
 
   // Save to IndexedDB when stream ends (isLoading changes from true to false)
