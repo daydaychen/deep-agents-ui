@@ -10,7 +10,8 @@ import {
   extractStringFromMessageContent,
   extractSubAgentContent,
 } from "@/app/utils/utils";
-import React from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 interface SubAgentDetailsProps {
   subAgent: SubAgent;
@@ -40,6 +41,16 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
       subAgent.status === "interrupted" &&
       onResumeInterrupt;
 
+    // State to control messages section expansion
+    const [isMessagesExpanded, setIsMessagesExpanded] = useState(true);
+
+    // Auto-collapse messages when output appears
+    useEffect(() => {
+      if (subAgent.output) {
+        setIsMessagesExpanded(false);
+      }
+    }, [subAgent.output]);
+
     if (hasInterrupt) {
       return (
         <ToolApprovalInterrupt
@@ -64,47 +75,70 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
 
         {hasMessages && (
           <>
-            <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
-              SubAgent Messages
-            </h4>
-            <div className="mb-4 space-y-3">
-              {processedSubAgentMessages.map((data, index) => {
-                const isUser = data.message.type === "human";
-                const messageContent = extractStringFromMessageContent(
-                  data.message
-                );
-                const hasContent =
-                  messageContent && messageContent.trim() !== "";
-                const hasToolCalls = data.toolCalls.length > 0;
-
-                return (
-                  <div
-                    key={data.message.id || index}
-                    className="space-y-2"
-                  >
-                    {hasContent && (
-                      <div className="text-sm">
-                        <MessageContent
-                          content={messageContent}
-                          isUser={isUser}
-                        />
-                      </div>
-                    )}
-                    {hasToolCalls && (
-                      <div className="flex flex-col gap-2">
-                        {data.toolCalls.map((toolCall) => (
-                          <ToolCallBox
-                            key={toolCall.id}
-                            toolCall={toolCall}
-                            isLoading={false}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="text-primary/70 text-xs font-semibold uppercase tracking-wider">
+                SubAgent Messages
+              </h4>
+              <button
+                onClick={() => setIsMessagesExpanded(!isMessagesExpanded)}
+                className="text-primary/70 flex items-center gap-1 text-xs transition-colors hover:text-primary"
+                aria-label={
+                  isMessagesExpanded ? "Collapse messages" : "Expand messages"
+                }
+              >
+                {isMessagesExpanded ? (
+                  <>
+                    <ChevronUp className="h-3 w-3" />
+                    Collapse
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3 w-3" />
+                    Expand
+                  </>
+                )}
+              </button>
             </div>
+            {isMessagesExpanded && (
+              <div className="border-border-light mb-4 max-h-96 space-y-3 overflow-y-auto rounded border bg-black/10 p-3">
+                {processedSubAgentMessages.map((data, index) => {
+                  const isUser = data.message.type === "human";
+                  const messageContent = extractStringFromMessageContent(
+                    data.message
+                  );
+                  const hasContent =
+                    messageContent && messageContent.trim() !== "";
+                  const hasToolCalls = data.toolCalls.length > 0;
+
+                  return (
+                    <div
+                      key={data.message.id || index}
+                      className="space-y-2"
+                    >
+                      {hasContent && (
+                        <div className="text-sm">
+                          <MessageContent
+                            content={messageContent}
+                            isUser={isUser}
+                          />
+                        </div>
+                      )}
+                      {hasToolCalls && (
+                        <div className="flex flex-col gap-2">
+                          {data.toolCalls.map((toolCall) => (
+                            <ToolCallBox
+                              key={toolCall.id}
+                              toolCall={toolCall}
+                              isLoading={false}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
 
