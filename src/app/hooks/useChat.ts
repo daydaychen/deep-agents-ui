@@ -93,7 +93,7 @@ export function useChat({
     messages: persistedMessages,
     cacheOnlyMessageIds,
     syncStatus,
-  } = usePersistedMessages(threadId, stream.messages);
+  } = usePersistedMessages(threadId, stream.messages, stream.isLoading);
 
   // Compute branch information from experimental_branchTree
   // Parse experimental_branchTree for advanced branch management

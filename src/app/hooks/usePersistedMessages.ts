@@ -24,11 +24,13 @@ type SyncStatus = "idle" | "syncing" | "synced";
  *
  * @param threadId - Current thread ID (null means no persistence)
  * @param streamMessages - Messages from the stream (server source of truth)
+ * @param isLoading - Whether the stream is currently loading (true during streaming)
  * @returns Merged messages, cache-only message IDs, and sync status
  */
 export function usePersistedMessages(
   threadId: string | null,
-  streamMessages: Message[]
+  streamMessages: Message[],
+  isLoading: boolean
 ) {
   const dbRef = useRef<IDBDatabase | null>(null);
   const dbReadyPromiseRef = useRef<Promise<IDBDatabase | null> | null>(null);
@@ -40,6 +42,8 @@ export function usePersistedMessages(
   const hasCacheLoadedRef = useRef(false); // Track if cache was ever loaded
   const isInitialLoadRef = useRef(true);
   const lastStreamMessagesRef = useRef<Message[]>([]);
+  const previousIsLoadingRef = useRef<boolean>(isLoading); // Track previous isLoading state
+  const pendingSaveMessagesRef = useRef<Message[]>([]); // Track messages to save when stream ends
 
   // Initialize IndexedDB
   useEffect(() => {
@@ -306,8 +310,8 @@ export function usePersistedMessages(
           }
         }
 
-        // Save to cache for next time
-        await saveMessages(streamSnapshot);
+        // Store messages for saving when stream ends (instead of saving immediately)
+        pendingSaveMessagesRef.current = streamSnapshot;
 
         // Only mark as synced if cache was previously loaded
         if (hasCacheLoadedRef.current) {
@@ -324,18 +328,37 @@ export function usePersistedMessages(
     cacheOnlyMessageIds,
     mergedMessages,
     loadMessages,
-    saveMessages,
   ]);
+
+  // Save to IndexedDB when stream ends (isLoading changes from true to false)
+  useEffect(() => {
+    const wasLoading = previousIsLoadingRef.current;
+    const isNowIdle = !isLoading;
+
+    // Detect transition from loading to idle
+    if (wasLoading && isNowIdle && threadId) {
+      // Stream just finished - save pending messages
+      const messagesToSave = pendingSaveMessagesRef.current;
+      if (messagesToSave.length > 0) {
+        saveMessages(messagesToSave);
+      }
+    }
+
+    // Update previous state
+    previousIsLoadingRef.current = isLoading;
+  }, [isLoading, threadId, saveMessages]);
 
   // Reset on thread change
   useEffect(() => {
     isInitialLoadRef.current = true;
     hasCacheLoadedRef.current = false;
     lastStreamMessagesRef.current = [];
+    previousIsLoadingRef.current = isLoading;
+    pendingSaveMessagesRef.current = [];
     setMergedMessages([]);
     setCacheOnlyMessageIds(new Set());
     setSyncStatus("idle");
-  }, [threadId]);
+  }, [threadId, isLoading]);
 
   return {
     // When no threadId, return streamMessages directly; otherwise use merged state
