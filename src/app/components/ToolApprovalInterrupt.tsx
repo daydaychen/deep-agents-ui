@@ -57,7 +57,7 @@ export function ToolApprovalInterrupt({
 
       {/* Description */}
       {actionRequest.description && (
-        <p className="mb-3 text-sm text-muted-foreground">
+        <p className="mb-3 whitespace-pre-line text-sm text-muted-foreground">
           {actionRequest.description}
         </p>
       )}
