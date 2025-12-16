@@ -12,6 +12,7 @@ interface PersistedMessage {
   messageId: string;
   message: Message;
   timestamp: number;
+  index: number; // 添加索引字段以保持顺序
 }
 
 type SyncStatus = "idle" | "syncing" | "synced";
@@ -102,15 +103,18 @@ export function usePersistedMessages(
           "readwrite"
         );
         const store = transaction.objectStore(STORE_NAME);
+        const now = Date.now();
 
-        for (const message of messages) {
+        for (let i = 0; i < messages.length; i++) {
+          const message = messages[i];
           if (!message.id) continue;
 
           const persistedMessage: PersistedMessage = {
             threadId,
             messageId: message.id,
             message,
-            timestamp: Date.now(),
+            timestamp: now,
+            index: i, // 保存消息在数组中的索引
           };
 
           store.put(persistedMessage);
@@ -151,7 +155,16 @@ export function usePersistedMessages(
         }
       );
 
-      result.sort((a, b) => a.timestamp - b.timestamp);
+      // 先按时间戳排序，再按索引排序以保持原始顺序
+      result.sort((a, b) => {
+        if (a.timestamp !== b.timestamp) {
+          return a.timestamp - b.timestamp;
+        }
+        // 如果索引存在则使用索引，否则视为相等
+        const indexA = a.index ?? 0;
+        const indexB = b.index ?? 0;
+        return indexA - indexB;
+      });
       return result.map((pm) => pm.message);
     } catch (error) {
       console.error("Failed to load messages from IndexedDB:", error);
