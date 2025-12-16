@@ -11,8 +11,9 @@ import {
 import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { usePersistedMessages } from "./usePersistedMessages";
 
 export type StateType = {
   messages: Message[];
@@ -86,6 +87,10 @@ export function useChat({
     fetchStateHistory: true,
     thread: thread,
   });
+
+  // Use persisted messages to maintain continuity during interrupt/history refetch
+  const { messages: persistedMessages, cacheOnlyMessageIds } =
+    usePersistedMessages(threadId, stream.messages);
 
   // Compute branch information from experimental_branchTree
   // Parse experimental_branchTree for advanced branch management
@@ -658,16 +663,27 @@ export function useChat({
         return options.map(formatBranchName);
       };
 
+      // Check if this message is cache-only (not in server history)
+      const isCacheOnly = message.id && cacheOnlyMessageIds.has(message.id);
+
+      // Determine if this message can be retried
+      // Messages can only be retried if they:
+      // 1. Exist in server history (not cache-only)
+      // 2. Have a parent checkpoint to retry from
+      // 3. Have retry functionality available
+      const hasParentCheckpoint = !!metadata?.firstSeenState?.parent_checkpoint;
+      const canRetry =
+        !isCacheOnly && hasParentCheckpoint && !!retryFromMessage;
+
       return {
         branch: formatBranchName(messageBranch || "main"),
 
         branchOptions: formatBranchOptions(messageBranchOptions),
 
-        canRetry:
-          metadata?.firstSeenState?.parent_checkpoint && retryFromMessage,
+        canRetry,
       };
     },
-    [stream, branchTreeInfo, retryFromMessage]
+    [stream, branchTreeInfo, retryFromMessage, cacheOnlyMessageIds]
   );
 
   return {
@@ -677,7 +693,7 @@ export function useChat({
     email: stream.values.email,
     ui: stream.values.ui,
     setFiles,
-    messages: stream.messages,
+    messages: persistedMessages,
     isLoading: stream.isLoading,
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,
