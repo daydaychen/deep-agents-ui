@@ -692,7 +692,7 @@ export function useChat({
   const latestError = useMemo(() => {
     const error = stream.error as string | undefined;
     // Filter out CancelledError as it's not a real error
-    if (error && error.includes("CancelledError")) {
+    if (error && error?.includes("CancelledError")) {
       return undefined;
     }
     return error;
