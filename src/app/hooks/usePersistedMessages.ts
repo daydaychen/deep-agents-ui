@@ -211,7 +211,7 @@ export function usePersistedMessages(
   // IMPORTANT: According to LangChain docs, stream.messages already filters to show
   // only the current branch. So we should NOT merge cache messages from other branches.
   // The server messages (streamMessages) are the source of truth for the current branch.
-  const mergeWithHistory = (
+  const mergeWithHistory = useCallback((
     serverMessages: Message[],
     cachedMessages: Message[],
     cachedMetadataMap: Map<string, MessageMetadata<any> | null>
@@ -297,7 +297,7 @@ export function usePersistedMessages(
       metadataMap: mergedMetadataMap,
       cacheOnlyMessageIds: cacheOnlyIds,
     };
-  };
+  }, [getMessagesMetadata]);
 
   // Priority 1: Load cache immediately when thread changes
   // NOTE: We load ALL cached messages initially, but when server data arrives,
@@ -419,6 +419,7 @@ export function usePersistedMessages(
     metadataMap,
     loadMessages,
     isLoading,
+    mergeWithHistory,
   ]);
 
   // Save to IndexedDB when stream ends (isLoading changes from true to false)

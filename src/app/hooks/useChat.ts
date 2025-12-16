@@ -91,7 +91,6 @@ export function useChat({
   const {
     messages: persistedMessages,
     metadataMap,
-    cacheOnlyMessageIds,
     syncStatus,
   } = usePersistedMessages(
     threadId,
@@ -312,7 +311,8 @@ export function useChat({
       const metadata = stream.getMessagesMetadata?.(message, index);
 
       // Get branch options from metadata
-      const branchOptions = (metadata?.branchOptions as string[] | undefined) || [];
+      const branchOptions =
+        (metadata?.branchOptions as string[] | undefined) || [];
 
       // Find current branch index
       const currentBranch = metadata?.branch;
@@ -320,13 +320,9 @@ export function useChat({
         ? branchOptions.indexOf(currentBranch)
         : 0;
 
-      // Check if this message is cache-only (not in server history)
-      const isCacheOnly = message.id && cacheOnlyMessageIds.has(message.id);
-
       // Determine if this message can be retried
       const hasParentCheckpoint = !!metadata?.firstSeenState?.parent_checkpoint;
-      const canRetry =
-        !isCacheOnly && hasParentCheckpoint && !!retryFromMessage;
+      const canRetry = hasParentCheckpoint && !!retryFromMessage;
 
       return {
         branchOptions,
@@ -334,7 +330,7 @@ export function useChat({
         canRetry,
       };
     },
-    [stream, retryFromMessage, cacheOnlyMessageIds]
+    [stream, retryFromMessage]
   );
 
   const latestError = useMemo(() => {
