@@ -73,7 +73,10 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const [showSyncedMessage, setShowSyncedMessage] = useState(false);
 
   const [input, setInput] = useState("");
-  const { scrollRef, contentRef } = useStickToBottom();
+  const { scrollRef, contentRef } = useStickToBottom({
+    initial: "instant",
+    resize: "instant",
+  });
 
   const {
     stream,
