@@ -5,6 +5,7 @@ import { useMemo } from "react";
  * Extract subagent information from tool calls
  * - Filters for "task" tool calls with subagent_type
  * - Transforms tool calls into SubAgent objects
+ * - Includes subagent messages from streaming
  */
 export function useSubAgents(toolCalls: ToolCall[]): SubAgent[] {
   return useMemo(() => {
@@ -28,6 +29,7 @@ export function useSubAgents(toolCalls: ToolCall[]): SubAgent[] {
           input: toolCall.args,
           output: toolCall.result ? { result: toolCall.result } : undefined,
           status: toolCall.status,
+          messages: toolCall.subAgentMessages || [],
         } as SubAgent;
       });
   }, [toolCalls]);

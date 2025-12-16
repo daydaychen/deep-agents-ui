@@ -1,6 +1,8 @@
+import type { StateType } from "@/app/hooks/useChat";
 import type { ToolCall } from "@/app/types/types";
 import { extractStringFromMessageContent } from "@/app/utils/utils";
 import { Message } from "@langchain/langgraph-sdk";
+import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import { useMemo } from "react";
 
 interface ProcessedMessage {
@@ -13,23 +15,60 @@ interface ProcessedMessage {
  * Process raw messages into a format that's easier to render
  * - Matches tool calls with their results
  * - Determines when to show avatars
+ * - Attaches subagent messages to their corresponding tool calls
  */
 export function useProcessedMessages(
   messages: Message[],
-  interrupt?: any
+  interrupt?: any,
+  getMessagesMetadata?: (
+    message: Message,
+    index?: number
+  ) => MessageMetadata<StateType> | undefined
 ): ProcessedMessage[] {
   return useMemo(() => {
     /*
-     1. Loop through all messages
-     2. For each AI message, add the AI message, and any tool calls to the messageMap
-     3. For each tool message, find the corresponding tool call in the messageMap and update the status and output
+     1. First, identify and group subagent messages by tool_call_id
+     2. Loop through main messages
+     3. For each AI message, add the AI message, and any tool calls to the messageMap
+     4. For each tool message, find the corresponding tool call in the messageMap and update the status and output
     */
+
+    // Step 1: Group subagent messages by tool_call_id
+    const subAgentMessagesMap = new Map<string, Message[]>();
+    const subAgentMessageIds = new Set<string>();
+
+    if (getMessagesMetadata) {
+      messages.forEach((message: Message, index: number) => {
+        const metadata = getMessagesMetadata(message, index);
+        const toolCallId = metadata?.streamMetadata?.tool_call_id as
+          | string
+          | undefined;
+
+        if (toolCallId) {
+          // This message belongs to a subagent
+          if (!subAgentMessagesMap.has(toolCallId)) {
+            subAgentMessagesMap.set(toolCallId, []);
+          }
+          subAgentMessagesMap.get(toolCallId)!.push(message);
+          if (message.id) {
+            subAgentMessageIds.add(message.id);
+          }
+        }
+      });
+    }
+
+    // Step 2: Process main messages (excluding subagent messages)
     const messageMap = new Map<
       string,
       { message: Message; toolCalls: ToolCall[] }
     >();
 
     messages.forEach((message: Message) => {
+      // Skip messages that belong to subagents
+      if (message.id && subAgentMessageIds.has(message.id)) {
+        return;
+      }
+
       if (message.type === "ai") {
         const toolCallsInMessage: Array<{
           id?: string;
@@ -120,6 +159,16 @@ export function useProcessedMessages(
     });
 
     const processedArray = Array.from(messageMap.values());
+
+    // Step 3: Attach subagent messages to their corresponding tool calls
+    processedArray.forEach((data) => {
+      data.toolCalls.forEach((toolCall) => {
+        if (subAgentMessagesMap.has(toolCall.id)) {
+          toolCall.subAgentMessages = subAgentMessagesMap.get(toolCall.id);
+        }
+      });
+    });
+
     return processedArray.map((data, index) => {
       const prevMessage = index > 0 ? processedArray[index - 1].message : null;
       return {
@@ -127,5 +176,5 @@ export function useProcessedMessages(
         showAvatar: data.message.type !== prevMessage?.type,
       };
     });
-  }, [messages, interrupt]);
+  }, [messages, interrupt, getMessagesMetadata]);
 }

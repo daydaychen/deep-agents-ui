@@ -4,6 +4,7 @@ export interface ToolCall {
   args: Record<string, unknown>;
   result?: string;
   status: "pending" | "completed" | "error" | "interrupted";
+  subAgentMessages?: any[]; // Messages from subagents (for task tool calls)
 }
 
 export interface SubAgent {
@@ -13,6 +14,7 @@ export interface SubAgent {
   input: Record<string, unknown>;
   output?: Record<string, unknown>;
   status: "pending" | "active" | "completed" | "error" | "interrupted";
+  messages?: any[]; // Messages from the subagent execution
 }
 
 export interface FileItem {

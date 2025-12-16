@@ -1,13 +1,15 @@
 "use client";
 
 import { MarkdownContent } from "@/app/components/MarkdownContent";
+import { MessageContent } from "@/app/components/message/MessageContent";
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
-import type {
-  ActionRequest,
-  ReviewConfig,
-  SubAgent,
-} from "@/app/types/types";
-import { extractSubAgentContent } from "@/app/utils/utils";
+import { ToolCallBox } from "@/app/components/ToolCallBox";
+import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
+import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
+import {
+  extractStringFromMessageContent,
+  extractSubAgentContent,
+} from "@/app/utils/utils";
 import React from "react";
 
 interface SubAgentDetailsProps {
@@ -26,8 +28,17 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
     onResumeInterrupt,
     isLoading,
   }) => {
+    // Process subagent messages to extract tool calls (must be called before any early returns)
+    const processedSubAgentMessages = useProcessedMessages(
+      subAgent.messages || [],
+      undefined,
+      undefined
+    );
+
     const hasInterrupt =
-      taskActionRequest && subAgent.status === "interrupted" && onResumeInterrupt;
+      taskActionRequest &&
+      subAgent.status === "interrupted" &&
+      onResumeInterrupt;
 
     if (hasInterrupt) {
       return (
@@ -40,6 +51,8 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
       );
     }
 
+    const hasMessages = subAgent.messages && subAgent.messages.length > 0;
+
     return (
       <div className="bg-surface border-border-light rounded-md border p-4">
         <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
@@ -48,6 +61,53 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
         <div className="mb-4">
           <MarkdownContent content={extractSubAgentContent(subAgent.input)} />
         </div>
+
+        {hasMessages && (
+          <>
+            <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
+              SubAgent Messages
+            </h4>
+            <div className="mb-4 space-y-3">
+              {processedSubAgentMessages.map((data, index) => {
+                const isUser = data.message.type === "human";
+                const messageContent = extractStringFromMessageContent(
+                  data.message
+                );
+                const hasContent =
+                  messageContent && messageContent.trim() !== "";
+                const hasToolCalls = data.toolCalls.length > 0;
+
+                return (
+                  <div
+                    key={data.message.id || index}
+                    className="space-y-2"
+                  >
+                    {hasContent && (
+                      <div className="text-sm">
+                        <MessageContent
+                          content={messageContent}
+                          isUser={isUser}
+                        />
+                      </div>
+                    )}
+                    {hasToolCalls && (
+                      <div className="flex flex-col gap-2">
+                        {data.toolCalls.map((toolCall) => (
+                          <ToolCallBox
+                            key={toolCall.id}
+                            toolCall={toolCall}
+                            isLoading={false}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         {subAgent.output && (
           <>
             <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">

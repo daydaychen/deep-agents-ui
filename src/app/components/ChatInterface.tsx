@@ -86,7 +86,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   }, [syncStatus]);
 
   // Use the extracted hook for processing messages
-  const processedMessages = useProcessedMessages(messages, interrupt);
+  const processedMessages = useProcessedMessages(
+    messages,
+    interrupt,
+    getMessagesMetadata
+  );
 
   // Parse out any action requests or review configs from the interrupt
   const actionRequestsMap: Map<string, ActionRequest> | null = useMemo(() => {
