@@ -308,7 +308,10 @@ export function useChat({
   // Helper function to get branch information for a specific message
   const getMessageBranchInfo = useCallback(
     (message: Message, index: number) => {
-      const metadata = stream.getMessagesMetadata?.(message, index);
+      // First try to get metadata from stream, then fallback to cached metadata
+      const streamMetadata = stream.getMessagesMetadata?.(message, index);
+      const cachedMetadata = message.id ? metadataMap.get(message.id) : null;
+      const metadata = streamMetadata || cachedMetadata;
 
       // Get branch options from metadata
       const branchOptions =
@@ -330,7 +333,7 @@ export function useChat({
         canRetry,
       };
     },
-    [stream, retryFromMessage]
+    [stream, retryFromMessage, metadataMap]
   );
 
   const latestError = useMemo(() => {
