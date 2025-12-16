@@ -1,7 +1,7 @@
 "use client";
 
 import { Message } from "@langchain/langgraph-sdk";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const DB_NAME = "deep-agents-ui";
 const DB_VERSION = 1;
@@ -92,37 +92,43 @@ export function usePersistedMessages(
   }, [threadId]);
 
   // Save messages to IndexedDB
-  const saveMessages = async (messages: Message[]) => {
-    if (!threadId || !dbRef.current) return;
+  const saveMessages = useCallback(
+    async (messages: Message[]) => {
+      if (!threadId || !dbRef.current) return;
 
-    try {
-      const transaction = dbRef.current.transaction([STORE_NAME], "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
+      try {
+        const transaction = dbRef.current.transaction(
+          [STORE_NAME],
+          "readwrite"
+        );
+        const store = transaction.objectStore(STORE_NAME);
 
-      for (const message of messages) {
-        if (!message.id) continue;
+        for (const message of messages) {
+          if (!message.id) continue;
 
-        const persistedMessage: PersistedMessage = {
-          threadId,
-          messageId: message.id,
-          message,
-          timestamp: Date.now(),
-        };
+          const persistedMessage: PersistedMessage = {
+            threadId,
+            messageId: message.id,
+            message,
+            timestamp: Date.now(),
+          };
 
-        store.put(persistedMessage);
+          store.put(persistedMessage);
+        }
+
+        await new Promise<void>((resolve, reject) => {
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } catch (error) {
+        console.error("Failed to save messages to IndexedDB:", error);
       }
-
-      await new Promise<void>((resolve, reject) => {
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-      });
-    } catch (error) {
-      console.error("Failed to save messages to IndexedDB:", error);
-    }
-  };
+    },
+    [threadId]
+  );
 
   // Load messages from IndexedDB
-  const loadMessages = async (): Promise<Message[]> => {
+  const loadMessages = useCallback(async (): Promise<Message[]> => {
     if (!threadId) return [];
 
     // Wait for DB to be ready if it's still initializing
@@ -151,7 +157,7 @@ export function usePersistedMessages(
       console.error("Failed to load messages from IndexedDB:", error);
       return [];
     }
-  };
+  }, [threadId]);
 
   // Merge server messages with cached messages
   const mergeWithHistory = (
@@ -235,7 +241,7 @@ export function usePersistedMessages(
     };
 
     loadCacheImmediately();
-  }, [threadId]);
+  }, [loadMessages, threadId]);
 
   // Priority 2: Sync with server data when available
   useEffect(() => {
@@ -299,7 +305,14 @@ export function usePersistedMessages(
     };
 
     syncMessages();
-  }, [streamMessages, threadId]);
+  }, [
+    streamMessages,
+    threadId,
+    cacheOnlyMessageIds,
+    mergedMessages,
+    loadMessages,
+    saveMessages,
+  ]);
 
   // Reset on thread change
   useEffect(() => {
