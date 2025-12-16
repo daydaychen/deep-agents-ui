@@ -271,11 +271,13 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   }, [interrupt]);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <SyncStatusBanner
-        status={syncStatus}
-        showSynced={showSyncedMessage}
-      />
+    <div className="relative flex flex-1 flex-col overflow-hidden">
+      <div className="absolute left-0 right-0 top-0 z-10">
+        <SyncStatusBanner
+          status={syncStatus}
+          showSynced={showSyncedMessage}
+        />
+      </div>
 
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
