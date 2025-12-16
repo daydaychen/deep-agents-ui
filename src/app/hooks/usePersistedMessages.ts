@@ -14,6 +14,8 @@ interface PersistedMessage {
   timestamp: number;
 }
 
+type SyncStatus = "idle" | "syncing" | "synced";
+
 /**
  * Custom hook to persist messages to IndexedDB
  * This ensures streaming messages (including subagent messages and tool calls)
@@ -21,24 +23,31 @@ interface PersistedMessage {
  *
  * @param threadId - Current thread ID (null means no persistence)
  * @param streamMessages - Messages from the stream (server source of truth)
- * @returns Merged messages and set of cache-only message IDs
+ * @returns Merged messages, cache-only message IDs, and sync status
  */
 export function usePersistedMessages(
   threadId: string | null,
   streamMessages: Message[]
 ) {
   const dbRef = useRef<IDBDatabase | null>(null);
+  const dbReadyPromiseRef = useRef<Promise<IDBDatabase | null> | null>(null);
   const [mergedMessages, setMergedMessages] = useState<Message[]>([]);
   const [cacheOnlyMessageIds, setCacheOnlyMessageIds] = useState<Set<string>>(
     new Set()
   );
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const hasCacheLoadedRef = useRef(false); // Track if cache was ever loaded
   const isInitialLoadRef = useRef(true);
   const lastStreamMessagesRef = useRef<Message[]>([]);
 
   // Initialize IndexedDB
   useEffect(() => {
-    if (!threadId) return;
+    if (!threadId) {
+      dbReadyPromiseRef.current = null;
+      return;
+    }
 
+    // Create a promise that resolves when DB is ready
     const openDB = (): Promise<IDBDatabase> => {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -61,19 +70,24 @@ export function usePersistedMessages(
       });
     };
 
-    openDB()
+    const dbPromise = openDB()
       .then((db) => {
         dbRef.current = db;
+        return db;
       })
       .catch((error) => {
         console.error("Failed to open IndexedDB:", error);
+        return null;
       });
+
+    dbReadyPromiseRef.current = dbPromise;
 
     return () => {
       if (dbRef.current) {
         dbRef.current.close();
         dbRef.current = null;
       }
+      dbReadyPromiseRef.current = null;
     };
   }, [threadId]);
 
@@ -109,7 +123,14 @@ export function usePersistedMessages(
 
   // Load messages from IndexedDB
   const loadMessages = async (): Promise<Message[]> => {
-    if (!threadId || !dbRef.current) return [];
+    if (!threadId) return [];
+
+    // Wait for DB to be ready if it's still initializing
+    if (dbReadyPromiseRef.current) {
+      await dbReadyPromiseRef.current;
+    }
+
+    if (!dbRef.current) return [];
 
     try {
       const transaction = dbRef.current.transaction([STORE_NAME], "readonly");
@@ -189,7 +210,34 @@ export function usePersistedMessages(
     };
   };
 
-  // Auto-sync with stream messages
+  // Priority 1: Load cache immediately when thread changes
+  useEffect(() => {
+    if (!threadId) {
+      setSyncStatus("idle");
+      hasCacheLoadedRef.current = false;
+      return;
+    }
+
+    const loadCacheImmediately = async () => {
+      const cachedMessages = await loadMessages();
+      if (cachedMessages.length > 0) {
+        // Show cached data immediately
+        setMergedMessages(cachedMessages);
+        setCacheOnlyMessageIds(
+          new Set(
+            cachedMessages.map((msg) => msg.id).filter((id) => id != null)
+          )
+        );
+        // Mark as syncing (waiting for server data)
+        setSyncStatus("syncing");
+        hasCacheLoadedRef.current = true; // Cache was loaded
+      }
+    };
+
+    loadCacheImmediately();
+  }, [threadId]);
+
+  // Priority 2: Sync with server data when available
   useEffect(() => {
     // No persistence without threadId - skip state updates
     if (!threadId) {
@@ -201,8 +249,9 @@ export function usePersistedMessages(
       lastStreamMessagesRef.current === streamMessages ||
       (lastStreamMessagesRef.current.length === streamMessages.length &&
         lastStreamMessagesRef.current.length > 0 &&
-        lastStreamMessagesRef.current[lastStreamMessagesRef.current.length - 1] ===
-          streamMessages[streamMessages.length - 1])
+        lastStreamMessagesRef.current[
+          lastStreamMessagesRef.current.length - 1
+        ] === streamMessages[streamMessages.length - 1])
     ) {
       return;
     }
@@ -210,32 +259,7 @@ export function usePersistedMessages(
     const syncMessages = async () => {
       lastStreamMessagesRef.current = streamMessages;
 
-      // Initial load: check cache first
-      if (isInitialLoadRef.current) {
-        const cachedMessages = await loadMessages();
-        const streamSnapshot = [...streamMessages];
-
-        if (cachedMessages.length > 0 && streamSnapshot.length === 0) {
-          // Show cached messages while waiting for server
-          setMergedMessages(cachedMessages);
-          setCacheOnlyMessageIds(
-            new Set(cachedMessages.map((msg) => msg.id).filter((id) => id != null))
-          );
-        } else if (streamSnapshot.length > 0) {
-          // Merge and save
-          const { messages, cacheOnlyMessageIds: cacheIds } = mergeWithHistory(
-            streamSnapshot,
-            cachedMessages
-          );
-          setMergedMessages(messages);
-          setCacheOnlyMessageIds(cacheIds);
-          await saveMessages(streamSnapshot);
-        }
-        isInitialLoadRef.current = false;
-        return;
-      }
-
-      // Subsequent updates: merge and save
+      // Server data arrived
       if (streamMessages.length > 0) {
         const cachedMessages = await loadMessages();
         const streamSnapshot = [...streamMessages];
@@ -243,9 +267,34 @@ export function usePersistedMessages(
           streamSnapshot,
           cachedMessages
         );
-        setMergedMessages(messages);
-        setCacheOnlyMessageIds(cacheIds);
+
+        // Check if data is consistent with current UI
+        const isDataConsistent =
+          mergedMessages.length === messages.length &&
+          mergedMessages.every((msg, i) => msg.id === messages[i].id);
+
+        if (!isDataConsistent) {
+          // Data changed - update UI
+          setMergedMessages(messages);
+          setCacheOnlyMessageIds(cacheIds);
+        } else {
+          // Data consistent - only update cache-only IDs if needed
+          const idsChanged =
+            cacheOnlyMessageIds.size !== cacheIds.size ||
+            Array.from(cacheIds).some((id) => !cacheOnlyMessageIds.has(id));
+          if (idsChanged) {
+            setCacheOnlyMessageIds(cacheIds);
+          }
+        }
+
+        // Save to cache for next time
         await saveMessages(streamSnapshot);
+
+        // Only mark as synced if cache was previously loaded
+        if (hasCacheLoadedRef.current) {
+          setSyncStatus("synced");
+        }
+        isInitialLoadRef.current = false;
       }
     };
 
@@ -255,9 +304,11 @@ export function usePersistedMessages(
   // Reset on thread change
   useEffect(() => {
     isInitialLoadRef.current = true;
+    hasCacheLoadedRef.current = false;
     lastStreamMessagesRef.current = [];
     setMergedMessages([]);
     setCacheOnlyMessageIds(new Set());
+    setSyncStatus("idle");
   }, [threadId]);
 
   return {
@@ -268,5 +319,6 @@ export function usePersistedMessages(
       ? mergedMessages
       : streamMessages,
     cacheOnlyMessageIds: !threadId ? new Set() : cacheOnlyMessageIds,
+    syncStatus: !threadId ? "idle" : syncStatus,
   };
 }

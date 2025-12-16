@@ -11,7 +11,7 @@ import {
 import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { usePersistedMessages } from "./usePersistedMessages";
 
@@ -89,8 +89,11 @@ export function useChat({
   });
 
   // Use persisted messages to maintain continuity during interrupt/history refetch
-  const { messages: persistedMessages, cacheOnlyMessageIds } =
-    usePersistedMessages(threadId, stream.messages);
+  const {
+    messages: persistedMessages,
+    cacheOnlyMessageIds,
+    syncStatus,
+  } = usePersistedMessages(threadId, stream.messages);
 
   // Compute branch information from experimental_branchTree
   // Parse experimental_branchTree for advanced branch management
@@ -694,6 +697,7 @@ export function useChat({
     ui: stream.values.ui,
     setFiles,
     messages: persistedMessages,
+    syncStatus, // Expose sync status for UI indicators
     isLoading: stream.isLoading,
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,

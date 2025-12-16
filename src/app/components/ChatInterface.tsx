@@ -1,38 +1,40 @@
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-  FormEvent,
-  Fragment,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Square,
-  ArrowUp,
-  CheckCircle,
-  Clock,
-  Circle,
-  FileIcon,
-  AlertCircle,
-} from "lucide-react";
 import { ChatMessage } from "@/app/components/ChatMessage";
 import { MessageToolbar } from "@/app/components/MessageToolbar";
+import { SyncStatusBanner } from "@/app/components/SyncStatusBanner";
+import { FilesPopover } from "@/app/components/TasksFilesSidebar";
 import type {
-  TodoItem,
-  ToolCall,
   ActionRequest,
   ReviewConfig,
+  TodoItem,
+  ToolCall,
 } from "@/app/types/types";
-import { Assistant, Message } from "@langchain/langgraph-sdk";
 import { extractStringFromMessageContent } from "@/app/utils/utils";
-import { useChatContext } from "@/providers/ChatProvider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useChatContext } from "@/providers/ChatProvider";
+import { Assistant, Message } from "@langchain/langgraph-sdk";
+import {
+  AlertCircle,
+  ArrowUp,
+  CheckCircle,
+  Circle,
+  Clock,
+  FileIcon,
+  Square,
+} from "lucide-react";
+import React, {
+  FormEvent,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
-import { FilesPopover } from "@/app/components/TasksFilesSidebar";
 
 interface ChatInterfaceProps {
   assistant: Assistant | null;
@@ -68,6 +70,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
   const tasksContainerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [showSyncedMessage, setShowSyncedMessage] = useState(false);
 
   const [input, setInput] = useState("");
   const { scrollRef, contentRef } = useStickToBottom();
@@ -83,6 +86,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     isThreadLoading,
     interrupt,
     error,
+    syncStatus,
     getMessagesMetadata,
     sendMessage,
     stopStream,
@@ -118,6 +122,19 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     },
     [handleSubmit, submitDisabled]
   );
+
+  // Auto-hide synced message after 3 seconds
+  useEffect(() => {
+    if (syncStatus === "synced") {
+      setShowSyncedMessage(true);
+      const timer = setTimeout(() => {
+        setShowSyncedMessage(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSyncedMessage(false);
+    }
+  }, [syncStatus]);
 
   // TODO: can we make this part of the hook?
   const processedMessages = useMemo(() => {
@@ -252,6 +269,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
+      <SyncStatusBanner
+        status={syncStatus}
+        showSynced={showSyncedMessage}
+      />
+
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
         ref={scrollRef}
@@ -289,8 +311,9 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                 // Get branch information for this message using the new helper function
                 const branchInfo = getMessageBranchInfo?.(data.message, index);
                 const messageBranch = branchInfo?.branch;
-                const messageBranchOptions =
-                  branchInfo?.branchOptions || ["main"];
+                const messageBranchOptions = branchInfo?.branchOptions || [
+                  "main",
+                ];
                 const canRetry = branchInfo?.canRetry;
 
                 return (
@@ -351,7 +374,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                           messageBranch={messageBranch}
                           messageBranchOptions={messageBranchOptions}
                           onSelectBranch={setBranch}
-                          showBranchSwitcher={!!setBranch && !!messageBranchOptions && messageBranchOptions.length > 1}
+                          showBranchSwitcher={
+                            !!setBranch &&
+                            !!messageBranchOptions &&
+                            messageBranchOptions.length > 1
+                          }
                           className="px-2"
                           message={data.message}
                           messageIndex={index}
@@ -473,7 +500,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                         >
                           <FileIcon size={16} />
                           Files (State)
-                          <span className="h-4 min-w-4 rounded-full bg-primary px-0.5 text-center text-[10px] leading-[16px] text-primary-foreground">
+                          <span className="text-primary-foreground h-4 min-w-4 rounded-full bg-primary px-0.5 text-center text-[10px] leading-[16px]">
                             {Object.keys(files).length}
                           </span>
                         </button>
@@ -519,7 +546,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                         aria-expanded={metaOpen === "files"}
                       >
                         Files (State)
-                        <span className="h-4 min-w-4 rounded-full bg-primary px-0.5 text-center text-[10px] leading-[16px] text-primary-foreground">
+                        <span className="text-primary-foreground h-4 min-w-4 rounded-full bg-primary px-0.5 text-center text-[10px] leading-[16px]">
                           {Object.keys(files).length}
                         </span>
                       </button>
