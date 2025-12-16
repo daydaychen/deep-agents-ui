@@ -689,6 +689,15 @@ export function useChat({
     [stream, branchTreeInfo, retryFromMessage, cacheOnlyMessageIds]
   );
 
+  const latestError = useMemo(() => {
+    const error = stream.error as string | undefined;
+    // Filter out CancelledError as it's not a real error
+    if (error && error.includes("CancelledError")) {
+      return undefined;
+    }
+    return error;
+  }, [stream.error]);
+
   return {
     stream,
     todos: stream.values.todos ?? [],
@@ -702,7 +711,7 @@ export function useChat({
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,
     getMessagesMetadata: stream.getMessagesMetadata,
-    error: stream.error as string | undefined,
+    error: latestError,
     branch: stream.branch,
     setBranch: stream.setBranch,
     history: stream.history,
