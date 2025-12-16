@@ -23,7 +23,8 @@ export function useProcessedMessages(
   getMessagesMetadata?: (
     message: Message,
     index?: number
-  ) => MessageMetadata<StateType> | undefined
+  ) => MessageMetadata<StateType> | undefined,
+  cachedMetadataMap?: Map<string, MessageMetadata<StateType> | null>
 ): ProcessedMessage[] {
   return useMemo(() => {
     /*
@@ -37,9 +38,17 @@ export function useProcessedMessages(
     const subAgentMessagesMap = new Map<string, Message[]>();
     const subAgentMessageIds = new Set<string>();
 
-    if (getMessagesMetadata) {
+    if (getMessagesMetadata || cachedMetadataMap) {
       messages.forEach((message: Message, index: number) => {
-        const metadata = getMessagesMetadata(message, index);
+        // Priority: use cached metadata if available, otherwise fetch from getMessagesMetadata
+        let metadata: MessageMetadata<StateType> | undefined | null;
+        if (cachedMetadataMap && message.id) {
+          metadata = cachedMetadataMap.get(message.id);
+        }
+        if (!metadata && getMessagesMetadata) {
+          metadata = getMessagesMetadata(message, index);
+        }
+
         const toolCallId = metadata?.streamMetadata?.tool_call_id as
           | string
           | undefined;
@@ -176,5 +185,5 @@ export function useProcessedMessages(
         showAvatar: data.message.type !== prevMessage?.type,
       };
     });
-  }, [messages, interrupt, getMessagesMetadata]);
+  }, [messages, interrupt, getMessagesMetadata, cachedMetadataMap]);
 }

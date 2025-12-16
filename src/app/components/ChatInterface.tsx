@@ -47,6 +47,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     interrupt,
     error,
     syncStatus,
+    metadataMap,
     getMessagesMetadata,
     sendMessage,
     stopStream,
@@ -89,7 +90,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const processedMessages = useProcessedMessages(
     messages,
     interrupt,
-    getMessagesMetadata
+    getMessagesMetadata,
+    metadataMap
   );
 
   // Parse out any action requests or review configs from the interrupt

@@ -91,9 +91,15 @@ export function useChat({
   // Use persisted messages to maintain continuity during interrupt/history refetch
   const {
     messages: persistedMessages,
+    metadataMap,
     cacheOnlyMessageIds,
     syncStatus,
-  } = usePersistedMessages(threadId, stream.messages, stream.isLoading);
+  } = usePersistedMessages(
+    threadId,
+    stream.messages,
+    stream.isLoading,
+    stream.getMessagesMetadata
+  );
 
   // Compute branch information from experimental_branchTree
   // Parse experimental_branchTree for advanced branch management
@@ -706,6 +712,7 @@ export function useChat({
     ui: stream.values.ui,
     setFiles,
     messages: persistedMessages,
+    metadataMap, // Expose cached metadata map for subagent messages
     syncStatus, // Expose sync status for UI indicators
     isLoading: stream.isLoading,
     isThreadLoading: stream.isThreadLoading,

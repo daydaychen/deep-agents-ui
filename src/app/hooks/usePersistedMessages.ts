@@ -1,16 +1,18 @@
 "use client";
 
 import { Message } from "@langchain/langgraph-sdk";
+import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const DB_NAME = "deep-agents-ui";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // 升级版本以支持 metadata 字段
 const STORE_NAME = "messages";
 
 interface PersistedMessage {
   threadId: string;
   messageId: string;
   message: Message;
+  metadata: MessageMetadata<any> | null; // 新增：缓存 metadata（特别是 streamMetadata.tool_call_id）
   timestamp: number;
   index: number; // 添加索引字段以保持顺序
 }
@@ -25,16 +27,24 @@ type SyncStatus = "idle" | "syncing" | "synced";
  * @param threadId - Current thread ID (null means no persistence)
  * @param streamMessages - Messages from the stream (server source of truth)
  * @param isLoading - Whether the stream is currently loading (true during streaming)
- * @returns Merged messages, cache-only message IDs, and sync status
+ * @param getMessagesMetadata - Function to get metadata for a message (needed to identify subagent messages)
+ * @returns Merged messages, metadata map, cache-only message IDs, and sync status
  */
 export function usePersistedMessages(
   threadId: string | null,
   streamMessages: Message[],
-  isLoading: boolean
+  isLoading: boolean,
+  getMessagesMetadata?: (
+    message: Message,
+    index?: number
+  ) => MessageMetadata<any> | undefined
 ) {
   const dbRef = useRef<IDBDatabase | null>(null);
   const dbReadyPromiseRef = useRef<Promise<IDBDatabase | null> | null>(null);
   const [mergedMessages, setMergedMessages] = useState<Message[]>([]);
+  const [metadataMap, setMetadataMap] = useState<
+    Map<string, MessageMetadata<any> | null>
+  >(new Map());
   const [cacheOnlyMessageIds, setCacheOnlyMessageIds] = useState<Set<string>>(
     new Set()
   );
@@ -113,10 +123,16 @@ export function usePersistedMessages(
           const message = messages[i];
           if (!message.id) continue;
 
+          // 获取并保存 metadata，特别是 streamMetadata.tool_call_id
+          const metadata = getMessagesMetadata
+            ? getMessagesMetadata(message, i)
+            : null;
+
           const persistedMessage: PersistedMessage = {
             threadId,
             messageId: message.id,
             message,
+            metadata: metadata || null, // 保存 metadata
             timestamp: now,
             index: i, // 保存消息在数组中的索引
           };
@@ -132,19 +148,22 @@ export function usePersistedMessages(
         console.error("Failed to save messages to IndexedDB:", error);
       }
     },
-    [threadId]
+    [threadId, getMessagesMetadata]
   );
 
   // Load messages from IndexedDB
-  const loadMessages = useCallback(async (): Promise<Message[]> => {
-    if (!threadId) return [];
+  const loadMessages = useCallback(async (): Promise<{
+    messages: Message[];
+    metadataMap: Map<string, MessageMetadata<any> | null>;
+  }> => {
+    if (!threadId) return { messages: [], metadataMap: new Map() };
 
     // Wait for DB to be ready if it's still initializing
     if (dbReadyPromiseRef.current) {
       await dbReadyPromiseRef.current;
     }
 
-    if (!dbRef.current) return [];
+    if (!dbRef.current) return { messages: [], metadataMap: new Map() };
 
     try {
       const transaction = dbRef.current.transaction([STORE_NAME], "readonly");
@@ -169,18 +188,35 @@ export function usePersistedMessages(
         const indexB = b.index ?? 0;
         return indexA - indexB;
       });
-      return result.map((pm) => pm.message);
+
+      // 构建 metadata map
+      const loadedMetadataMap = new Map<string, MessageMetadata<any> | null>();
+      result.forEach((pm) => {
+        if (pm.message.id && pm.metadata) {
+          loadedMetadataMap.set(pm.message.id, pm.metadata);
+        }
+      });
+
+      return {
+        messages: result.map((pm) => pm.message),
+        metadataMap: loadedMetadataMap,
+      };
     } catch (error) {
       console.error("Failed to load messages from IndexedDB:", error);
-      return [];
+      return { messages: [], metadataMap: new Map() };
     }
   }, [threadId]);
 
   // Merge server messages with cached messages
   const mergeWithHistory = (
     serverMessages: Message[],
-    cachedMessages: Message[]
-  ): { messages: Message[]; cacheOnlyMessageIds: Set<string> } => {
+    cachedMessages: Message[],
+    cachedMetadataMap: Map<string, MessageMetadata<any> | null>
+  ): {
+    messages: Message[];
+    metadataMap: Map<string, MessageMetadata<any> | null>;
+    cacheOnlyMessageIds: Set<string>;
+  } => {
     const serverMessageMap = new Map(
       serverMessages.map((msg) => [msg.id, msg])
     );
@@ -190,6 +226,7 @@ export function usePersistedMessages(
       string,
       { message: Message; serverIndex: number; cachedIndex: number }
     >();
+    const mergedMetadataMap = new Map<string, MessageMetadata<any> | null>();
 
     // Add server messages (source of truth)
     serverMessages.forEach((msg, index) => {
@@ -199,10 +236,11 @@ export function usePersistedMessages(
           serverIndex: index,
           cachedIndex: -1,
         });
+        // Server messages don't have cached metadata yet (will be added on next save)
       }
     });
 
-    // Add cache-only messages (not yet in server history)
+    // Add cache-only messages (not yet in server history) and their metadata
     cachedMessages.forEach((msg, index) => {
       if (msg.id && !serverMessageMap.has(msg.id)) {
         mergedMap.set(msg.id, {
@@ -211,6 +249,12 @@ export function usePersistedMessages(
           cachedIndex: index,
         });
         cacheOnlyIds.add(msg.id);
+
+        // Preserve cached metadata for cache-only messages (especially subagent messages)
+        const metadata = cachedMetadataMap.get(msg.id);
+        if (metadata) {
+          mergedMetadataMap.set(msg.id, metadata);
+        }
       }
     });
 
@@ -229,6 +273,7 @@ export function usePersistedMessages(
 
     return {
       messages: merged.map((item) => item.message),
+      metadataMap: mergedMetadataMap,
       cacheOnlyMessageIds: cacheOnlyIds,
     };
   };
@@ -242,10 +287,12 @@ export function usePersistedMessages(
     }
 
     const loadCacheImmediately = async () => {
-      const cachedMessages = await loadMessages();
+      const { messages: cachedMessages, metadataMap: cachedMetadataMap } =
+        await loadMessages();
       if (cachedMessages.length > 0) {
         // Show cached data immediately
         setMergedMessages(cachedMessages);
+        setMetadataMap(cachedMetadataMap);
         setCacheOnlyMessageIds(
           new Set(
             cachedMessages.map((msg) => msg.id).filter((id) => id != null)
@@ -288,17 +335,21 @@ export function usePersistedMessages(
           // During streaming, show stream messages directly
           setMergedMessages(streamMessages);
           setCacheOnlyMessageIds(new Set()); // No cache-only messages during streaming
+          // Clear metadata map during streaming (will be rebuilt when stream ends)
+          setMetadataMap(new Map());
           pendingSaveMessagesRef.current = streamMessages;
           return;
         }
 
         // Only merge with cache when stream is idle (isLoading === false)
-        const cachedMessages = await loadMessages();
+        const { messages: cachedMessages, metadataMap: cachedMetadataMap } =
+          await loadMessages();
         const streamSnapshot = [...streamMessages];
-        const { messages, cacheOnlyMessageIds: cacheIds } = mergeWithHistory(
-          streamSnapshot,
-          cachedMessages
-        );
+        const {
+          messages,
+          metadataMap: mergedMetadata,
+          cacheOnlyMessageIds: cacheIds,
+        } = mergeWithHistory(streamSnapshot, cachedMessages, cachedMetadataMap);
 
         // Check if data is consistent with current UI
         const isDataConsistent =
@@ -308,14 +359,19 @@ export function usePersistedMessages(
         if (!isDataConsistent) {
           // Data changed - update UI
           setMergedMessages(messages);
+          setMetadataMap(mergedMetadata);
           setCacheOnlyMessageIds(cacheIds);
         } else {
-          // Data consistent - only update cache-only IDs if needed
+          // Data consistent - only update cache-only IDs and metadata if needed
           const idsChanged =
             cacheOnlyMessageIds.size !== cacheIds.size ||
             Array.from(cacheIds).some((id) => !cacheOnlyMessageIds.has(id));
           if (idsChanged) {
             setCacheOnlyMessageIds(cacheIds);
+          }
+          // Update metadata map if it changed
+          if (mergedMetadata.size !== metadataMap.size) {
+            setMetadataMap(mergedMetadata);
           }
         }
 
@@ -336,6 +392,7 @@ export function usePersistedMessages(
     threadId,
     cacheOnlyMessageIds,
     mergedMessages,
+    metadataMap,
     loadMessages,
     isLoading,
   ]);
@@ -366,6 +423,7 @@ export function usePersistedMessages(
     previousIsLoadingRef.current = isLoading;
     pendingSaveMessagesRef.current = [];
     setMergedMessages([]);
+    setMetadataMap(new Map());
     setCacheOnlyMessageIds(new Set());
     setSyncStatus("idle");
   }, [threadId, isLoading]);
@@ -377,6 +435,7 @@ export function usePersistedMessages(
       : mergedMessages.length > 0
       ? mergedMessages
       : streamMessages,
+    metadataMap: !threadId ? new Map() : metadataMap,
     cacheOnlyMessageIds: !threadId ? new Set() : cacheOnlyMessageIds,
     syncStatus: !threadId ? "idle" : syncStatus,
   };
