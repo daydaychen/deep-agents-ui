@@ -121,7 +121,7 @@ function EmptyState() {
 }
 
 interface ThreadListProps {
-  onThreadSelect: (id: string) => void;
+  onThreadSelect: (id: string | null) => void;
   onMutateReady?: (mutate: () => void) => void;
   onClose?: () => void;
   onInterruptCountChange?: (count: number) => void;
@@ -138,6 +138,10 @@ export function ThreadList({
 
   const handleDeleteThread = async (threadId: string) => {
     try {
+      if (currentThreadId === threadId) {
+        setCurrentThreadId(null);
+      }
+
       await deleteThread({ threadId });
       // Trigger revalidation to update the list
       if (mutateFn) {
@@ -162,7 +166,7 @@ export function ThreadList({
       console.error("Failed to mark thread as resolved:", error);
     }
   };
-  const [currentThreadId] = useQueryState("threadId");
+  const [currentThreadId, setCurrentThreadId] = useQueryState("threadId");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const threads = useThreads({
