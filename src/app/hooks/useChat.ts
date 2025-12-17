@@ -277,12 +277,13 @@ export function useChat({
   );
 
   const editMessage = useCallback(
-    (message: Message, index: number) => {
+    async (message: Message, index: number) => {
       // Find the actual index of this message in stream.messages by ID
       const actualIndex = stream.messages.findIndex(
         (msg) => msg.id === message.id
       );
       const indexToUse = actualIndex !== -1 ? actualIndex : index;
+      const isFirstMessage = indexToUse === 0;
 
       const metadata = stream.getMessagesMetadata(message, indexToUse);
       if (!metadata?.firstSeenState?.parent_checkpoint) {
@@ -290,13 +291,20 @@ export function useChat({
         return;
       }
 
-      // Submit the edited message from the parent checkpoint
-      // This creates a new branch with the edited message
-      stream.submit(
-        { messages: [message] },
-        {
-          config: activeAssistant?.config,
+      if (isFirstMessage) {
+        const newConfig = await client.threads.updateState(threadId!, {
+          values: {
+            messages: [message],
+          },
           checkpoint: metadata.firstSeenState.parent_checkpoint,
+        });
+        stream.submit(undefined, {
+          config: activeAssistant?.config,
+          checkpoint: {
+            checkpoint_id: newConfig?.configurable?.checkpoint_id,
+            checkpoint_ns: "",
+            checkpoint_map: {},
+          },
           metadata: {
             langfuse_session_id: sessionId,
             langfuse_user_id: config.userId || "user",
@@ -304,10 +312,32 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-        }
-      );
+        });
+      } else {
+        stream.submit(
+          { messages: [message] },
+          {
+            config: activeAssistant?.config,
+            checkpoint: metadata.firstSeenState.parent_checkpoint,
+            metadata: {
+              langfuse_session_id: sessionId,
+              langfuse_user_id: config.userId || "user",
+            },
+            streamMode: ["messages", "updates"],
+            streamSubgraphs: true,
+            streamResumable: true,
+          }
+        );
+      }
     },
-    [stream, activeAssistant?.config, sessionId, config.userId]
+    [
+      stream,
+      client.threads,
+      threadId,
+      activeAssistant?.config,
+      sessionId,
+      config.userId,
+    ]
   );
 
   // Helper function to get branch information for a specific message
@@ -338,7 +368,8 @@ export function useChat({
       // User messages should only support editing, not retrying
       const hasParentCheckpoint = !!metadata?.firstSeenState?.parent_checkpoint;
       const isUserMessage = message.type === "human";
-      const canRetry = hasParentCheckpoint && !!retryFromMessage && !isUserMessage;
+      const canRetry =
+        hasParentCheckpoint && !!retryFromMessage && !isUserMessage;
 
       return {
         branchOptions,

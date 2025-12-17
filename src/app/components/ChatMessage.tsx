@@ -31,7 +31,6 @@ interface ChatMessageProps {
     index?: number
   ) => MessageMetadata<StateType> | undefined;
   setBranch?: (branch: string) => void;
-  onEditMessage?: (message: Message, index: number) => void;
   graphId?: string;
 }
 

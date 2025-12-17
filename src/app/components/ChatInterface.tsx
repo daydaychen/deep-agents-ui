@@ -172,7 +172,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                       onRetry={retryFromMessage}
                       getMessagesMetadata={getMessagesMetadata}
                       setBranch={setBranch}
-                      onEditMessage={editMessage}
                       graphId={assistant?.graph_id}
                     />
                     {/* Message Toolbar - placed below the message, aligned with message type */}
