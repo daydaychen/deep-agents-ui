@@ -11,7 +11,7 @@ import {
   extractSubAgentContent,
 } from "@/app/utils/utils";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface SubAgentDetailsProps {
   subAgent: SubAgent;
@@ -43,6 +43,7 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
 
     // State to control messages section expansion
     const [isMessagesExpanded, setIsMessagesExpanded] = useState(true);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     // Auto-collapse messages when output appears
     useEffect(() => {
@@ -50,6 +51,14 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
         setIsMessagesExpanded(false);
       }
     }, [subAgent.output]);
+
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() => {
+      if (isMessagesExpanded && messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop =
+          messagesContainerRef.current.scrollHeight;
+      }
+    }, [processedSubAgentMessages, isMessagesExpanded]);
 
     if (hasInterrupt) {
       return (
@@ -65,7 +74,7 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
     const hasMessages = subAgent.messages && subAgent.messages.length > 0;
 
     return (
-      <div className="border-border-light rounded-md border bg-surface p-4 shadow-sm">
+      <div className="border-border-light bg-surface rounded-md border p-4 shadow-sm">
         <h4 className="text-primary/70 mb-2 text-xs font-semibold uppercase tracking-wider">
           Input
         </h4>
@@ -100,7 +109,10 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
               </button>
             </div>
             {isMessagesExpanded && (
-              <div className="border-border-light mb-4 max-h-96 space-y-4 overflow-y-auto rounded border bg-muted/30 p-4">
+              <div
+                ref={messagesContainerRef}
+                className="border-border-light mb-4 max-h-96 space-y-4 overflow-y-auto rounded border bg-muted/30 p-4"
+              >
                 {processedSubAgentMessages.map((data, index) => {
                   const isUser = data.message.type === "human";
                   const messageContent = extractStringFromMessageContent(
