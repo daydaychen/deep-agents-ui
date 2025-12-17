@@ -210,9 +210,7 @@ export function useChat({
         langfuse_user_id: config.userId || "user",
       },
     });
-    // Update thread list when marking thread as resolved
-    onHistoryRevalidate?.();
-  }, [stream, sessionId, config.userId, onHistoryRevalidate]);
+  }, [stream, sessionId, config.userId]);
 
   const resumeInterrupt = useCallback(
     (value: any) => {
@@ -235,18 +233,30 @@ export function useChat({
   }, [stream]);
 
   const retryFromMessage = useCallback(
-    (message: Message, index: number) => {
-      const metadata = stream.getMessagesMetadata(message, index);
+    async (message: Message, index: number) => {
+      const actualIndex = stream.messages.findIndex(
+        (msg) => msg.id === message.id
+      );
+      const indexToUse = actualIndex !== -1 ? actualIndex : index;
+
+      const metadata = stream.getMessagesMetadata(message, indexToUse);
       if (!metadata?.firstSeenState?.parent_checkpoint) {
         console.warn("No parent checkpoint found for message", message.id);
         return;
       }
 
-      // Submit from the parent checkpoint to re-execute from that point
-      // This creates a new branch in the conversation
+      const newConfig = await client.threads.updateState(threadId!, {
+        values: null,
+        checkpoint: metadata.firstSeenState.parent_checkpoint,
+      });
+
       stream.submit(undefined, {
         config: activeAssistant?.config,
-        checkpoint: metadata.firstSeenState.parent_checkpoint,
+        checkpoint: {
+          checkpoint_id: newConfig?.configurable?.checkpoint_id,
+          checkpoint_ns: "",
+          checkpoint_map: {},
+        },
         metadata: {
           langfuse_session_id: sessionId,
           langfuse_user_id: config.userId || "user",
@@ -255,22 +265,26 @@ export function useChat({
         streamSubgraphs: true,
         streamResumable: true,
       });
-
-      // Update thread list when retrying
-      onHistoryRevalidate?.();
     },
     [
       stream,
+      client.threads,
+      threadId,
       activeAssistant?.config,
       sessionId,
       config.userId,
-      onHistoryRevalidate,
     ]
   );
 
   const editMessage = useCallback(
     (message: Message, index: number) => {
-      const metadata = stream.getMessagesMetadata(message, index);
+      // Find the actual index of this message in stream.messages by ID
+      const actualIndex = stream.messages.findIndex(
+        (msg) => msg.id === message.id
+      );
+      const indexToUse = actualIndex !== -1 ? actualIndex : index;
+
+      const metadata = stream.getMessagesMetadata(message, indexToUse);
       if (!metadata?.firstSeenState?.parent_checkpoint) {
         console.warn("No parent checkpoint found for message", message.id);
         return;
@@ -292,24 +306,21 @@ export function useChat({
           streamResumable: true,
         }
       );
-
-      // Update thread list when editing
-      onHistoryRevalidate?.();
     },
-    [
-      stream,
-      activeAssistant?.config,
-      sessionId,
-      config.userId,
-      onHistoryRevalidate,
-    ]
+    [stream, activeAssistant?.config, sessionId, config.userId]
   );
 
   // Helper function to get branch information for a specific message
   const getMessageBranchInfo = useCallback(
     (message: Message, index: number) => {
+      // Find the actual index of this message in stream.messages by ID
+      const actualIndex = stream.messages.findIndex(
+        (msg) => msg.id === message.id
+      );
+      const indexToUse = actualIndex !== -1 ? actualIndex : index;
+
       // First try to get metadata from stream, then fallback to cached metadata
-      const streamMetadata = stream.getMessagesMetadata?.(message, index);
+      const streamMetadata = stream.getMessagesMetadata?.(message, indexToUse);
       const cachedMetadata = message.id ? metadataMap.get(message.id) : null;
       const metadata = streamMetadata || cachedMetadata;
 
