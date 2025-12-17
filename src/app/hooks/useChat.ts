@@ -335,8 +335,10 @@ export function useChat({
         : 0;
 
       // Determine if this message can be retried
+      // User messages should only support editing, not retrying
       const hasParentCheckpoint = !!metadata?.firstSeenState?.parent_checkpoint;
-      const canRetry = hasParentCheckpoint && !!retryFromMessage;
+      const isUserMessage = message.type === "human";
+      const canRetry = hasParentCheckpoint && !!retryFromMessage && !isUserMessage;
 
       return {
         branchOptions,
