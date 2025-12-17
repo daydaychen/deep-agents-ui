@@ -2,7 +2,6 @@
 
 import { ChatMessage } from "@/app/components/ChatMessage";
 import { MessageToolbar } from "@/app/components/MessageToolbar";
-import { SyncStatusBanner } from "@/app/components/SyncStatusBanner";
 import { ChatInput } from "@/app/components/chat/ChatInput";
 import { TasksSection } from "@/app/components/chat/TasksSection";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
@@ -13,13 +12,7 @@ import { cn } from "@/lib/utils";
 import { useChatContext } from "@/providers/ChatProvider";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { AlertCircle } from "lucide-react";
-import React, {
-  FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { FormEvent, useCallback, useMemo, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
 interface ChatInterfaceProps {
@@ -28,7 +21,6 @@ interface ChatInterfaceProps {
 
 export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
-  const [showSyncedMessage, setShowSyncedMessage] = useState(false);
   const [input, setInput] = useState("");
   const { scrollRef, contentRef } = useStickToBottom({
     initial: "instant",
@@ -46,8 +38,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     isThreadLoading,
     interrupt,
     error,
-    syncStatus,
-    metadataMap,
+    subagentMessagesMap,
     getMessagesMetadata,
     sendMessage,
     stopStream,
@@ -73,26 +64,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     [input, isLoading, sendMessage, setInput, submitDisabled]
   );
 
-  // Auto-hide synced message after 3 seconds
-  useEffect(() => {
-    if (syncStatus === "synced") {
-      setShowSyncedMessage(true);
-      const timer = setTimeout(() => {
-        setShowSyncedMessage(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowSyncedMessage(false);
-    }
-  }, [syncStatus]);
-
   // Use the extracted hook for processing messages
-  const processedMessages = useProcessedMessages(
-    messages,
-    interrupt,
-    getMessagesMetadata,
-    metadataMap
-  );
+  const processedMessages = useProcessedMessages(messages, interrupt);
 
   // Parse out any action requests or review configs from the interrupt
   const actionRequestsMap: Map<string, ActionRequest> | null = useMemo(() => {
@@ -113,13 +86,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
-      <div className="absolute left-0 right-0 top-0 z-10">
-        <SyncStatusBanner
-          status={syncStatus}
-          showSynced={showSyncedMessage}
-        />
-      </div>
-
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
         ref={scrollRef}
@@ -173,6 +139,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                       getMessagesMetadata={getMessagesMetadata}
                       setBranch={setBranch}
                       graphId={assistant?.graph_id}
+                      subagentMessagesMap={subagentMessagesMap}
                     />
                     {/* Message Toolbar - placed below the message, aligned with message type */}
                     <div
@@ -203,7 +170,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                                   editMessage(editedMessage, index)
                               : undefined
                           }
-                          showEdit={!!editMessage && isUser}
+                          showEdit={false}
                           branchOptions={branchOptions}
                           currentBranchIndex={currentBranchIndex}
                           onSelectBranch={setBranch}

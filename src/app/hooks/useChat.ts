@@ -88,11 +88,8 @@ export function useChat({
     thread: thread,
   });
 
-  const {
-    messages: persistedMessages,
-    metadataMap,
-    syncStatus,
-  } = usePersistedMessages(
+  // 消息拆分和缓存 - 返回 mainMessages 和 subagentMessagesMap
+  const { mainMessages, subagentMessagesMap } = usePersistedMessages(
     threadId,
     stream.messages,
     stream.isLoading,
@@ -349,10 +346,7 @@ export function useChat({
       );
       const indexToUse = actualIndex !== -1 ? actualIndex : index;
 
-      // First try to get metadata from stream, then fallback to cached metadata
-      const streamMetadata = stream.getMessagesMetadata?.(message, indexToUse);
-      const cachedMetadata = message.id ? metadataMap.get(message.id) : null;
-      const metadata = streamMetadata || cachedMetadata;
+      const metadata = stream.getMessagesMetadata?.(message, indexToUse);
 
       // Get branch options from metadata
       const branchOptions =
@@ -377,7 +371,7 @@ export function useChat({
         canRetry,
       };
     },
-    [stream, retryFromMessage, metadataMap]
+    [stream, retryFromMessage]
   );
 
   const latestError = useMemo(() => {
@@ -396,9 +390,8 @@ export function useChat({
     email: stream.values.email,
     ui: stream.values.ui,
     setFiles,
-    messages: persistedMessages,
-    metadataMap,
-    syncStatus,
+    messages: mainMessages,
+    subagentMessagesMap,
     isLoading: stream.isLoading,
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,

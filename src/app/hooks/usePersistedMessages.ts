@@ -2,33 +2,43 @@
 
 import { Message } from "@langchain/langgraph-sdk";
 import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const DB_NAME = "deep-agents-ui";
-const DB_VERSION = 2; // 升级版本以支持 metadata 字段
-const STORE_NAME = "messages";
+const DB_VERSION = 3;
+const STORE_NAME = "subagent_messages";
 
-interface PersistedMessage {
+// 批量写入的间隔时间（毫秒）
+const BATCH_WRITE_INTERVAL = 500;
+
+interface PersistedSubagentMessage {
   threadId: string;
   messageId: string;
+  toolCallId: string;
   message: Message;
-  metadata: MessageMetadata<any> | null; // 新增：缓存 metadata（特别是 streamMetadata.tool_call_id）
   timestamp: number;
-  index: number; // 添加索引字段以保持顺序
+  index: number;
 }
 
-type SyncStatus = "idle" | "syncing" | "synced";
+// 待写入的消息
+interface PendingMessage {
+  message: Message;
+  toolCallId: string;
+  index: number;
+}
 
 /**
- * Custom hook to persist messages to IndexedDB
- * This ensures streaming messages (including subagent messages and tool calls)
- * are not lost when interrupts trigger history refetch
+ * Custom hook to split messages and persist subagent messages to IndexedDB
  *
- * @param threadId - Current thread ID (null means no persistence)
- * @param streamMessages - Messages from the stream (server source of truth)
- * @param isLoading - Whether the stream is currently loading (true during streaming)
- * @param getMessagesMetadata - Function to get metadata for a message (needed to identify subagent messages)
- * @returns Merged messages, metadata map, cache-only message IDs, and sync status
+ * 功能：
+ * 1. 拆分 streamMessages 为 mainMessages 和 subagentMessagesMap
+ * 2. 缓存 subagent 消息到 IndexedDB，用于页面刷新后恢复
+ * 3. 合并 stream 中的 subagent 消息和缓存的消息
+ *
+ * 性能优化：
+ * - 使用 useMemo 计算拆分结果，只在 streamMessages 变化时重新计算
+ * - 异步批量写入 IndexedDB，不阻塞 UI
+ * - 使用 ref 跟踪已处理的消息，避免重复处理
  */
 export function usePersistedMessages(
   threadId: string | null,
@@ -41,19 +51,90 @@ export function usePersistedMessages(
 ) {
   const dbRef = useRef<IDBDatabase | null>(null);
   const dbReadyPromiseRef = useRef<Promise<IDBDatabase | null> | null>(null);
-  const [mergedMessages, setMergedMessages] = useState<Message[]>([]);
-  const [metadataMap, setMetadataMap] = useState<
-    Map<string, MessageMetadata<any> | null>
-  >(new Map());
-  const [cacheOnlyMessageIds, setCacheOnlyMessageIds] = useState<Set<string>>(
-    new Set()
+
+  // 从 IndexedDB 加载的缓存消息
+  const [cachedMessages, setCachedMessages] = useState<Map<string, Message[]>>(
+    new Map()
   );
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
-  const hasCacheLoadedRef = useRef(false); // Track if cache was ever loaded
-  const isInitialLoadRef = useRef(true);
-  const lastStreamMessagesRef = useRef<Message[]>([]);
-  const previousIsLoadingRef = useRef<boolean>(isLoading); // Track previous isLoading state
-  const pendingSaveMessagesRef = useRef<Message[]>([]); // Track messages to save when stream ends
+
+  // 性能优化：使用 ref 跟踪状态
+  const hasCacheLoadedRef = useRef(false);
+  const lastProcessedMessageIdsRef = useRef<Set<string>>(new Set());
+  const previousIsLoadingRef = useRef<boolean>(isLoading);
+  const knownToolCallIdsRef = useRef<Set<string>>(new Set());
+
+  // 批量写入相关
+  const pendingMessagesRef = useRef<PendingMessage[]>([]);
+  const batchWriteTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ============ 消息拆分逻辑 (useMemo，同步计算) ============
+
+  // 拆分 streamMessages 为 mainMessages 和 streamSubagentMap
+  const { mainMessages, streamSubagentMap, subagentMessageIds } =
+    useMemo(() => {
+      const main: Message[] = [];
+      const subagentMap = new Map<string, Message[]>();
+      const subagentIds = new Set<string>();
+
+      if (!getMessagesMetadata) {
+        return {
+          mainMessages: streamMessages,
+          streamSubagentMap: subagentMap,
+          subagentMessageIds: subagentIds,
+        };
+      }
+
+      streamMessages.forEach((message, index) => {
+        const metadata = getMessagesMetadata(message, index);
+        const toolCallId = metadata?.streamMetadata?.tool_call_id as
+          | string
+          | undefined;
+
+        if (toolCallId) {
+          // subagent 消息
+          if (!subagentMap.has(toolCallId)) {
+            subagentMap.set(toolCallId, []);
+          }
+          subagentMap.get(toolCallId)!.push(message);
+          if (message.id) {
+            subagentIds.add(message.id);
+          }
+        } else {
+          // 主消息
+          main.push(message);
+        }
+      });
+
+      return {
+        mainMessages: main,
+        streamSubagentMap: subagentMap,
+        subagentMessageIds: subagentIds,
+      };
+    }, [streamMessages, getMessagesMetadata]);
+
+  // 合并 stream 中的 subagent 消息和缓存的消息
+  const subagentMessagesMap = useMemo(() => {
+    const merged = new Map<string, Message[]>();
+
+    // 先添加缓存的消息
+    cachedMessages.forEach((msgs, toolCallId) => {
+      merged.set(toolCallId, [...msgs]);
+    });
+
+    // 再添加 stream 中的消息（去重）
+    streamSubagentMap.forEach((msgs, toolCallId) => {
+      const existing = merged.get(toolCallId) || [];
+      const existingIds = new Set(existing.map((m) => m.id));
+      const newMsgs = msgs.filter((m) => !existingIds.has(m.id));
+      if (newMsgs.length > 0 || existing.length === 0) {
+        merged.set(toolCallId, [...existing, ...newMsgs]);
+      }
+    });
+
+    return merged;
+  }, [cachedMessages, streamSubagentMap]);
+
+  // ============ IndexedDB 操作 (异步，不阻塞 UI) ============
 
   // Initialize IndexedDB
   useEffect(() => {
@@ -62,7 +143,6 @@ export function usePersistedMessages(
       return;
     }
 
-    // Create a promise that resolves when DB is ready
     const openDB = (): Promise<IDBDatabase> => {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -72,11 +152,17 @@ export function usePersistedMessages(
 
         request.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result;
+          if (db.objectStoreNames.contains("messages")) {
+            db.deleteObjectStore("messages");
+          }
           if (!db.objectStoreNames.contains(STORE_NAME)) {
             const objectStore = db.createObjectStore(STORE_NAME, {
               keyPath: ["threadId", "messageId"],
             });
             objectStore.createIndex("threadId", "threadId", { unique: false });
+            objectStore.createIndex("toolCallId", ["threadId", "toolCallId"], {
+              unique: false,
+            });
             objectStore.createIndex("timestamp", "timestamp", {
               unique: false,
             });
@@ -106,10 +192,10 @@ export function usePersistedMessages(
     };
   }, [threadId]);
 
-  // Save messages to IndexedDB
-  const saveMessages = useCallback(
-    async (messages: Message[]) => {
-      if (!threadId || !dbRef.current) return;
+  // 批量保存消息到 IndexedDB
+  const batchSaveToIndexedDB = useCallback(
+    async (messages: PendingMessage[]) => {
+      if (!threadId || !dbRef.current || messages.length === 0) return;
 
       try {
         const transaction = dbRef.current.transaction(
@@ -119,22 +205,16 @@ export function usePersistedMessages(
         const store = transaction.objectStore(STORE_NAME);
         const now = Date.now();
 
-        for (let i = 0; i < messages.length; i++) {
-          const message = messages[i];
+        for (const { message, toolCallId, index } of messages) {
           if (!message.id) continue;
 
-          // 获取并保存 metadata，特别是 streamMetadata.tool_call_id
-          const metadata = getMessagesMetadata
-            ? getMessagesMetadata(message, i)
-            : null;
-
-          const persistedMessage: PersistedMessage = {
+          const persistedMessage: PersistedSubagentMessage = {
             threadId,
             messageId: message.id,
+            toolCallId,
             message,
-            metadata: metadata || null, // 保存 metadata
             timestamp: now,
-            index: i, // 保存消息在数组中的索引
+            index,
           };
 
           store.put(persistedMessage);
@@ -145,25 +225,23 @@ export function usePersistedMessages(
           transaction.onerror = () => reject(transaction.error);
         });
       } catch (error) {
-        console.error("Failed to save messages to IndexedDB:", error);
+        console.error("Failed to batch save subagent messages:", error);
       }
     },
-    [threadId, getMessagesMetadata]
+    [threadId]
   );
 
-  // Load messages from IndexedDB
-  const loadMessages = useCallback(async (): Promise<{
-    messages: Message[];
-    metadataMap: Map<string, MessageMetadata<any> | null>;
-  }> => {
-    if (!threadId) return { messages: [], metadataMap: new Map() };
+  // 加载 subagent 消息
+  const loadSubagentMessages = useCallback(async (): Promise<
+    Map<string, Message[]>
+  > => {
+    if (!threadId) return new Map();
 
-    // Wait for DB to be ready if it's still initializing
     if (dbReadyPromiseRef.current) {
       await dbReadyPromiseRef.current;
     }
 
-    if (!dbRef.current) return { messages: [], metadataMap: new Map() };
+    if (!dbRef.current) return new Map();
 
     try {
       const transaction = dbRef.current.transaction([STORE_NAME], "readonly");
@@ -171,280 +249,207 @@ export function usePersistedMessages(
       const index = store.index("threadId");
       const request = index.getAll(threadId);
 
-      const result = await new Promise<PersistedMessage[]>(
+      const result = await new Promise<PersistedSubagentMessage[]>(
         (resolve, reject) => {
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => reject(request.error);
         }
       );
 
-      // 先按时间戳排序，再按索引排序以保持原始顺序
+      const subagentMap = new Map<string, Message[]>();
+
       result.sort((a, b) => {
+        if (a.toolCallId !== b.toolCallId) {
+          return a.toolCallId.localeCompare(b.toolCallId);
+        }
         if (a.timestamp !== b.timestamp) {
           return a.timestamp - b.timestamp;
         }
-        // 如果索引存在则使用索引，否则视为相等
-        const indexA = a.index ?? 0;
-        const indexB = b.index ?? 0;
-        return indexA - indexB;
+        return (a.index ?? 0) - (b.index ?? 0);
       });
 
-      // 构建 metadata map
-      const loadedMetadataMap = new Map<string, MessageMetadata<any> | null>();
       result.forEach((pm) => {
-        if (pm.message.id && pm.metadata) {
-          loadedMetadataMap.set(pm.message.id, pm.metadata);
+        if (!subagentMap.has(pm.toolCallId)) {
+          subagentMap.set(pm.toolCallId, []);
         }
+        subagentMap.get(pm.toolCallId)!.push(pm.message);
+        knownToolCallIdsRef.current.add(pm.toolCallId);
       });
 
-      return {
-        messages: result.map((pm) => pm.message),
-        metadataMap: loadedMetadataMap,
-      };
+      return subagentMap;
     } catch (error) {
-      console.error("Failed to load messages from IndexedDB:", error);
-      return { messages: [], metadataMap: new Map() };
+      console.error("Failed to load subagent messages from IndexedDB:", error);
+      return new Map();
     }
   }, [threadId]);
 
-  const mergeWithHistory = useCallback(
-    (
-      serverMessages: Message[],
-      cachedMessages: Message[],
-      cachedMetadataMap: Map<string, MessageMetadata<any> | null>
-    ): {
-      messages: Message[];
-      metadataMap: Map<string, MessageMetadata<any> | null>;
-      cacheOnlyMessageIds: Set<string>;
-    } => {
-      // Server messages are the source of truth - they already contain only the current branch
-      const serverMessageIds = new Set(
-        serverMessages.map((msg) => msg.id).filter((id) => id != null)
-      );
+  // 清除指定 tool_call_id 的缓存
+  const clearSubagentCache = useCallback(
+    async (toolCallIds: string[]) => {
+      if (!threadId || !dbRef.current || toolCallIds.length === 0) return;
 
-      const cacheOnlyIds = new Set<string>();
-      const mergedMetadataMap = new Map<string, MessageMetadata<any> | null>();
-
-      // Get the checkpoint of the LAST server message - this is the current branch tip
-      // Only cache messages that are direct continuations of this tip should be merged
-      let lastServerCheckpointId: string | null = null;
-      if (getMessagesMetadata && serverMessages.length > 0) {
-        const lastMsg = serverMessages[serverMessages.length - 1];
-        const lastMetadata = getMessagesMetadata(
-          lastMsg,
-          serverMessages.length - 1
+      try {
+        const transaction = dbRef.current.transaction(
+          [STORE_NAME],
+          "readwrite"
         );
-        lastServerCheckpointId =
-          lastMetadata?.firstSeenState?.checkpoint?.checkpoint_id || null;
-      }
+        const store = transaction.objectStore(STORE_NAME);
+        const index = store.index("threadId");
+        const request = index.getAll(threadId);
 
-      // Find cache-only messages that are direct continuations of the current branch tip
-      const cacheOnlyMessages: Message[] = [];
-      cachedMessages.forEach((msg) => {
-        if (msg.id && !serverMessageIds.has(msg.id)) {
-          const cachedMetadata = cachedMetadataMap.get(msg.id);
-          const cachedParentCheckpoint =
-            cachedMetadata?.firstSeenState?.parent_checkpoint?.checkpoint_id;
-
-          // Only add cache message if:
-          // 1. We have a last server checkpoint to compare against
-          // 2. The cache message's PARENT checkpoint equals the last server checkpoint
-          //    (meaning this message is a direct child of the current branch tip)
-          if (
-            lastServerCheckpointId &&
-            cachedParentCheckpoint === lastServerCheckpointId
-          ) {
-            cacheOnlyMessages.push(msg);
-            cacheOnlyIds.add(msg.id);
-
-            if (cachedMetadata) {
-              mergedMetadataMap.set(msg.id, cachedMetadata);
-            }
+        const result = await new Promise<PersistedSubagentMessage[]>(
+          (resolve, reject) => {
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
           }
-          // If no server messages yet, don't add any cache messages
-          // (cache will be shown via the initial load effect)
-        }
-      });
+        );
 
-      // Return server messages followed by cache-only messages
-      return {
-        messages: [...serverMessages, ...cacheOnlyMessages],
-        metadataMap: mergedMetadataMap,
-        cacheOnlyMessageIds: cacheOnlyIds,
-      };
+        const toolCallIdSet = new Set(toolCallIds);
+        for (const pm of result) {
+          if (toolCallIdSet.has(pm.toolCallId)) {
+            store.delete([threadId, pm.messageId]);
+          }
+        }
+
+        await new Promise<void>((resolve, reject) => {
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+        });
+
+        toolCallIds.forEach((id) => knownToolCallIdsRef.current.delete(id));
+      } catch (error) {
+        console.error("Failed to clear subagent cache:", error);
+      }
     },
-    [getMessagesMetadata]
+    [threadId]
   );
 
-  // Priority 1: Load cache immediately when thread changes
-  // NOTE: We load ALL cached messages initially, but when server data arrives,
-  // it will be filtered to only show current branch messages
+  // ============ 缓存管理逻辑 ============
+
+  // 初始加载缓存
   useEffect(() => {
     if (!threadId) {
-      setSyncStatus("idle");
       hasCacheLoadedRef.current = false;
+      setCachedMessages(new Map());
       return;
     }
 
-    const loadCacheImmediately = async () => {
-      const { messages: cachedMessages, metadataMap: cachedMetadataMap } =
-        await loadMessages();
-      if (cachedMessages.length > 0) {
-        // Show cached data immediately (will be replaced by server data when available)
-        // Note: This may show all messages temporarily until server syncs and filters to current branch
-        setMergedMessages(cachedMessages);
-        setMetadataMap(cachedMetadataMap);
-        setCacheOnlyMessageIds(
-          new Set(
-            cachedMessages.map((msg) => msg.id).filter((id) => id != null)
-          )
-        );
-        // Mark as syncing (waiting for server data)
-        setSyncStatus("syncing");
-        hasCacheLoadedRef.current = true; // Cache was loaded
+    const loadCache = async () => {
+      const subagentMap = await loadSubagentMessages();
+      if (subagentMap.size > 0) {
+        setCachedMessages(subagentMap);
+        hasCacheLoadedRef.current = true;
       }
     };
 
-    loadCacheImmediately();
-  }, [loadMessages, threadId]);
+    loadCache();
+  }, [threadId, loadSubagentMessages]);
 
-  // Priority 2: Sync with server data when available
+  // 在 streaming 过程中收集新的 subagent 消息并异步写入缓存
   useEffect(() => {
-    // No persistence without threadId - skip state updates
-    if (!threadId) {
-      return;
+    if (!threadId || !isLoading || !getMessagesMetadata) return;
+
+    let hasNewMessages = false;
+
+    streamSubagentMap.forEach((msgs, toolCallId) => {
+      msgs.forEach((message, idx) => {
+        if (message.id && !lastProcessedMessageIdsRef.current.has(message.id)) {
+          lastProcessedMessageIdsRef.current.add(message.id);
+          knownToolCallIdsRef.current.add(toolCallId);
+          hasNewMessages = true;
+
+          pendingMessagesRef.current.push({
+            message,
+            toolCallId,
+            index: idx,
+          });
+        }
+      });
+    });
+
+    // 启动批量写入定时器
+    if (hasNewMessages && !batchWriteTimerRef.current) {
+      batchWriteTimerRef.current = setTimeout(() => {
+        const pending = pendingMessagesRef.current;
+        if (pending.length > 0) {
+          batchSaveToIndexedDB(pending);
+          pendingMessagesRef.current = [];
+        }
+        batchWriteTimerRef.current = null;
+      }, BATCH_WRITE_INTERVAL);
     }
-
-    // Skip if messages haven't changed
-    if (
-      lastStreamMessagesRef.current === streamMessages ||
-      (lastStreamMessagesRef.current.length === streamMessages.length &&
-        lastStreamMessagesRef.current.length > 0 &&
-        lastStreamMessagesRef.current[
-          lastStreamMessagesRef.current.length - 1
-        ] === streamMessages[streamMessages.length - 1])
-    ) {
-      return;
-    }
-
-    const syncMessages = async () => {
-      lastStreamMessagesRef.current = streamMessages;
-
-      // Server data arrived
-      if (streamMessages.length > 0) {
-        if (isLoading) {
-          // During streaming, show stream messages directly
-          setMergedMessages(streamMessages);
-          setCacheOnlyMessageIds(new Set()); // No cache-only messages during streaming
-          // Clear metadata map during streaming (will be rebuilt when stream ends)
-          setMetadataMap(new Map());
-          pendingSaveMessagesRef.current = streamMessages;
-          return;
-        }
-
-        // Only merge with cache when stream is idle (isLoading === false)
-        const { messages: cachedMessages, metadataMap: cachedMetadataMap } =
-          await loadMessages();
-        const streamSnapshot = [...streamMessages];
-        const {
-          messages,
-          metadataMap: mergedMetadata,
-          cacheOnlyMessageIds: cacheIds,
-        } = mergeWithHistory(streamSnapshot, cachedMessages, cachedMetadataMap);
-
-        // Check if data is consistent with current UI
-        const isDataConsistent =
-          mergedMessages.length === messages.length &&
-          mergedMessages.every((msg, i) => msg.id === messages[i].id);
-
-        if (!isDataConsistent) {
-          // Data changed - update UI
-          setMergedMessages(messages);
-          setMetadataMap(mergedMetadata);
-          setCacheOnlyMessageIds(cacheIds);
-        } else {
-          // Data consistent - only update cache-only IDs and metadata if needed
-          const idsChanged =
-            cacheOnlyMessageIds.size !== cacheIds.size ||
-            Array.from(cacheIds).some((id) => !cacheOnlyMessageIds.has(id));
-          if (idsChanged) {
-            setCacheOnlyMessageIds(cacheIds);
-          }
-          // Update metadata map if it changed
-          if (mergedMetadata.size !== metadataMap.size) {
-            setMetadataMap(mergedMetadata);
-          }
-        }
-
-        // Store messages for saving when stream ends (instead of saving immediately)
-        pendingSaveMessagesRef.current = streamSnapshot;
-
-        // Only mark as synced if cache was previously loaded
-        if (hasCacheLoadedRef.current) {
-          setSyncStatus("synced");
-        }
-        isInitialLoadRef.current = false;
-      }
-    };
-
-    syncMessages();
   }, [
-    streamMessages,
     threadId,
-    cacheOnlyMessageIds,
-    mergedMessages,
-    metadataMap,
-    loadMessages,
+    streamSubagentMap,
     isLoading,
-    mergeWithHistory,
+    getMessagesMetadata,
+    batchSaveToIndexedDB,
   ]);
 
-  // Save to IndexedDB when stream ends (isLoading changes from true to false)
+  // 当 stream 结束后，刷新待写入的消息并清理缓存
   useEffect(() => {
     const wasLoading = previousIsLoadingRef.current;
     const isNowIdle = !isLoading;
 
-    // Detect transition from loading to idle
     if (wasLoading && isNowIdle && threadId) {
-      // Stream just finished - save pending messages
-      const messagesToSave = pendingSaveMessagesRef.current;
-      if (messagesToSave.length > 0) {
-        saveMessages(messagesToSave);
+      // 清除定时器并立即写入
+      if (batchWriteTimerRef.current) {
+        clearTimeout(batchWriteTimerRef.current);
+        batchWriteTimerRef.current = null;
+      }
+
+      const pending = pendingMessagesRef.current;
+      if (pending.length > 0) {
+        batchSaveToIndexedDB(pending);
+        pendingMessagesRef.current = [];
+      }
+
+      // 清理缓存（stream 结束后，server 已返回完整数据）
+      if (knownToolCallIdsRef.current.size > 0) {
+        const toolCallIds = Array.from(knownToolCallIdsRef.current);
+        clearSubagentCache(toolCallIds);
+
+        setCachedMessages((prev) => {
+          const newMap = new Map(prev);
+          toolCallIds.forEach((id) => newMap.delete(id));
+          return newMap;
+        });
       }
     }
 
-    // Update previous state
     previousIsLoadingRef.current = isLoading;
-  }, [isLoading, threadId, saveMessages]);
+  }, [isLoading, threadId, batchSaveToIndexedDB, clearSubagentCache]);
 
   // Reset on thread change
   useEffect(() => {
-    isInitialLoadRef.current = true;
     hasCacheLoadedRef.current = false;
-    lastStreamMessagesRef.current = [];
-    previousIsLoadingRef.current = isLoading;
-    pendingSaveMessagesRef.current = [];
-    setMergedMessages([]);
-    setMetadataMap(new Map());
-    setCacheOnlyMessageIds(new Set());
-    setSyncStatus("idle");
-  }, [threadId, isLoading]);
+    lastProcessedMessageIdsRef.current = new Set();
+    knownToolCallIdsRef.current = new Set();
+    pendingMessagesRef.current = [];
+
+    if (batchWriteTimerRef.current) {
+      clearTimeout(batchWriteTimerRef.current);
+      batchWriteTimerRef.current = null;
+    }
+
+    setCachedMessages(new Map());
+  }, [threadId]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (batchWriteTimerRef.current) {
+        clearTimeout(batchWriteTimerRef.current);
+      }
+    };
+  }, []);
 
   return {
-    // IMPORTANT: stream.messages already filters to show only the current branch
-    // So we should prioritize streamMessages when available, and only use cache for supplementary data
-    // When no threadId, return streamMessages directly
-    // When streamMessages is available, use merged state (which prioritizes server data)
-    // When only cache is available (during initial load), show cache temporarily
-    messages: !threadId
-      ? streamMessages
-      : streamMessages.length > 0
-      ? mergedMessages.length > 0
-        ? mergedMessages
-        : streamMessages
-      : mergedMessages, // Fallback to cache when no stream data yet
-    metadataMap: !threadId ? new Map() : metadataMap,
-    cacheOnlyMessageIds: !threadId ? new Set() : cacheOnlyMessageIds,
-    syncStatus: !threadId ? "idle" : syncStatus,
+    // 主消息（不包含 subagent 消息）
+    mainMessages,
+    // 合并后的 subagent 消息 (stream + cache)
+    subagentMessagesMap,
+    // subagent 消息的 ID 集合（用于过滤）
+    subagentMessageIds,
   };
 }

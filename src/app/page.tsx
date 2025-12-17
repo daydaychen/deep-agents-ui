@@ -352,12 +352,12 @@ export default function HomePage() {
     <Suspense
       fallback={
         <div className="flex h-screen items-center justify-center p-4">
-          <div className="flex flex-col items-center gap-4 w-full max-w-md">
+          <div className="flex w-full max-w-md flex-col items-center gap-4">
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
-            <div className="flex gap-2 w-full justify-center mt-4">
-               <Skeleton className="h-10 w-24" />
-               <Skeleton className="h-10 w-24" />
+            <div className="mt-4 flex w-full justify-center gap-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
             </div>
           </div>
         </div>

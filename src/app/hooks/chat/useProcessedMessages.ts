@@ -1,8 +1,6 @@
-import type { StateType } from "@/app/hooks/useChat";
 import type { ToolCall } from "@/app/types/types";
 import { extractStringFromMessageContent } from "@/app/utils/utils";
 import { Message } from "@langchain/langgraph-sdk";
-import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import { useMemo } from "react";
 
 interface ProcessedMessage {
@@ -12,72 +10,30 @@ interface ProcessedMessage {
 }
 
 /**
- * Process raw messages into a format that's easier to render
+ * Process main messages into a format that's easier to render
  * - Matches tool calls with their results
  * - Determines when to show avatars
- * - Attaches subagent messages to their corresponding tool calls
+ *
+ * Note: This hook expects mainMessages (already filtered, without subagent messages)
+ * Subagent messages should be handled separately via subagentMessagesMap
  */
 export function useProcessedMessages(
-  messages: Message[],
-  interrupt?: any,
-  getMessagesMetadata?: (
-    message: Message,
-    index?: number
-  ) => MessageMetadata<StateType> | undefined,
-  cachedMetadataMap?: Map<string, MessageMetadata<StateType> | null>
+  mainMessages: Message[],
+  interrupt?: any
 ): ProcessedMessage[] {
   return useMemo(() => {
     /*
-     1. First, identify and group subagent messages by tool_call_id
-     2. Loop through main messages
-     3. For each AI message, add the AI message, and any tool calls to the messageMap
-     4. For each tool message, find the corresponding tool call in the messageMap and update the status and output
+     1. Loop through main messages
+     2. For each AI message, add the AI message, and any tool calls to the messageMap
+     3. For each tool message, find the corresponding tool call in the messageMap and update the status and output
     */
 
-    // Step 1: Group subagent messages by tool_call_id
-    const subAgentMessagesMap = new Map<string, Message[]>();
-    const subAgentMessageIds = new Set<string>();
-
-    if (getMessagesMetadata || cachedMetadataMap) {
-      messages.forEach((message: Message, index: number) => {
-        // Priority: use cached metadata if available, otherwise fetch from getMessagesMetadata
-        let metadata: MessageMetadata<StateType> | undefined | null;
-        if (cachedMetadataMap && message.id) {
-          metadata = cachedMetadataMap.get(message.id);
-        }
-        if (!metadata && getMessagesMetadata) {
-          metadata = getMessagesMetadata(message, index);
-        }
-
-        const toolCallId = metadata?.streamMetadata?.tool_call_id as
-          | string
-          | undefined;
-
-        if (toolCallId) {
-          // This message belongs to a subagent
-          if (!subAgentMessagesMap.has(toolCallId)) {
-            subAgentMessagesMap.set(toolCallId, []);
-          }
-          subAgentMessagesMap.get(toolCallId)!.push(message);
-          if (message.id) {
-            subAgentMessageIds.add(message.id);
-          }
-        }
-      });
-    }
-
-    // Step 2: Process main messages (excluding subagent messages)
     const messageMap = new Map<
       string,
       { message: Message; toolCalls: ToolCall[] }
     >();
 
-    messages.forEach((message: Message) => {
-      // Skip messages that belong to subagents
-      if (message.id && subAgentMessageIds.has(message.id)) {
-        return;
-      }
-
+    mainMessages.forEach((message: Message) => {
       if (message.type === "ai") {
         const toolCallsInMessage: Array<{
           id?: string;
@@ -169,15 +125,6 @@ export function useProcessedMessages(
 
     const processedArray = Array.from(messageMap.values());
 
-    // Step 3: Attach subagent messages to their corresponding tool calls
-    processedArray.forEach((data) => {
-      data.toolCalls.forEach((toolCall) => {
-        if (subAgentMessagesMap.has(toolCall.id)) {
-          toolCall.subAgentMessages = subAgentMessagesMap.get(toolCall.id);
-        }
-      });
-    });
-
     return processedArray.map((data, index) => {
       const prevMessage = index > 0 ? processedArray[index - 1].message : null;
       return {
@@ -185,5 +132,5 @@ export function useProcessedMessages(
         showAvatar: data.message.type !== prevMessage?.type,
       };
     });
-  }, [messages, interrupt, getMessagesMetadata, cachedMetadataMap]);
+  }, [mainMessages, interrupt]);
 }

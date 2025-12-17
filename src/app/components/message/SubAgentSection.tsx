@@ -2,11 +2,8 @@
 
 import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
 import { SubAgentDetails } from "@/app/components/message/SubAgentDetails";
-import type {
-  ActionRequest,
-  ReviewConfig,
-  SubAgent,
-} from "@/app/types/types";
+import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
+import { Message } from "@langchain/langgraph-sdk";
 import React from "react";
 
 interface SubAgentSectionProps {
@@ -17,6 +14,7 @@ interface SubAgentSectionProps {
   reviewConfigsMap?: Map<string, ReviewConfig>;
   onResumeInterrupt?: (value: any) => void;
   isLoading?: boolean;
+  subagentMessagesMap?: Map<string, Message[]>;
 }
 
 export const SubAgentSection = React.memo<SubAgentSectionProps>(
@@ -28,6 +26,7 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
     reviewConfigsMap,
     onResumeInterrupt,
     isLoading,
+    subagentMessagesMap,
   }) => {
     if (subAgents.length === 0) return null;
 
@@ -39,7 +38,7 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
             className="flex w-full flex-col gap-2"
           >
             {index > 0 && (
-              <div className="border-border/30 -mt-3 mb-3 border-t" />
+              <div className="-mt-3 mb-3 border-t border-border/30" />
             )}
             <div className="flex items-end gap-2">
               <div className="w-[calc(100%-100px)]">
@@ -58,6 +57,7 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
                   taskReviewConfig={reviewConfigsMap?.get("task")}
                   onResumeInterrupt={onResumeInterrupt}
                   isLoading={isLoading}
+                  subagentMessages={subagentMessagesMap?.get(subAgent.id)}
                 />
               </div>
             )}

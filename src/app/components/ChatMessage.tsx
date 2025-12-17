@@ -32,6 +32,7 @@ interface ChatMessageProps {
   ) => MessageMetadata<StateType> | undefined;
   setBranch?: (branch: string) => void;
   graphId?: string;
+  subagentMessagesMap?: Map<string, Message[]>;
 }
 
 export const ChatMessage = React.memo<ChatMessageProps>(
@@ -45,6 +46,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     stream,
     onResumeInterrupt,
     graphId,
+    subagentMessagesMap,
   }) => {
     const isUser = message.type === "human";
     const messageContent = extractStringFromMessageContent(message);
@@ -115,6 +117,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               reviewConfigsMap={reviewConfigsMap}
               onResumeInterrupt={onResumeInterrupt}
               isLoading={isLoading}
+              subagentMessagesMap={subagentMessagesMap}
             />
           )}
           {!isUser && onResumeInterrupt && (

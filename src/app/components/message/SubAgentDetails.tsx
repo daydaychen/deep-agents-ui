@@ -10,8 +10,9 @@ import {
   extractStringFromMessageContent,
   extractSubAgentContent,
 } from "@/app/utils/utils";
+import { Message } from "@langchain/langgraph-sdk";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 interface SubAgentDetailsProps {
   subAgent: SubAgent;
@@ -19,6 +20,7 @@ interface SubAgentDetailsProps {
   taskReviewConfig?: ReviewConfig;
   onResumeInterrupt?: (value: any) => void;
   isLoading?: boolean;
+  subagentMessages?: Message[];
 }
 
 export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
@@ -28,13 +30,16 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
     taskReviewConfig,
     onResumeInterrupt,
     isLoading,
+    subagentMessages,
   }) => {
-    // Process subagent messages to extract tool calls (must be called before any early returns)
-    const processedSubAgentMessages = useProcessedMessages(
-      subAgent.messages || [],
-      undefined,
-      undefined
+    // 使用 subagentMessages（已在 usePersistedMessages 中合并了 stream 和 cache）
+    const messages = useMemo(
+      () => subagentMessages || subAgent.messages || [],
+      [subagentMessages, subAgent.messages]
     );
+
+    // Process subagent messages to extract tool calls (must be called before any early returns)
+    const processedSubAgentMessages = useProcessedMessages(messages, undefined);
 
     const hasInterrupt =
       taskActionRequest &&
@@ -60,7 +65,7 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
           container.scrollTop = container.scrollHeight;
         });
       }
-    }, [subAgent.messages, isMessagesExpanded]);
+    }, [messages, isMessagesExpanded]);
 
     if (hasInterrupt) {
       return (
@@ -73,7 +78,7 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
       );
     }
 
-    const hasMessages = subAgent.messages && subAgent.messages.length > 0;
+    const hasMessages = messages.length > 0;
 
     return (
       <div className="border-border-light bg-surface rounded-md border p-4 shadow-sm">
