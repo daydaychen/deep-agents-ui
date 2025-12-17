@@ -55,10 +55,12 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
       if (isMessagesExpanded && messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop =
-          messagesContainerRef.current.scrollHeight;
+        const container = messagesContainerRef.current;
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+        });
       }
-    }, [processedSubAgentMessages, isMessagesExpanded]);
+    }, [subAgent.messages, isMessagesExpanded]);
 
     if (hasInterrupt) {
       return (
