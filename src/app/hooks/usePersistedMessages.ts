@@ -20,25 +20,17 @@ interface PersistedSubagentMessage {
   index: number;
 }
 
-// 待写入的消息
-interface PendingMessage {
-  message: Message;
-  toolCallId: string;
-  index: number;
-}
-
 /**
  * Custom hook to split messages and persist subagent messages to IndexedDB
  *
- * 功能：
- * 1. 拆分 streamMessages 为 mainMessages 和 subagentMessagesMap
- * 2. 缓存 subagent 消息到 IndexedDB，用于页面刷新后恢复
- * 3. 合并 stream 中的 subagent 消息和缓存的消息
+ * 缓存逻辑：
+ * 1. Thread 打开时：从 IndexedDB 加载缓存 → 显示到 UI
+ * 2. 流式过程中：将 stream 数据合并到缓存（更新已有消息内容）→ UI 显示合并后的数据
+ * 3. 定期/流结束后：将缓存提交到 IndexedDB
  *
  * 性能优化：
  * - 使用 useMemo 计算拆分结果，只在 streamMessages 变化时重新计算
  * - 异步批量写入 IndexedDB，不阻塞 UI
- * - 使用 ref 跟踪已处理的消息，避免重复处理
  */
 export function usePersistedMessages(
   threadId: string | null,
@@ -52,20 +44,18 @@ export function usePersistedMessages(
   const dbRef = useRef<IDBDatabase | null>(null);
   const dbReadyPromiseRef = useRef<Promise<IDBDatabase | null> | null>(null);
 
-  // 从 IndexedDB 加载的缓存消息
+  // 缓存的 subagent 消息（从 IndexedDB 加载 + 流式合并）
   const [cachedMessages, setCachedMessages] = useState<Map<string, Message[]>>(
     new Map()
   );
 
   // 性能优化：使用 ref 跟踪状态
   const hasCacheLoadedRef = useRef(false);
-  const lastProcessedMessageIdsRef = useRef<Set<string>>(new Set());
   const previousIsLoadingRef = useRef<boolean>(isLoading);
-  const knownToolCallIdsRef = useRef<Set<string>>(new Set());
 
   // 批量写入相关
-  const pendingMessagesRef = useRef<PendingMessage[]>([]);
   const batchWriteTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingWriteRef = useRef(false);
 
   // ============ 消息拆分逻辑 (useMemo，同步计算) ============
 
@@ -112,27 +102,57 @@ export function usePersistedMessages(
       };
     }, [streamMessages, getMessagesMetadata]);
 
-  // 合并 stream 中的 subagent 消息和缓存的消息
-  const subagentMessagesMap = useMemo(() => {
-    const merged = new Map<string, Message[]>();
+  // ============ 合并 stream 数据到缓存 ============
 
-    // 先添加缓存的消息
-    cachedMessages.forEach((msgs, toolCallId) => {
-      merged.set(toolCallId, [...msgs]);
-    });
+  // 流式过程中，将 streamSubagentMap 合并到 cachedMessages
+  useEffect(() => {
+    if (!isLoading || streamSubagentMap.size === 0) return;
 
-    // 再添加 stream 中的消息（去重）
-    streamSubagentMap.forEach((msgs, toolCallId) => {
-      const existing = merged.get(toolCallId) || [];
-      const existingIds = new Set(existing.map((m) => m.id));
-      const newMsgs = msgs.filter((m) => !existingIds.has(m.id));
-      if (newMsgs.length > 0 || existing.length === 0) {
-        merged.set(toolCallId, [...existing, ...newMsgs]);
+    setCachedMessages((prev) => {
+      const newMap = new Map(prev);
+      let hasChanges = false;
+
+      streamSubagentMap.forEach((streamMsgs, toolCallId) => {
+        const cachedMsgs = prev.get(toolCallId) || [];
+
+        // 合并逻辑：按 messageId 更新或添加
+        const mergedMsgs = [...cachedMsgs];
+        const cachedIds = new Map(cachedMsgs.map((m, i) => [m.id, i]));
+
+        streamMsgs.forEach((streamMsg) => {
+          if (!streamMsg.id) return;
+
+          const existingIndex = cachedIds.get(streamMsg.id);
+          if (existingIndex !== undefined) {
+            // 更新已有消息（流式内容更新）
+            if (mergedMsgs[existingIndex] !== streamMsg) {
+              mergedMsgs[existingIndex] = streamMsg;
+              hasChanges = true;
+            }
+          } else {
+            // 添加新消息
+            mergedMsgs.push(streamMsg);
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges || !prev.has(toolCallId)) {
+          newMap.set(toolCallId, mergedMsgs);
+        }
+      });
+
+      // 标记需要写入 IndexedDB
+      if (hasChanges) {
+        pendingWriteRef.current = true;
       }
-    });
 
-    return merged;
-  }, [cachedMessages, streamSubagentMap]);
+      return hasChanges ? newMap : prev;
+    });
+  }, [isLoading, streamSubagentMap]);
+
+  // UI 显示：直接使用 cachedMessages
+  // 因为流式数据已经合并到 cachedMessages 中了
+  const subagentMessagesMap = cachedMessages;
 
   // ============ IndexedDB 操作 (异步，不阻塞 UI) ============
 
@@ -194,8 +214,8 @@ export function usePersistedMessages(
 
   // 批量保存消息到 IndexedDB
   const batchSaveToIndexedDB = useCallback(
-    async (messages: PendingMessage[]) => {
-      if (!threadId || !dbRef.current || messages.length === 0) return;
+    async (messagesMap: Map<string, Message[]>) => {
+      if (!threadId || !dbRef.current || messagesMap.size === 0) return;
 
       try {
         const transaction = dbRef.current.transaction(
@@ -205,20 +225,22 @@ export function usePersistedMessages(
         const store = transaction.objectStore(STORE_NAME);
         const now = Date.now();
 
-        for (const { message, toolCallId, index } of messages) {
-          if (!message.id) continue;
+        messagesMap.forEach((msgs, toolCallId) => {
+          msgs.forEach((message, idx) => {
+            if (!message.id) return;
 
-          const persistedMessage: PersistedSubagentMessage = {
-            threadId,
-            messageId: message.id,
-            toolCallId,
-            message,
-            timestamp: now,
-            index,
-          };
+            const persistedMessage: PersistedSubagentMessage = {
+              threadId,
+              messageId: message.id,
+              toolCallId,
+              message,
+              timestamp: now,
+              index: idx,
+            };
 
-          store.put(persistedMessage);
-        }
+            store.put(persistedMessage);
+          });
+        });
 
         await new Promise<void>((resolve, reject) => {
           transaction.oncomplete = () => resolve();
@@ -273,7 +295,6 @@ export function usePersistedMessages(
           subagentMap.set(pm.toolCallId, []);
         }
         subagentMap.get(pm.toolCallId)!.push(pm.message);
-        knownToolCallIdsRef.current.add(pm.toolCallId);
       });
 
       return subagentMap;
@@ -283,50 +304,9 @@ export function usePersistedMessages(
     }
   }, [threadId]);
 
-  // 清除指定 tool_call_id 的缓存
-  const clearSubagentCache = useCallback(
-    async (toolCallIds: string[]) => {
-      if (!threadId || !dbRef.current || toolCallIds.length === 0) return;
-
-      try {
-        const transaction = dbRef.current.transaction(
-          [STORE_NAME],
-          "readwrite"
-        );
-        const store = transaction.objectStore(STORE_NAME);
-        const index = store.index("threadId");
-        const request = index.getAll(threadId);
-
-        const result = await new Promise<PersistedSubagentMessage[]>(
-          (resolve, reject) => {
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-          }
-        );
-
-        const toolCallIdSet = new Set(toolCallIds);
-        for (const pm of result) {
-          if (toolCallIdSet.has(pm.toolCallId)) {
-            store.delete([threadId, pm.messageId]);
-          }
-        }
-
-        await new Promise<void>((resolve, reject) => {
-          transaction.oncomplete = () => resolve();
-          transaction.onerror = () => reject(transaction.error);
-        });
-
-        toolCallIds.forEach((id) => knownToolCallIdsRef.current.delete(id));
-      } catch (error) {
-        console.error("Failed to clear subagent cache:", error);
-      }
-    },
-    [threadId]
-  );
-
   // ============ 缓存管理逻辑 ============
 
-  // 初始加载缓存
+  // 初始加载缓存（thread 打开时）
   useEffect(() => {
     if (!threadId) {
       hasCacheLoadedRef.current = false;
@@ -345,87 +325,48 @@ export function usePersistedMessages(
     loadCache();
   }, [threadId, loadSubagentMessages]);
 
-  // 在 streaming 过程中收集新的 subagent 消息并异步写入缓存
+  // 定期写入 IndexedDB（流式过程中）
   useEffect(() => {
-    if (!threadId || !isLoading || !getMessagesMetadata) return;
+    if (!isLoading || !pendingWriteRef.current) return;
 
-    let hasNewMessages = false;
-
-    streamSubagentMap.forEach((msgs, toolCallId) => {
-      msgs.forEach((message, idx) => {
-        if (message.id && !lastProcessedMessageIdsRef.current.has(message.id)) {
-          lastProcessedMessageIdsRef.current.add(message.id);
-          knownToolCallIdsRef.current.add(toolCallId);
-          hasNewMessages = true;
-
-          pendingMessagesRef.current.push({
-            message,
-            toolCallId,
-            index: idx,
-          });
-        }
-      });
-    });
-
-    // 启动批量写入定时器
-    if (hasNewMessages && !batchWriteTimerRef.current) {
+    // 启动定时器批量写入
+    if (!batchWriteTimerRef.current) {
       batchWriteTimerRef.current = setTimeout(() => {
-        const pending = pendingMessagesRef.current;
-        if (pending.length > 0) {
-          batchSaveToIndexedDB(pending);
-          pendingMessagesRef.current = [];
+        if (pendingWriteRef.current && cachedMessages.size > 0) {
+          batchSaveToIndexedDB(cachedMessages);
+          pendingWriteRef.current = false;
         }
         batchWriteTimerRef.current = null;
       }, BATCH_WRITE_INTERVAL);
     }
-  }, [
-    threadId,
-    streamSubagentMap,
-    isLoading,
-    getMessagesMetadata,
-    batchSaveToIndexedDB,
-  ]);
+  }, [isLoading, cachedMessages, batchSaveToIndexedDB]);
 
-  // 当 stream 结束后，刷新待写入的消息并清理缓存
+  // 流结束后，确保写入 IndexedDB
   useEffect(() => {
     const wasLoading = previousIsLoadingRef.current;
     const isNowIdle = !isLoading;
 
     if (wasLoading && isNowIdle && threadId) {
-      // 清除定时器并立即写入
+      // 清除定时器
       if (batchWriteTimerRef.current) {
         clearTimeout(batchWriteTimerRef.current);
         batchWriteTimerRef.current = null;
       }
 
-      const pending = pendingMessagesRef.current;
-      if (pending.length > 0) {
-        batchSaveToIndexedDB(pending);
-        pendingMessagesRef.current = [];
-      }
-
-      // 清理缓存（stream 结束后，server 已返回完整数据）
-      if (knownToolCallIdsRef.current.size > 0) {
-        const toolCallIds = Array.from(knownToolCallIdsRef.current);
-        clearSubagentCache(toolCallIds);
-
-        setCachedMessages((prev) => {
-          const newMap = new Map(prev);
-          toolCallIds.forEach((id) => newMap.delete(id));
-          return newMap;
-        });
+      // 写入最终状态到 IndexedDB
+      if (cachedMessages.size > 0) {
+        batchSaveToIndexedDB(cachedMessages);
+        pendingWriteRef.current = false;
       }
     }
 
     previousIsLoadingRef.current = isLoading;
-  }, [isLoading, threadId, batchSaveToIndexedDB, clearSubagentCache]);
+  }, [isLoading, threadId, cachedMessages, batchSaveToIndexedDB]);
 
   // Reset on thread change
   useEffect(() => {
     hasCacheLoadedRef.current = false;
-    lastProcessedMessageIdsRef.current = new Set();
-    knownToolCallIdsRef.current = new Set();
-    pendingMessagesRef.current = [];
+    pendingWriteRef.current = false;
 
     if (batchWriteTimerRef.current) {
       clearTimeout(batchWriteTimerRef.current);
@@ -447,7 +388,7 @@ export function usePersistedMessages(
   return {
     // 主消息（不包含 subagent 消息）
     mainMessages,
-    // 合并后的 subagent 消息 (stream + cache)
+    // subagent 消息（缓存 + 流式合并）
     subagentMessagesMap,
     // subagent 消息的 ID 集合（用于过滤）
     subagentMessageIds,
