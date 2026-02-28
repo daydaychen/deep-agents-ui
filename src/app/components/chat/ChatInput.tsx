@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowUp, Square } from "lucide-react";
-import React, { FormEvent, useCallback, useRef } from "react";
+import React, { FormEvent, useCallback, useRef, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   input: string;
@@ -16,6 +17,7 @@ interface ChatInputProps {
 export const ChatInput = React.memo<ChatInputProps>(
   ({ input, setInput, isLoading, submitDisabled, onSubmit, onStop }) => {
     const isComposingRef = useRef(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -28,46 +30,67 @@ export const ChatInput = React.memo<ChatInputProps>(
       [onSubmit, submitDisabled]
     );
 
+    // Auto-focus textarea on mount
+    useEffect(() => {
+      textareaRef.current?.focus();
+    }, []);
+
+    const hasInput = input.trim().length > 0;
+
     return (
       <form
         onSubmit={onSubmit}
-        className="flex flex-col"
+        className="flex items-end gap-2 p-3 pr-4"
       >
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onCompositionStart={() => {
-            isComposingRef.current = true;
-          }}
-          onCompositionEnd={() => {
-            isComposingRef.current = false;
-          }}
-          placeholder={isLoading ? "Running..." : "Write your message..."}
-          className="font-inherit field-sizing-content flex-1 resize-none border-0 bg-transparent px-[18px] pb-[13px] pt-[14px] text-sm leading-7 text-primary outline-none placeholder:text-tertiary"
-          rows={1}
-        />
-        <div className="flex justify-between gap-2 p-3">
-          <div className="flex justify-end gap-2">
+        <div className="relative flex flex-1 flex-col">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={() => {
+              isComposingRef.current = true;
+            }}
+            onCompositionEnd={() => {
+              isComposingRef.current = false;
+            }}
+            placeholder={isLoading ? "AI is thinking..." : "Ask me anything..."}
+            className={cn(
+              "font-inherit field-sizing-content flex-1 resize-none border-0 bg-transparent px-2 pb-1.5 pt-1 text-sm leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/60 transition-all duration-200",
+              "min-h-[40px] max-h-[200px]"
+            )}
+            rows={1}
+          />
+        </div>
+        
+        <div className="flex flex-shrink-0 items-center justify-center pb-0.5">
+          {isLoading ? (
             <Button
-              type={isLoading ? "button" : "submit"}
-              variant={isLoading ? "destructive" : "default"}
-              onClick={isLoading ? onStop : onSubmit}
-              disabled={!isLoading && (submitDisabled || !input.trim())}
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={onStop}
+              className="h-8 w-8 rounded-full border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
             >
-              {isLoading ? (
-                <>
-                  <Square size={14} />
-                  <span>Stop</span>
-                </>
-              ) : (
-                <>
-                  <ArrowUp size={18} />
-                  <span>Send</span>
-                </>
-              )}
+              <Square size={14} fill="currentColor" />
+              <span className="sr-only">Stop</span>
             </Button>
-          </div>
+          ) : (
+            <Button
+              type="submit"
+              size="icon"
+              disabled={submitDisabled || !hasInput}
+              className={cn(
+                "h-8 w-8 rounded-full transition-all duration-300",
+                hasInput 
+                  ? "bg-primary text-primary-foreground shadow-sm hover:scale-105 active:scale-95" 
+                  : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
+              )}
+            >
+              <ArrowUp size={18} strokeWidth={2.5} />
+              <span className="sr-only">Send message</span>
+            </Button>
+          )}
         </div>
       </form>
     );

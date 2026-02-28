@@ -12,13 +12,13 @@ interface MessageContentProps {
 export const MessageContent = React.memo<MessageContentProps>(
   ({ content, isUser }) => {
     return (
-      <div className={cn("relative flex flex-col gap-2")}>
+      <div className={cn("relative flex flex-col gap-2 group")}>
         <div
           className={cn(
-            "mt-4 overflow-hidden break-words text-sm font-normal leading-[150%]",
+            "mt-1 overflow-hidden break-words text-sm font-normal leading-relaxed",
             isUser
-              ? "rounded-xl rounded-br-none border border-border px-3 py-2 text-foreground"
-              : "rounded-lg bg-accent/30 px-4 py-3 text-primary"
+              ? "rounded-2xl rounded-tr-none border border-border px-4 py-3 text-foreground shadow-sm"
+              : "rounded-2xl rounded-tl-none bg-accent/30 px-5 py-4 text-primary"
           )}
           style={
             isUser
@@ -28,7 +28,7 @@ export const MessageContent = React.memo<MessageContentProps>(
         >
           {isUser ? (
             <div className="flex flex-col gap-2">
-              <p className="m-0 whitespace-pre-wrap break-words text-sm leading-relaxed">
+              <p className="m-0 whitespace-pre-wrap break-words leading-relaxed">
                 {content}
               </p>
             </div>

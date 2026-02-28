@@ -91,7 +91,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
         ref={scrollRef}
       >
         <div
-          className="mx-auto w-full max-w-[1024px] px-6 pb-6 pt-4"
+          className="mx-auto w-full max-w-[800px] px-4 pb-6 pt-4 md:px-6"
           ref={contentRef}
         >
           {isThreadLoading && processedMessages.length === 0 ? (
@@ -136,52 +136,15 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                       stream={stream}
                       onResumeInterrupt={resumeInterrupt}
                       onRetry={retryFromMessage}
+                      onEdit={editMessage}
                       getMessagesMetadata={getMessagesMetadata}
                       setBranch={setBranch}
                       graphId={assistant?.graph_id}
                       subagentMessagesMap={subagentMessagesMap}
+                      branchOptions={branchOptions}
+                      currentBranchIndex={currentBranchIndex}
+                      canRetry={!!canRetry}
                     />
-                    {/* Message Toolbar - placed below the message, aligned with message type */}
-                    <div
-                      className={cn(
-                        "flex w-full max-w-full overflow-x-hidden",
-                        isUser && "flex-row-reverse"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "min-w-0 max-w-full",
-                          isUser ? "max-w-[70%]" : "w-full"
-                        )}
-                      >
-                        <MessageToolbar
-                          messageContent={messageContent}
-                          isUser={isUser}
-                          isLoading={isLoading}
-                          onRetry={
-                            canRetry
-                              ? () => retryFromMessage(data.message, index)
-                              : undefined
-                          }
-                          showRetry={!!canRetry}
-                          onEdit={
-                            editMessage
-                              ? (editedMessage) =>
-                                  editMessage(editedMessage, index)
-                              : undefined
-                          }
-                          showEdit={false}
-                          branchOptions={branchOptions}
-                          currentBranchIndex={currentBranchIndex}
-                          onSelectBranch={setBranch}
-                          showBranchSwitcher={
-                            !!setBranch && branchOptions.length > 1
-                          }
-                          className="px-2"
-                          message={data.message}
-                        />
-                      </div>
-                    </div>
                   </div>
                 );
               })}
@@ -200,11 +163,10 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
         </div>
       </div>
 
-      <div className="flex-shrink-0 bg-background">
+      <div className="flex-shrink-0 bg-background/80 backdrop-blur-md pt-2 pb-6 px-4">
         <div
           className={cn(
-            "mx-4 mb-6 flex flex-shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-background",
-            "mx-auto w-[calc(100%-32px)] max-w-[1024px] transition-colors duration-200 ease-in-out"
+            "mx-auto flex w-full max-w-[800px] flex-col overflow-hidden rounded-[24px] border border-border bg-background shadow-lg transition-all duration-300 focus-within:shadow-xl focus-within:border-primary/20",
           )}
         >
           <TasksSection
