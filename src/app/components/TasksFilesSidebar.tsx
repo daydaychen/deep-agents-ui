@@ -77,7 +77,7 @@ export function FilesPopover({
                 onClick={() =>
                   setSelectedFile({ path: filePath, content: fileContent })
                 }
-                className="group flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left transition-all hover:border-border hover:bg-muted/50 active:scale-[0.98]"
+                className="group flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left transition-[background-color,border-color,color,transform] hover:border-border hover:bg-muted/50 active:scale-[0.98]"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                   <FileText size={16} />
@@ -90,7 +90,7 @@ export function FilesPopover({
                     {fileContent.length} characters
                   </div>
                 </div>
-                <ExternalLink size={12} className="text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-all" />
+                <ExternalLink size={12} className="text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-[color,opacity]" />
               </button>
             );
           })}

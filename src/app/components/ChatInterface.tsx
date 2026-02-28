@@ -14,7 +14,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
-import { useChatContext } from "@/providers/ChatProvider";
+import { useChatActions, useChatState } from "@/providers/ChatProvider";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { AlertCircle } from "lucide-react";
 import React, { FormEvent, useCallback, useMemo, useState } from "react";
@@ -38,23 +38,26 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     todos,
     files,
     ui,
-    setFiles,
     isLoading,
     isThreadLoading,
     interrupt,
     error,
     subagentMessagesMap,
     activeSubAgentId,
-    setActiveSubAgentId,
     getMessagesMetadata,
+    getMessageBranchInfo,
+  } = useChatState();
+
+  const {
     sendMessage,
     stopStream,
     resumeInterrupt,
     retryFromMessage,
     setBranch,
     editMessage,
-    getMessageBranchInfo,
-  } = useChatContext();
+    setActiveSubAgentId,
+    setFiles,
+  } = useChatActions();
 
   const isPanelOpen = !!activeSubAgentId;
 
@@ -123,7 +126,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             >
               <div
                 className={cn(
-                  "mx-auto w-full transition-all duration-300 ease-in-out px-4 pb-6 pt-4 md:px-6 max-w-[850px]"
+                  "mx-auto w-full transition-[padding,max-width,opacity,transform] duration-300 ease-in-out px-4 pb-6 pt-4 md:px-6 max-w-[850px]"
                 )}
                 ref={contentRef}
               >
@@ -197,7 +200,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
             {/* Input Container */}
             <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-4">
-              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-all duration-500 focus-within:border-primary/30 focus-within:shadow-primary/10">
+              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow] duration-500 focus-within:border-primary/30 focus-within:shadow-primary/10">
                 <TasksSection
                   todos={todos}
                   files={files}

@@ -70,7 +70,7 @@ export const SubAgentPanel: React.FC<SubAgentPanelProps> = ({
               {status === "completed" && <CheckCircle2 size={10} className="text-green-600 shrink-0" />}
               {status === "error" && <AlertCircle size={10} className="text-destructive shrink-0" />}
               <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/70 truncate block">
-                {status === "active" ? "Processing..." : status}
+                {status === "active" ? "Processing…" : status}
               </span>
             </div>
           </div>

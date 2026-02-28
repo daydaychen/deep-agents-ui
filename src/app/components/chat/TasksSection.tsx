@@ -63,7 +63,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
     return (
       <div
         className={cn(
-          "flex flex-col overflow-y-auto border-b border-border bg-muted/20 transition-all duration-300 ease-in-out",
+          "flex flex-col overflow-y-auto border-b border-border bg-muted/20 transition-[height,opacity,background-color,border-color] duration-300 ease-in-out",
           hasTasks || hasFiles ? "max-h-72" : "max-h-0 border-b-0"
         )}
       >

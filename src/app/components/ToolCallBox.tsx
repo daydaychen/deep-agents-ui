@@ -73,7 +73,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             return `${key}: ${valStr}`;
           })
           .join(", ");
-        return preview.length > 80 ? preview.substring(0, 80) + "..." : preview;
+        return preview.length > 80 ? preview.substring(0, 80) + "…" : preview;
       } catch {
         return "";
       }
@@ -96,7 +96,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     return (
       <div
         className={cn(
-          "w-full min-w-0 overflow-hidden rounded-xl border shadow-sm transition-all duration-300",
+          "w-full min-w-0 overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
           status === "completed" ? "border-emerald-500/20 bg-emerald-500/[0.02]" : 
           status === "error" ? "border-destructive/20 bg-destructive/[0.02]" : 
           status === "pending" ? "border-blue-500/20 bg-blue-500/[0.02]" : 

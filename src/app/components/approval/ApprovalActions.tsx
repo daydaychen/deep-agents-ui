@@ -51,7 +51,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             className="bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
           >
             <Check size={14} />
-            {isLoading ? "Saving..." : "Save & Approve"}
+            {isLoading ? "Saving…" : "Save & Approve"}
           </Button>
         </div>
       );
@@ -74,7 +74,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             onClick={onRejectConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "Rejecting..." : "Confirm Reject"}
+            {isLoading ? "Rejecting…" : "Confirm Reject"}
           </Button>
         </div>
       );
@@ -116,7 +116,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             )}
           >
             <Check size={14} />
-            {isLoading ? "Approving..." : "Approve"}
+            {isLoading ? "Approving…" : "Approve"}
           </Button>
         )}
       </div>

@@ -42,7 +42,7 @@ export const ChatInput = React.memo<ChatInputProps>(
       <div className="px-2 pb-3">
         <div
           className={cn(
-            "relative flex flex-col gap-1 rounded-2xl bg-transparent px-2 transition-all duration-300",
+            "relative flex flex-col gap-1 rounded-2xl bg-transparent px-2 transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
             isFocused ? "bg-muted/5 shadow-inner" : ""
           )}
         >
@@ -64,9 +64,9 @@ export const ChatInput = React.memo<ChatInputProps>(
               onCompositionEnd={() => {
                 isComposingRef.current = false;
               }}
-              placeholder={isLoading ? "AI is processing..." : "Message Deep Agent..."}
+              placeholder={isLoading ? "AI is processing…" : "Message Deep Agent…"}
               className={cn(
-                "font-sans field-sizing-content flex-1 resize-none border-0 bg-transparent py-3 text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40 transition-all",
+                "font-sans field-sizing-content flex-1 resize-none border-0 bg-transparent py-3 text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40 transition-[opacity,color,background-color]",
                 "min-h-[44px] max-h-[300px]"
               )}
               rows={1}
@@ -98,7 +98,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                   size="sm"
                   variant="ghost"
                   onClick={onStop}
-                  className="h-7 gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-[10px] font-bold text-destructive hover:bg-destructive/10 transition-all"
+                  className="h-7 gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-[10px] font-bold text-destructive hover:bg-destructive/10 transition-[background-color,color,opacity,transform]"
                 >
                   <Square size={10} fill="currentColor" />
                   STOP CORE
@@ -109,7 +109,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                   size="icon"
                   disabled={submitDisabled || !hasInput}
                   className={cn(
-                    "h-8 w-8 rounded-xl transition-all duration-500",
+                    "h-8 w-8 rounded-xl transition-[background-color,border-color,color,transform,opacity] duration-500",
                     hasInput 
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-110 active:scale-90" 
                       : "bg-muted text-muted-foreground/20 opacity-30"

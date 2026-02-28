@@ -190,7 +190,7 @@ export function ConfigDialog({
                 <SelectTrigger id="assistantId" className="bg-muted/30">
                   <SelectValue
                     placeholder={
-                      loadingAssistants ? "Loading..." : "Select Assistant"
+                      loadingAssistants ? "Loading…" : "Select Assistant"
                     }
                   />
                 </SelectTrigger>

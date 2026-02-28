@@ -106,7 +106,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                 size="sm"
                 onClick={handleCopy}
                 aria-label={copySuccess ? "Message copied" : "Copy message to clipboard"}
-                className={`group h-7 gap-1 px-2 text-xs transition-all duration-200 hover:bg-accent/50 ${
+                className={`group h-7 gap-1 px-2 text-xs transition-[background-color,color,opacity,transform] duration-200 hover:bg-accent/50 ${
                   copySuccess
                     ? "text-success hover:text-success"
                     : "text-muted-foreground hover:text-foreground"
@@ -118,7 +118,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                 ) : (
                   <Copy className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
                 )}
-                <span className="transition-all duration-200">
+                <span className="transition-[background-color,color,opacity,transform] duration-200">
                   {copySuccess ? "Copied" : "Copy"}
                 </span>
               </Button>
@@ -140,11 +140,11 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                 size="sm"
                 onClick={onRetry}
                 aria-label="Retry generation from this message"
-                className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground"
+                className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-[background-color,color,opacity,transform] duration-200 hover:bg-accent/50 hover:text-foreground"
                 title="Retry from this message"
               >
                 <RotateCcw className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
-                <span className="transition-all duration-200">Retry</span>
+                <span className="transition-[background-color,color,opacity,transform] duration-200">Retry</span>
               </Button>
             )}
           </div>

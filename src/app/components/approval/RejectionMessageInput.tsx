@@ -19,7 +19,7 @@ export const RejectionMessageInput = React.memo<RejectionMessageInputProps>(
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Explain why you're rejecting this action..."
+          placeholder="Explain why you're rejecting this action…"
           className="text-sm"
           rows={2}
           disabled={isLoading}

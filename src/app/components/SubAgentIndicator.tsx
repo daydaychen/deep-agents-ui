@@ -86,7 +86,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
       // 1. Priority: If 'description' exists, show it directly (most meaningful)
       if (input.description && typeof input.description === 'string') {
         const desc = input.description;
-        return desc.length > 300 ? desc.substring(0, 300) + "..." : desc;
+        return desc.length > 300 ? desc.substring(0, 300) + "…" : desc;
       }
 
       // 2. Fallback: Filter out redundant 'subagent_type' and join others
@@ -103,7 +103,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             return `${key}: ${valStr}`;
           })
           .join(", ");
-        return preview.length > 300 ? preview.substring(0, 300) + "..." : preview;
+        return preview.length > 300 ? preview.substring(0, 300) + "…" : preview;
       } catch {
         return "";
       }
@@ -112,7 +112,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
     return (
       <div
         className={cn(
-          "w-full overflow-hidden rounded-xl border shadow-sm transition-all duration-300",
+          "w-full overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
           status === "completed" ? "border-emerald-500/20 bg-emerald-500/[0.02]" : 
           status === "error" ? "border-destructive/20 bg-destructive/[0.02]" : 
           status === "active" ? "border-blue-500/20 bg-blue-500/[0.02] ring-1 ring-blue-500/10" : 
@@ -176,7 +176,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                 onShowLogs();
               }}
               className={cn(
-                "h-9 w-9 rounded-xl transition-all duration-300",
+                "h-9 w-9 rounded-xl transition-[background-color,border-color,color,transform,opacity] duration-300",
                 isActiveInSidebar 
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 scale-105" 
                   : "text-muted-foreground hover:bg-muted hover:text-primary"

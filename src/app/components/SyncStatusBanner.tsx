@@ -21,7 +21,7 @@ interface SyncStatusBannerProps {
  */
 export function SyncStatusBanner({
   status,
-  syncingText = "Syncing historical messages...",
+  syncingText = "Syncing historical messages…",
   syncedText = "History synchronized",
   showSynced = true,
 }: SyncStatusBannerProps) {

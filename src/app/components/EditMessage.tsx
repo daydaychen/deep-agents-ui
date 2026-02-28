@@ -57,11 +57,11 @@ export const EditMessage = React.memo<EditMessageProps>(
           variant="ghost"
           size="sm"
           onClick={() => setEditing(true)}
-          className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground"
+          className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-[background-color,color,opacity,transform] duration-200 hover:bg-accent/50 hover:text-foreground"
           title="Edit message"
         >
           <Edit className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
-          <span className="transition-all duration-200">Edit</span>
+          <span className="transition-[background-color,color,opacity,transform] duration-200">Edit</span>
         </Button>
       );
     }
@@ -83,7 +83,7 @@ export const EditMessage = React.memo<EditMessageProps>(
               isComposingRef.current = false;
             }}
             className="font-inherit field-sizing-content min-h-[2.5rem] w-full resize-none border-0 bg-transparent px-2 py-1 text-sm leading-6 text-primary outline-none placeholder:text-tertiary"
-            placeholder="Edit your message..."
+            placeholder="Edit your message…"
             autoFocus
             rows={1}
           />

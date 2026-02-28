@@ -107,7 +107,7 @@ export function useThreads(props: {
                 typeof firstHumanMessage.content === "string"
                   ? firstHumanMessage.content
                   : firstHumanMessage.content[0]?.text || "";
-              title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
+              title = content.slice(0, 50) + (content.length > 50 ? "…" : "");
             }
             const firstAiMessage = values.messages.find(
               (m: any) => m.type === "ai"
