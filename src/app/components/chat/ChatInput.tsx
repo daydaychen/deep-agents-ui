@@ -20,6 +20,19 @@ export const ChatInput = React.memo<ChatInputProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isFocused, setIsFocused] = useState(false);
 
+    // Auto-resize textarea based on content
+    React.useLayoutEffect(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        // Reset height to let it shrink if needed, then set to scrollHeight
+        textarea.style.height = "inherit";
+        const scrollHeight = textarea.scrollHeight;
+        if (scrollHeight > 0) {
+          textarea.style.height = `${scrollHeight}px`;
+        }
+      }
+    }, [input]);
+
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (submitDisabled) return;
@@ -66,9 +79,12 @@ export const ChatInput = React.memo<ChatInputProps>(
               }}
               placeholder={isLoading ? "AI is processing…" : "Message Deep Agent…"}
               className={cn(
-                "font-sans field-sizing-content flex-1 resize-none border-0 bg-transparent py-3 text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40 transition-[opacity,color,background-color]",
-                "min-h-[44px] max-h-[300px]"
+                "font-sans flex-1 resize-none border-0 bg-transparent py-3 text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40 transition-[opacity,color,background-color]",
+                "min-h-[44px] max-h-[300px] overflow-y-auto"
               )}
+              style={{
+                fieldSizing: "content",
+              }}
               rows={1}
             />
           </div>

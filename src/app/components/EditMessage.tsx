@@ -1,10 +1,10 @@
 "use client";
 
+import { extractStringFromMessageContent } from "@/app/utils/utils";
 import { Button } from "@/components/ui/button";
 import type { Message } from "@langchain/langgraph-sdk";
 import { Check, Edit, X } from "lucide-react";
 import React, { useCallback, useRef, useState } from "react";
-import { extractStringFromMessageContent } from "@/app/utils/utils";
 
 interface EditMessageProps {
   message: Message;
@@ -19,6 +19,19 @@ export const EditMessage = React.memo<EditMessageProps>(
       extractStringFromMessageContent(message)
     );
     const isComposingRef = useRef(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Auto-resize textarea based on content
+    React.useLayoutEffect(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.style.height = "inherit";
+        const scrollHeight = textarea.scrollHeight;
+        if (scrollHeight > 0) {
+          textarea.style.height = `${scrollHeight}px`;
+        }
+      }
+    }, [content]);
 
     const handleSave = useCallback(
       (e?: React.FormEvent) => {
@@ -73,6 +86,7 @@ export const EditMessage = React.memo<EditMessageProps>(
           className="flex flex-col gap-2 rounded-lg border border-border bg-background p-2"
         >
           <textarea
+            ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -82,7 +96,10 @@ export const EditMessage = React.memo<EditMessageProps>(
             onCompositionEnd={() => {
               isComposingRef.current = false;
             }}
-            className="font-inherit field-sizing-content min-h-[2.5rem] w-full resize-none border-0 bg-transparent px-2 py-1 text-sm leading-6 text-primary outline-none placeholder:text-tertiary"
+            className="font-inherit w-full resize-none border-0 bg-transparent px-2 py-1 text-sm leading-6 text-primary outline-none placeholder:text-tertiary"
+            style={{
+              fieldSizing: "content",
+            }}
             placeholder="Edit your message…"
             autoFocus
             rows={1}
