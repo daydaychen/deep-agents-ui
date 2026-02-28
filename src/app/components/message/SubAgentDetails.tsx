@@ -64,7 +64,7 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
               Protocol Input
             </h4>
           </div>
-          <div className="rounded-xl border border-border/40 bg-background/50 p-3 text-sm shadow-inner">
+          <div className="rounded-xl border border-border/40 bg-muted/30 dark:bg-zinc-950/50 p-3 text-sm shadow-inner">
             <MarkdownContent content={extractSubAgentContent(subAgent.input)} />
           </div>
         </div>
@@ -101,7 +101,7 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
                 Final Result
               </h4>
             </div>
-            <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] p-3 text-sm shadow-inner">
+            <div className="rounded-xl border border-emerald-500/10 bg-muted/30 dark:bg-emerald-500/[0.05] dark:bg-zinc-950/50 p-3 text-sm shadow-inner">
               <MarkdownContent
                 content={extractSubAgentContent(subAgent.output)}
               />

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { cn } from "@/lib/utils";
 import { Check, Copy } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface MarkdownContentProps {
   content: string;
@@ -36,16 +37,23 @@ const CopyButton = ({ text }: { text: string }) => {
 
 export const MarkdownContent = React.memo<MarkdownContentProps>(
   ({ content, className = "" }) => {
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+      setMounted(true);
+    }, []);
+
+    const isDark = resolvedTheme === "dark";
+
     return (
       <div
         className={cn(
           "prose prose-sm dark:prose-invert min-w-0 max-w-full overflow-hidden break-words leading-relaxed text-inherit",
-          "[&_h1]:mt-6 [&_h1]:mb-4 [&_h1]:font-bold [&_h1]:text-lg",
-          "[&_h2]:mt-5 [&_h2]:mb-3 [&_h2]:font-bold [&_h2]:text-base",
-          "[&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:font-bold [&_h3]:text-sm",
-          "[&_p]:mb-4 [&_p:last-child]:mb-0",
-          "[&_ul]:mb-4 [&_ol]:mb-4 [&_li]:mb-1",
-          "[&_pre]:p-0 [&_pre]:bg-transparent",
+          "[&_pre]:!bg-transparent [&_pre]:!p-0",
+          "[&_code]:!bg-transparent",
+          "[&_code_*]:!bg-transparent",
+          "[&_.react-syntax-highlighter]:!bg-transparent",
           className
         )}
       >
@@ -66,33 +74,42 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
               const codeString = String(children).replace(/\n$/, "");
               
               if (!inline && match) {
+                // Use explicit logic-based coloring to avoid Tailwind 'dark:' prefix issues
+                const containerBg = mounted && isDark ? "bg-[#1e1e1e]" : "bg-zinc-50";
+                const headerBg = mounted && isDark ? "bg-zinc-900/80" : "bg-muted/40";
+
                 return (
-                  <div className="group relative my-4 overflow-hidden rounded-lg border border-border bg-[#282c34]">
-                    <div className="flex items-center justify-between px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 bg-muted/20 border-b border-border">
+                  <div className={cn("group relative my-4 overflow-hidden rounded-lg border border-border shadow-sm", containerBg)}>
+                    <div className={cn("flex items-center justify-between px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 border-b border-border", headerBg)}>
                       <span>{match[1]}</span>
                     </div>
                     <CopyButton text={codeString} />
-                    <SyntaxHighlighter
-                      style={oneDark}
-                      language={match[1]}
-                      PreTag="div"
-                      className="!m-0 !bg-transparent text-xs"
-                      wrapLines={true}
-                      wrapLongLines={true}
-                      lineProps={{
-                        style: {
-                          wordBreak: "break-all",
-                          whiteSpace: "pre-wrap",
-                          overflowWrap: "break-word",
-                        },
-                      }}
-                      customStyle={{
-                        padding: "1rem",
-                        fontSize: "0.8rem",
-                      }}
-                    >
-                      {codeString}
-                    </SyntaxHighlighter>
+                    {mounted && (
+                      <SyntaxHighlighter
+                        style={isDark ? oneDark : oneLight}
+                        language={match[1]}
+                        PreTag="div"
+                        className="!m-0 !bg-transparent text-xs"
+                        wrapLines={true}
+                        wrapLongLines={true}
+                        lineProps={{
+                          style: {
+                            wordBreak: "break-all",
+                            whiteSpace: "pre-wrap",
+                            overflowWrap: "break-word",
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                        customStyle={{
+                          padding: "1rem",
+                          fontSize: "0.8rem",
+                          backgroundColor: "transparent",
+                          background: "transparent",
+                        }}
+                      >
+                        {codeString}
+                      </SyntaxHighlighter>
+                    )}
                   </div>
                 );
               }
@@ -109,54 +126,26 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
             pre({ children }: { children?: React.ReactNode }) {
               return <>{children}</>;
             },
-            a({
-              href,
-              children,
-            }: {
-              href?: string;
-              children?: React.ReactNode;
-            }) {
-              return (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
-                >
-                  {children}
-                </a>
-              );
-            },
-            blockquote({ children }: { children?: React.ReactNode }) {
-              return (
-                <blockquote className="my-4 border-l-4 border-primary/30 bg-muted/30 px-4 py-2 italic text-muted-foreground">
-                  {children}
-                </blockquote>
-              );
-            },
-            table({ children }: { children?: React.ReactNode }) {
+            // ... rest of Markdown components remain the same
+            a: ({ href, children }) => (
+              <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary">{children}</a>
+            ),
+            blockquote: ({ children }) => (
+              <blockquote className="my-4 border-l-4 border-primary/30 bg-muted/30 px-4 py-2 italic text-muted-foreground">{children}</blockquote>
+            ),
+            table: ({ children }) => {
               const childrenArray = React.Children.toArray(children) as any[];
               return (
                 <div className="my-4 overflow-x-auto rounded-lg border border-border">
                   <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="bg-muted/50">
-                        {childrenArray[0]?.props?.children}
-                      </tr>
-                    </thead>
-                    <tbody className="[&_tr:last-child]:border-0">
-                      {childrenArray[1]?.props?.children}
-                    </tbody>
+                    <thead><tr className="bg-muted/50">{childrenArray[0]?.props?.children}</tr></thead>
+                    <tbody className="[&_tr:last-child]:border-0">{childrenArray[1]?.props?.children}</tbody>
                   </table>
                 </div>
               );
             },
-            th({ children }: { children?: React.ReactNode }) {
-              return <th className="border-b border-border p-2 text-left font-semibold">{children}</th>;
-            },
-            td({ children }: { children?: React.ReactNode }) {
-              return <td className="border-b border-border p-2">{children}</td>;
-            },
+            th: ({ children }) => <th className="border-b border-border p-2 text-left font-semibold">{children}</th>,
+            td: ({ children }) => <td className="border-b border-border p-2">{children}</td>,
           }}
         >
           {content}

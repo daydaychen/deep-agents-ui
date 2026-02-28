@@ -192,8 +192,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                             <ChevronDown size={12} className={cn("text-muted-foreground/40 transition-transform", expandedArgs[key] && "rotate-180")} />
                           </button>
                           {expandedArgs[key] && (
-                            <div className="border-t border-border/20 bg-zinc-950 p-3 shadow-inner">
-                              <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-zinc-300">
+                            <div className="border-t border-border/20 bg-muted/30 dark:bg-zinc-950 p-3 shadow-inner">
+                              <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/80 dark:text-zinc-300">
                                 {typeof value === "string" ? value : JSON.stringify(value, null, 2)}
                               </pre>
                             </div>
@@ -209,8 +209,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                       <CircleCheckBigIcon size={10} className="text-emerald-500/50" />
                       <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">Execution Result</h4>
                     </div>
-                    <div className="rounded-lg border border-emerald-500/10 bg-zinc-950 p-4 shadow-inner overflow-x-auto">
-                      <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-emerald-400/90 selection:bg-emerald-500/20">
+                    <div className="rounded-lg border border-emerald-500/10 bg-muted/30 dark:bg-zinc-950 p-4 shadow-inner overflow-x-auto">
+                      <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/80 dark:text-emerald-400/90 selection:bg-emerald-500/20">
                         {typeof toolCall.result === "string" ? toolCall.result : JSON.stringify(toolCall.result, null, 2)}
                       </pre>
                     </div>
