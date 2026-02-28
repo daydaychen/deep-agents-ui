@@ -2,7 +2,6 @@
 
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
 import { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
 import {
@@ -14,7 +13,7 @@ import {
   StopCircle,
   Terminal,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 interface ToolCallBoxProps {
   toolCall: ToolCall;
@@ -45,137 +44,114 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       {}
     );
 
-    const { name, args, result, status } = useMemo(() => {
-      return {
-        name: toolCall.name || "Unknown Tool",
-        args: toolCall.args || {},
-        result: toolCall.result,
-        status: toolCall.status || "completed",
-      };
+    // Deep Arg Extraction
+    const finalArgs = useMemo(() => {
+      const raw = (toolCall.args as any) ?? (toolCall as any).input ?? (toolCall as any).function?.arguments ?? (toolCall as any).arguments;
+      if (!raw) return {};
+      if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+      if (typeof raw === 'string' && (raw as string).trim() !== "") {
+        try {
+          const parsed = JSON.parse(raw);
+          return typeof parsed === 'object' ? parsed : { value: parsed };
+        } catch {
+          return { text: raw };
+        }
+      }
+      return {};
     }, [toolCall]);
+
+    // Preview Logic
+    const argsPreview = useMemo(() => {
+      const entries = Object.entries(finalArgs);
+      if (entries.length === 0) return "";
+      try {
+        const preview = entries
+          .map(([key, value]) => {
+            let valStr = "";
+            if (value === null || value === undefined) valStr = "null";
+            else if (typeof value === 'object') valStr = Array.isArray(value) ? "[...]" : "{...}";
+            else valStr = String(value);
+            return `${key}: ${valStr}`;
+          })
+          .join(", ");
+        return preview.length > 150 ? preview.substring(0, 150) + "..." : preview;
+      } catch {
+        return "";
+      }
+    }, [finalArgs]);
+
+    const name = toolCall.name || "Unknown Tool";
+    const status = toolCall.status || "completed";
+    const hasContent = toolCall.result || Object.keys(finalArgs).length > 0;
 
     const statusIcon = useMemo(() => {
       switch (status) {
-        case "completed":
-          return (
-            <CircleCheckBigIcon
-              size={14}
-              className="text-green-600"
-            />
-          );
-        case "error":
-          return (
-            <AlertCircle
-              size={14}
-              className="text-destructive"
-            />
-          );
-        case "pending":
-          return (
-            <Loader2
-              size={14}
-              className="animate-spin text-blue-600"
-            />
-          );
-        case "interrupted":
-          return (
-            <StopCircle
-              size={14}
-              className="text-orange-500"
-            />
-          );
-        default:
-          return (
-            <Terminal
-              size={14}
-              className="text-muted-foreground"
-            />
-          );
+        case "completed": return <CircleCheckBigIcon size={14} className="text-green-600" />;
+        case "error": return <AlertCircle size={14} className="text-destructive" />;
+        case "pending": return <Loader2 size={14} className="animate-spin text-blue-600" />;
+        case "interrupted": return <StopCircle size={14} className="text-orange-500" />;
+        default: return <Terminal size={14} className="text-muted-foreground" />;
       }
     }, [status]);
-
-    const getStatusBorderColor = useMemo(() => {
-      switch (status) {
-        case "completed":
-          return "border-l-green-600";
-        case "error":
-          return "border-l-destructive";
-        case "pending":
-          return "border-l-blue-600";
-        case "interrupted":
-          return "border-l-orange-500";
-        default:
-          return "border-l-border";
-      }
-    }, [status]);
-
-    const toggleExpanded = useCallback(() => {
-      setIsExpanded((prev) => !prev);
-    }, []);
-
-    const toggleArgExpanded = useCallback((argKey: string) => {
-      setExpandedArgs((prev) => ({
-        ...prev,
-        [argKey]: !prev[argKey],
-      }));
-    }, []);
-
-    const hasContent = result || Object.keys(args).length > 0;
 
     return (
       <div
         className={cn(
-          "w-full overflow-hidden rounded-lg border border-l-[3px] border-border shadow-sm outline-none transition-all duration-200 hover:shadow-md",
-          getStatusBorderColor,
-          isExpanded && hasContent && "bg-accent/50"
+          "w-full min-w-0 overflow-hidden rounded-xl border border-l-[3px] border-border shadow-sm bg-card transition-all",
+          status === "completed" ? "border-l-green-600" : 
+          status === "error" ? "border-l-destructive" : 
+          status === "pending" ? "border-l-blue-600" : 
+          status === "interrupted" ? "border-l-orange-500" : "border-l-border",
+          isExpanded && hasContent && "bg-accent/5"
         )}
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleExpanded}
-          className={cn(
-            "flex w-full items-center justify-between gap-2 border-none px-2 py-2 text-left shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default"
-          )}
+        {/* Header - Replaced Div with Button for accessibility */}
+        <button 
+          onClick={() => hasContent && setIsExpanded(!isExpanded)}
           disabled={!hasContent}
+          aria-expanded={isExpanded}
+          className={cn(
+            "grid grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-3 min-w-0 w-full text-left transition-colors",
+            hasContent ? "cursor-pointer hover:bg-muted/30" : "cursor-default"
+          )}
         >
-          <div className="flex w-full items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              {statusIcon}
-              <span className="text-[15px] font-medium tracking-[-0.6px] text-foreground">
-                {name}
-              </span>
-            </div>
-            {hasContent &&
-              (isExpanded ? (
-                <ChevronUp
-                  size={14}
-                  className="shrink-0 text-muted-foreground"
-                />
-              ) : (
-                <ChevronDown
-                  size={14}
-                  className="shrink-0 text-muted-foreground"
-                />
-              ))}
+          {/* Tool Name */}
+          <div className="flex items-center gap-2.5 shrink-0 min-w-0 max-w-[200px]">
+            <div className="shrink-0">{statusIcon}</div>
+            <span className="text-sm font-bold tracking-tight text-foreground truncate">
+              {name}
+            </span>
           </div>
-        </Button>
+          
+          {/* Arguments Preview - High priority visibility */}
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <div className="truncate text-[11px] font-mono text-muted-foreground/80">
+              {argsPreview || <span className="italic opacity-30 font-sans tracking-normal">no arguments</span>}
+            </div>
+          </div>
+
+          {/* Icon */}
+          <div className="shrink-0 ml-1">
+            {hasContent && (
+              isExpanded ? <ChevronUp size={16} className="text-muted-foreground/60" /> : <ChevronDown size={16} className="text-muted-foreground/60" />
+            )}
+          </div>
+        </button>
 
         {isExpanded && hasContent && (
-          <div className="px-4 pb-4">
+          <div className="px-4 pb-4 border-t border-border/10">
             {uiComponent && stream && graphId ? (
-              <div className="mt-4">
+              <div className="mt-4 min-w-0 overflow-hidden">
                 <LoadExternalComponent
                   key={uiComponent.id}
                   stream={stream}
                   message={uiComponent}
                   namespace={graphId}
-                  meta={{ status, args, result: result ?? "No Result Yet" }}
+                  meta={{ status, args: finalArgs, result: toolCall.result ?? "No Result Yet" }}
                 />
               </div>
             ) : actionRequest && onResume ? (
-              // Show tool approval UI when there's an action request but no GenUI
-              <div className="mt-4">
+              <div className="mt-4 min-w-0">
                 <ToolApprovalInterrupt
                   actionRequest={actionRequest}
                   reviewConfig={reviewConfig}
@@ -184,41 +160,25 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 />
               </div>
             ) : (
-              <>
-                {Object.keys(args).length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Arguments
-                    </h4>
-                    <div className="space-y-2">
-                      {Object.entries(args).map(([key, value]) => (
-                        <div
-                          key={key}
-                          className="rounded-sm border border-border"
-                        >
+              <div className="min-w-0">
+                {Object.keys(finalArgs).length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 px-1">Arguments</h4>
+                    <div className="space-y-1.5">
+                      {Object.entries(finalArgs).map(([key, value]) => (
+                        <div key={key} className="rounded-md border border-border/50 bg-background/30 overflow-hidden shadow-sm">
                           <button
-                            onClick={() => toggleArgExpanded(key)}
-                            className="flex w-full items-center justify-between bg-muted/30 p-2 text-left text-xs font-medium transition-colors hover:bg-muted/50"
+                            onClick={(e) => { e.stopPropagation(); setExpandedArgs(p => ({ ...p, [key]: !p[key] })); }}
+                            aria-expanded={expandedArgs[key]}
+                            className="flex w-full items-center justify-between bg-muted/20 p-2.5 text-left text-xs font-medium hover:bg-muted/40 transition-colors"
                           >
-                            <span className="font-mono">{key}</span>
-                            {expandedArgs[key] ? (
-                              <ChevronUp
-                                size={12}
-                                className="text-muted-foreground"
-                              />
-                            ) : (
-                              <ChevronDown
-                                size={12}
-                                className="text-muted-foreground"
-                              />
-                            )}
+                            <span className="font-mono text-primary/70 truncate pr-2">{key}</span>
+                            {expandedArgs[key] ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                           </button>
                           {expandedArgs[key] && (
-                            <div className="border-t border-border bg-muted/20 p-2">
-                              <pre className="m-0 overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs leading-6 text-foreground">
-                                {typeof value === "string"
-                                  ? value
-                                  : JSON.stringify(value, null, 2)}
+                            <div className="border-t border-border/30 bg-muted/5 p-3 overflow-x-auto">
+                              <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/90">
+                                {typeof value === "string" ? value : JSON.stringify(value, null, 2)}
                               </pre>
                             </div>
                           )}
@@ -227,19 +187,17 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                     </div>
                   </div>
                 )}
-                {result && (
-                  <div className="mt-4">
-                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Result
-                    </h4>
-                    <pre className="m-0 overflow-x-auto whitespace-pre-wrap break-all rounded-sm border border-border bg-muted/40 p-2 font-mono text-xs leading-7 text-foreground">
-                      {typeof result === "string"
-                        ? result
-                        : JSON.stringify(result, null, 2)}
-                    </pre>
+                {toolCall.result && (
+                  <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 px-1">Result</h4>
+                    <div className="rounded-md border border-border/50 bg-muted/10 p-3 shadow-inner overflow-x-auto">
+                      <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/90">
+                        {typeof toolCall.result === "string" ? toolCall.result : JSON.stringify(toolCall.result, null, 2)}
+                      </pre>
+                    </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}

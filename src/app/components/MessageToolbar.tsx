@@ -73,13 +73,16 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
       }
     }, [messageContent, onCopy]);
 
-    // Check if we have any visible actions (for showing placeholder when none exist)
+    // Determine what's actually visible
     const hasVisibleCopyButton = hasContent && !isLoading;
-    const hasVisibleEditButton =
-      isUser && showEdit && hasContent && !isLoading && onEdit && message;
+    const hasVisibleEditButton = isUser && showEdit && hasContent && !isLoading && onEdit && message;
     const hasVisibleRetryButton = showRetry && !isLoading && onRetry;
-    const hasAnyVisibleAction =
-      hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton;
+    const hasVisibleBranchSwitcher = showBranchSwitcher && onSelectBranch && branchOptions.length > 1;
+    
+    const hasAnyVisibleAction = hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton || hasVisibleBranchSwitcher;
+
+    // If nothing to show, don't render anything at all
+    if (!hasAnyVisibleAction) return null;
 
     return (
       <div className={className}>
@@ -89,29 +92,20 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
             isUser ? "flex-row-reverse justify-between" : "justify-between"
           )}
         >
-          {/* Action buttons - order depends on message type */}
+          {/* Action buttons */}
           <div
             className={cn(
               "flex items-center gap-1",
               isUser && "flex-row-reverse"
             )}
           >
-            {!hasAnyVisibleAction && (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled
-                className="h-7 gap-1 px-2 text-xs opacity-0"
-                aria-hidden="true"
-              ></Button>
-            )}
-
-            {/* Copy button - always visible for messages with content */}
-            {hasContent && !isLoading && (
+            {/* Copy button */}
+            {hasVisibleCopyButton && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleCopy}
+                aria-label={copySuccess ? "Message copied" : "Copy message to clipboard"}
                 className={`group h-7 gap-1 px-2 text-xs transition-all duration-200 hover:bg-accent/50 ${
                   copySuccess
                     ? "text-success hover:text-success"
@@ -130,26 +124,22 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
               </Button>
             )}
 
-            {/* Edit button - only visible for user messages when editing is enabled */}
-            {isUser &&
-              showEdit &&
-              hasContent &&
-              !isLoading &&
-              onEdit &&
-              message && (
-                <EditMessage
-                  message={message}
-                  onEdit={onEdit}
-                  className="self-start"
-                />
-              )}
+            {/* Edit button */}
+            {hasVisibleEditButton && (
+              <EditMessage
+                message={message}
+                onEdit={onEdit}
+                className="self-start"
+              />
+            )}
 
-            {/* Retry button - only visible when retry is available */}
-            {showRetry && !isLoading && onRetry && (
+            {/* Retry button */}
+            {hasVisibleRetryButton && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onRetry}
+                aria-label="Retry generation from this message"
                 className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground"
                 title="Retry from this message"
               >
@@ -159,8 +149,8 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
             )}
           </div>
 
-          {/* Branch switcher - only show when multiple branches exist */}
-          {showBranchSwitcher && onSelectBranch && branchOptions.length > 1 && (
+          {/* Branch switcher */}
+          {hasVisibleBranchSwitcher && (
             <BranchSwitcher
               branchOptions={branchOptions}
               currentIndex={currentBranchIndex}

@@ -135,16 +135,17 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
               );
             },
             table({ children }: { children?: React.ReactNode }) {
+              const childrenArray = React.Children.toArray(children) as any[];
               return (
                 <div className="my-4 overflow-x-auto rounded-lg border border-border">
                   <table className="w-full border-collapse text-sm">
                     <thead>
                       <tr className="bg-muted/50">
-                        {children?.[0]?.props?.children}
+                        {childrenArray[0]?.props?.children}
                       </tr>
                     </thead>
                     <tbody className="[&_tr:last-child]:border-0">
-                      {children?.[1]?.props?.children}
+                      {childrenArray[1]?.props?.children}
                     </tbody>
                   </table>
                 </div>

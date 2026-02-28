@@ -10,13 +10,16 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  ScrollText,
 } from "lucide-react";
 import React from "react";
 
 interface SubAgentIndicatorProps {
   subAgent: SubAgent;
-  onClick: () => void;
+  onToggleExpand: () => void;
+  onShowLogs: () => void;
   isExpanded?: boolean;
+  isActiveInSidebar?: boolean;
 }
 
 const getStatusIcon = (status: SubAgent["status"]) => {
@@ -70,42 +73,58 @@ const getStatusBorderColor = (status: SubAgent["status"]) => {
 };
 
 export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
-  ({ subAgent, onClick, isExpanded = true }) => {
+  ({ subAgent, onToggleExpand, onShowLogs, isExpanded = false, isActiveInSidebar = false }) => {
     return (
       <div
         className={cn(
-          "w-fit max-w-[70vw] overflow-hidden rounded-lg border border-l-[3px] border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md",
-          getStatusBorderColor(subAgent.status)
+          "w-full overflow-hidden rounded-xl border border-l-[3px] border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md",
+          getStatusBorderColor(subAgent.status),
+          isActiveInSidebar && "ring-1 ring-primary/20 bg-primary/5"
         )}
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClick}
-          className="flex w-full items-center justify-between gap-2 border-none px-4 py-2 text-left shadow-none outline-none transition-colors duration-200"
-        >
-          <div className="flex w-full items-center justify-between gap-2">
+        <div className="flex items-center">
+          {/* Main Click Area - Toggles local Input/Output visibility */}
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className="flex flex-1 items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-200 hover:bg-muted/50"
+          >
             <div className="flex items-center gap-2">
               {getStatusIcon(subAgent.status)}
-              <span className="font-sans text-[15px] font-bold leading-[140%] tracking-[-0.6px] text-[#3F3F46]">
+              <span className="font-sans text-sm font-bold tracking-tight text-foreground">
                 {subAgent.agentName && subAgent.agentName !== subAgent.subAgentName
                   ? `${subAgent.agentName} (${subAgent.subAgentName})`
                   : subAgent.agentName || subAgent.subAgentName}
               </span>
             </div>
             {isExpanded ? (
-              <ChevronUp
-                size={14}
-                className="shrink-0 text-[#70707B]"
-              />
+              <ChevronUp size={14} className="text-muted-foreground" />
             ) : (
-              <ChevronDown
-                size={14}
-                className="shrink-0 text-[#70707B]"
-              />
+              <ChevronDown size={14} className="text-muted-foreground" />
             )}
+          </button>
+
+          {/* Logs Button - Toggles the Global Sidebar Detail */}
+          <div className="flex items-center px-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowLogs();
+              }}
+              className={cn(
+                "h-8 w-8 rounded-lg transition-all",
+                isActiveInSidebar 
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+              title="View Internal Logs"
+            >
+              <ScrollText size={16} />
+            </Button>
           </div>
-        </Button>
+        </div>
       </div>
     );
   }

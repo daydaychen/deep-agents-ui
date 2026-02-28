@@ -383,6 +383,22 @@ export function useChat({
     return error;
   }, [stream.error]);
 
+  const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
+
+  // Auto-activate subagent when it starts streaming
+  useEffect(() => {
+    if (stream.isLoading) {
+      // Find a subagent that has recent messages and is likely active
+      const subagentIds = Array.from(subagentMessagesMap.keys());
+      if (subagentIds.length > 0) {
+        const lastId = subagentIds[subagentIds.length - 1];
+        if (!activeSubAgentId) {
+          setActiveSubAgentId(lastId);
+        }
+      }
+    }
+  }, [stream.isLoading, subagentMessagesMap, activeSubAgentId]);
+
   return {
     stream,
     todos: stream.values.todos ?? [],
@@ -392,6 +408,8 @@ export function useChat({
     setFiles,
     messages: mainMessages,
     subagentMessagesMap,
+    activeSubAgentId,
+    setActiveSubAgentId,
     isLoading: stream.isLoading,
     isThreadLoading: stream.isThreadLoading,
     interrupt: stream.interrupt,

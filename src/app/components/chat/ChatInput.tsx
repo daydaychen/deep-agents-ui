@@ -43,7 +43,11 @@ export const ChatInput = React.memo<ChatInputProps>(
         className="flex items-end gap-2 p-3 pr-4"
       >
         <div className="relative flex flex-1 flex-col">
+          <label htmlFor="chat-input" className="sr-only">
+            Message AI assistant
+          </label>
           <textarea
+            id="chat-input"
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}

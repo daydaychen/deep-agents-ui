@@ -6,7 +6,6 @@ import { OrphanedApprovals } from "@/app/components/message/OrphanedApprovals";
 import { SubAgentSection } from "@/app/components/message/SubAgentSection";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useOrphanedActionRequests } from "@/app/hooks/message/useOrphanedActionRequests";
-import { useSubAgentExpansion } from "@/app/hooks/message/useSubAgentExpansion";
 import { useSubAgents } from "@/app/hooks/message/useSubAgents";
 import type { StateType } from "@/app/hooks/useChat";
 import type { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
@@ -39,6 +38,8 @@ interface ChatMessageProps {
   branchOptions?: string[];
   currentBranchIndex?: number;
   canRetry?: boolean;
+  activeSubAgentId?: string | null;
+  setActiveSubAgentId?: (id: string | null) => void;
 }
 
 export const ChatMessage = React.memo<ChatMessageProps>(
@@ -55,20 +56,20 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     onRetry,
     onEdit,
     graphId,
-    subagentMessagesMap,
     branchOptions = [],
     currentBranchIndex = 0,
     setBranch,
     canRetry = false,
+    activeSubAgentId,
+    setActiveSubAgentId,
   }) => {
     const isUser = message.type === "human";
     const messageContent = extractStringFromMessageContent(message);
     const hasContent = messageContent && messageContent.trim() !== "";
     const hasToolCalls = toolCalls.length > 0;
 
-    // Use custom hooks to extract and manage subagents
+    // Use custom hook to extract subagents
     const subAgents = useSubAgents(toolCalls);
-    const { isSubAgentExpanded, toggleSubAgent } = useSubAgentExpansion();
 
     // Find orphaned action requests
     const orphanedApprovals = useOrphanedActionRequests(
@@ -112,13 +113,14 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           {/* Sender Name/Label */}
           <div
             className={cn(
-              "flex items-center px-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50",
+              "flex items-center px-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-0.5",
               isUser && "flex-row-reverse"
             )}
           >
             {isUser ? "You" : "Assistant"}
           </div>
 
+          {/* 1. Text Content (Message Bubble) */}
           {hasContent && (
             <MessageContent
               content={messageContent}
@@ -126,39 +128,9 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             />
           )}
 
-          {/* Message Toolbar - integrated inside the content area */}
-          <div
-            className={cn(
-              "opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-1",
-              isUser && "self-end"
-            )}
-          >
-            <MessageToolbar
-              messageContent={messageContent}
-              isUser={isUser}
-              isLoading={isLoading}
-              onRetry={
-                canRetry && onRetry
-                  ? () => onRetry(message, messageIndex)
-                  : undefined
-              }
-              showRetry={canRetry}
-              onEdit={
-                onEdit
-                  ? (editedMessage) => onEdit(editedMessage, messageIndex)
-                  : undefined
-              }
-              showEdit={false} // Keeping it false for now as per previous code
-              branchOptions={branchOptions}
-              currentBranchIndex={currentBranchIndex}
-              onSelectBranch={setBranch}
-              showBranchSwitcher={!!setBranch && branchOptions.length > 1}
-              message={message}
-            />
-          </div>
-
+          {/* 2. Tool Calls */}
           {hasToolCalls && (
-            <div className="mt-4 flex w-full flex-col gap-3">
+            <div className={cn("flex w-full min-w-0 flex-col gap-3", hasContent ? "mt-4" : "mt-1")}>
               {toolCalls.map((toolCall: ToolCall) => {
                 if (toolCall.name === "task") return null;
                 const toolCallGenUiComponent = ui?.find(
@@ -182,18 +154,21 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               })}
             </div>
           )}
+
+          {/* 3. SubAgent Section */}
           {!isUser && (
             <SubAgentSection
               subAgents={subAgents}
-              isSubAgentExpanded={isSubAgentExpanded}
-              toggleSubAgent={toggleSubAgent}
+              activeSubAgentId={activeSubAgentId}
+              setActiveSubAgentId={setActiveSubAgentId}
               actionRequestsMap={actionRequestsMap}
               reviewConfigsMap={reviewConfigsMap}
               onResumeInterrupt={onResumeInterrupt}
               isLoading={isLoading}
-              subagentMessagesMap={subagentMessagesMap}
             />
           )}
+
+          {/* 4. Orphaned Approvals */}
           {!isUser && onResumeInterrupt && (
             <OrphanedApprovals
               orphanedApprovals={orphanedApprovals}
@@ -201,6 +176,37 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               isLoading={isLoading}
             />
           )}
+
+          {/* 5. Message Toolbar - Moved to the very bottom for consistent placement */}
+          <div
+            className={cn(
+              "opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-2",
+              isUser && "self-end"
+            )}
+          >
+            <MessageToolbar
+              messageContent={messageContent}
+              isUser={isUser}
+              isLoading={isLoading}
+              onRetry={
+                canRetry && onRetry
+                  ? () => onRetry(message, messageIndex)
+                  : undefined
+              }
+              showRetry={canRetry}
+              onEdit={
+                onEdit
+                  ? (editedMessage) => onEdit(editedMessage, messageIndex)
+                  : undefined
+              }
+              showEdit={false}
+              branchOptions={branchOptions}
+              currentBranchIndex={currentBranchIndex}
+              onSelectBranch={setBranch}
+              showBranchSwitcher={!!setBranch && branchOptions.length > 0}
+              message={message}
+            />
+          </div>
         </div>
       </div>
     );
