@@ -45,9 +45,9 @@ function LoadingState() {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center">
-      <MessageSquare className="mb-2 h-12 w-12 text-gray-300" />
-      <p className="text-sm text-muted-foreground">No threads found</p>
+    <div className="flex flex-col items-center justify-center p-12 text-center opacity-50">
+      <MessageSquare className="mb-4 h-10 w-10 text-muted-foreground/30" />
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">No threads found</p>
     </div>
   );
 }
@@ -151,11 +151,14 @@ export function ThreadList({
   }, [interruptedCount, onInterruptCountChange]);
 
   return (
-    <div className="absolute inset-0 flex flex-col">
+    <div className="absolute inset-0 flex flex-col bg-background">
       {/* Header with title, filter, and close button */}
-      <div className="grid flex-shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-b border-border p-4">
-        <h2 className="text-lg font-semibold tracking-tight">Threads</h2>
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-border/50 px-5 py-4">
         <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">Threads</h2>
+        </div>
+        <div className="flex items-center gap-3">
           <ThreadStatusFilter
             value={statusFilter}
             onChange={setStatusFilter}
@@ -166,10 +169,10 @@ export function ThreadList({
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="h-8 w-8"
+              className="h-7 w-7 rounded-full hover:bg-muted"
               aria-label="Close threads sidebar"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
@@ -185,7 +188,7 @@ export function ThreadList({
         {!threads.error && !threads.isLoading && isEmpty && <EmptyState />}
 
         {!threads.error && !isEmpty && (
-          <div className="box-border w-full max-w-full overflow-hidden p-2">
+          <div className="box-border w-full max-w-full overflow-hidden px-2 pb-6 pt-2">
             {getThreadGroupKeys().map((groupType) => (
               <ThreadGroup
                 key={groupType}
@@ -199,16 +202,17 @@ export function ThreadList({
             ))}
 
             {!isReachingEnd && (
-              <div className="flex justify-center py-4">
+              <div className="flex justify-center py-6">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-8 border-dashed px-6 text-xs"
                   onClick={() => threads.setSize(threads.size + 1)}
                   disabled={isLoadingMore}
                 >
                   {isLoadingMore ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                       Loading...
                     </>
                   ) : (

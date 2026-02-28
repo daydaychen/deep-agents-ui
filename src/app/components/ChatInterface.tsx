@@ -196,12 +196,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             </div>
 
             {/* Input Container */}
-            <div className="flex-shrink-0 bg-background/80 backdrop-blur-md pt-2 pb-6 px-4">
-              <div
-                className={cn(
-                  "mx-auto flex w-full flex-col overflow-hidden rounded-[24px] border border-border bg-background shadow-lg transition-all duration-300 focus-within:shadow-xl focus-within:border-primary/20 max-w-[850px]"
-                )}
-              >
+            <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-4">
+              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-all duration-500 focus-within:border-primary/30 focus-within:shadow-primary/10">
                 <TasksSection
                   todos={todos}
                   files={files}
@@ -234,7 +230,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
         
         <ResizablePanel 
           ref={sidebarPanelRef}
-          defaultSize={0} 
+          defaultSize={40} 
           minSize={25} 
           collapsible 
           onCollapse={() => setActiveSubAgentId(null)}

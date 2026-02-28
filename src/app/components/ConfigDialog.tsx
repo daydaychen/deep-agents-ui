@@ -22,6 +22,8 @@ import {
 import { StandaloneConfig } from "@/lib/config";
 import { Client } from "@langchain/langgraph-sdk";
 import type { Assistant } from "@langchain/langgraph-sdk";
+import { toast } from "sonner";
+import { Loader2, Settings2, Globe, Key, ListFilter, Hash, User } from "lucide-react";
 
 interface ConfigDialogProps {
   open: boolean;
@@ -107,14 +109,18 @@ export function ConfigDialog({
   ]);
 
   const handleSave = () => {
-    if (!deploymentUrl || !assistantId) {
-      alert("Please fill in all required fields");
+    if (!deploymentUrl) {
+      toast.error("Deployment URL is required");
+      return;
+    }
+    if (!assistantId) {
+      toast.error("Assistant ID is required");
       return;
     }
 
     const parsedRecursionLimit = parseInt(recursionLimit, 10);
     if (isNaN(parsedRecursionLimit) || parsedRecursionLimit < 1) {
-      alert("Recursion limit must be a positive number");
+      toast.error("Recursion limit must be a positive number");
       return;
     }
 
@@ -125,6 +131,7 @@ export function ConfigDialog({
       recursionLimit: parsedRecursionLimit,
       userId: userId || undefined,
     });
+    toast.success("Settings saved successfully");
     onOpenChange(false);
   };
 
@@ -135,86 +142,92 @@ export function ConfigDialog({
     >
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Configuration</DialogTitle>
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5 text-primary" />
+            <DialogTitle>Configuration</DialogTitle>
+          </div>
           <DialogDescription>
             Configure your LangGraph deployment settings. These settings are
-            saved in your browser&apos;s local storage.
+            saved in your browser's local storage.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-5 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="deploymentUrl">Deployment URL</Label>
+            <Label htmlFor="deploymentUrl" className="flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              Deployment URL
+            </Label>
             <Input
               id="deploymentUrl"
               placeholder="https://<deployment-url>"
               value={deploymentUrl}
               onChange={(e) => setDeploymentUrl(e.target.value)}
+              className="bg-muted/30"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="assistantId">Assistant ID</Label>
-            {!useCustomId && assistants.length > 0 ? (
-              <>
-                <Select
-                  value={assistantId}
-                  onValueChange={setAssistantId}
-                  disabled={loadingAssistants}
-                >
-                  <SelectTrigger id="assistantId">
-                    <SelectValue
-                      placeholder={
-                        loadingAssistants ? "加载中..." : "选择 Assistant"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assistants.map((assistant) => (
-                      <SelectItem
-                        key={assistant.assistant_id}
-                        value={assistant.assistant_id}
-                      >
-                        {assistant.name || assistant.graph_id} (
-                        {assistant.assistant_id.slice(0, 8)}...)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
+            <div className="flex items-center justify-between">
+              <Label htmlFor="assistantId" className="flex items-center gap-1.5">
+                <ListFilter className="h-3.5 w-3.5" />
+                Assistant ID
+              </Label>
+              {assistants.length > 0 && (
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setUseCustomId(true)}
-                  className="text-xs text-muted-foreground"
+                  onClick={() => setUseCustomId(!useCustomId)}
+                  className="text-[11px] font-medium text-primary hover:underline"
                 >
-                  或手动输入 Assistant ID
-                </Button>
-              </>
+                  {useCustomId ? "Select from list" : "Enter manually"}
+                </button>
+              )}
+            </div>
+            {!useCustomId && assistants.length > 0 ? (
+              <Select
+                value={assistantId}
+                onValueChange={setAssistantId}
+                disabled={loadingAssistants}
+              >
+                <SelectTrigger id="assistantId" className="bg-muted/30">
+                  <SelectValue
+                    placeholder={
+                      loadingAssistants ? "Loading..." : "Select Assistant"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {assistants.map((assistant) => (
+                    <SelectItem
+                      key={assistant.assistant_id}
+                      value={assistant.assistant_id}
+                    >
+                      <span className="font-medium">{assistant.name || assistant.graph_id}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        ({assistant.assistant_id.slice(0, 8)}...)
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
-              <>
+              <div className="relative">
                 <Input
                   id="assistantId"
                   placeholder="<assistant-id>"
                   value={assistantId}
                   onChange={(e) => setAssistantId(e.target.value)}
+                  className="bg-muted/30"
                 />
-                {assistants.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setUseCustomId(false)}
-                    className="text-xs text-muted-foreground"
-                  >
-                    从列表中选择
-                  </Button>
+                {loadingAssistants && (
+                  <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
                 )}
-              </>
+              </div>
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="langsmithApiKey">
+            <Label htmlFor="langsmithApiKey" className="flex items-center gap-1.5">
+              <Key className="h-3.5 w-3.5" />
               LangSmith API Key{" "}
-              <span className="text-muted-foreground">(Optional)</span>
+              <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wider ml-1">(Optional)</span>
             </Label>
             <Input
               id="langsmithApiKey"
@@ -222,42 +235,48 @@ export function ConfigDialog({
               placeholder="lsv2_pt_..."
               value={langsmithApiKey}
               onChange={(e) => setLangsmithApiKey(e.target.value)}
+              className="bg-muted/30"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="recursionLimit">
-              Recursion Limit{" "}
-              <span className="text-muted-foreground">(Default: 100)</span>
-            </Label>
-            <Input
-              id="recursionLimit"
-              type="number"
-              min="1"
-              placeholder="100"
-              value={recursionLimit}
-              onChange={(e) => setRecursionLimit(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="userId">
-              User ID <span className="text-muted-foreground">(Optional)</span>
-            </Label>
-            <Input
-              id="userId"
-              placeholder="user-identifier"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="recursionLimit" className="flex items-center gap-1.5">
+                <Hash className="h-3.5 w-3.5" />
+                Recursion Limit
+              </Label>
+              <Input
+                id="recursionLimit"
+                type="number"
+                min="1"
+                placeholder="100"
+                value={recursionLimit}
+                onChange={(e) => setRecursionLimit(e.target.value)}
+                className="bg-muted/30"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="userId" className="flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                User ID
+              </Label>
+              <Input
+                id="userId"
+                placeholder="user-identifier"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                className="bg-muted/30"
+              />
+            </div>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save</Button>
+          <Button onClick={handleSave} className="px-8">Save Settings</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

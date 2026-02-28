@@ -81,24 +81,24 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     return (
       <div
         className={cn(
-          "group flex w-full max-w-full overflow-x-hidden gap-3 py-4",
+          "group flex w-full max-w-full overflow-x-hidden gap-4 py-6 px-4 transition-colors hover:bg-muted/5",
           isUser && "flex-row-reverse"
         )}
       >
         {/* Avatar Container */}
-        <div className="flex flex-shrink-0 flex-col items-center pt-5">
+        <div className="flex flex-shrink-0 flex-col items-center pt-1">
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-colors",
+              "flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition-all duration-300",
               isUser
-                ? "bg-primary/5 border-primary/10 text-primary"
-                : "bg-accent/50 border-accent text-accent-foreground"
+                ? "bg-zinc-900 border-zinc-800 text-white dark:bg-zinc-100 dark:border-zinc-200 dark:text-zinc-900"
+                : "bg-primary/10 border-primary/20 text-primary shadow-primary/5"
             )}
           >
             {isUser ? (
-              <User className="h-4 w-4" />
+              <User className="h-5 w-5" />
             ) : (
-              <Bot className="h-4 w-4" />
+              <Bot className="h-5 w-5" />
             )}
           </div>
         </div>
@@ -106,31 +106,47 @@ export const ChatMessage = React.memo<ChatMessageProps>(
         {/* Message Content Area */}
         <div
           className={cn(
-            "flex min-w-0 flex-col gap-1",
-            isUser ? "max-w-[80%] items-end" : "flex-1 max-w-[85%]"
+            "flex min-w-0 flex-col gap-1.5",
+            isUser ? "max-w-[85%] items-end" : "flex-1 max-w-[90%]"
           )}
         >
           {/* Sender Name/Label */}
           <div
             className={cn(
-              "flex items-center px-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-0.5",
+              "flex items-center px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40 mb-1",
               isUser && "flex-row-reverse"
             )}
           >
-            {isUser ? "You" : "Assistant"}
+            {isUser ? "User Protocol" : "Deep Agent Core"}
           </div>
 
           {/* 1. Text Content (Message Bubble) */}
           {hasContent && (
-            <MessageContent
-              content={messageContent}
-              isUser={isUser}
-            />
+            <div className={cn(
+              "relative min-w-0 overflow-hidden",
+              isUser ? "text-right" : "text-left w-full pl-3 border-l-2 border-muted/30 ml-0.5"
+            )}>
+              <MessageContent
+                content={messageContent}
+                isUser={isUser}
+              />
+            </div>
           )}
 
           {/* 2. Tool Calls */}
           {hasToolCalls && (
-            <div className={cn("flex w-full min-w-0 flex-col gap-3", hasContent ? "mt-4" : "mt-1")}>
+            <div className={cn(
+              "flex w-full min-w-0 flex-col gap-3", 
+              hasContent ? "mt-4" : "mt-1",
+              !isUser && "pl-3 border-l-2 border-muted/30 ml-0.5"
+            )}>
+              {!isUser && (
+                <div className="flex items-center gap-2 px-1 mb-1 opacity-40">
+                  <div className="h-[1px] flex-1 bg-border" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Core Execution</span>
+                  <div className="h-[1px] flex-1 bg-border" />
+                </div>
+              )}
               {toolCalls.map((toolCall: ToolCall) => {
                 if (toolCall.name === "task") return null;
                 const toolCallGenUiComponent = ui?.find(
@@ -177,10 +193,10 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             />
           )}
 
-          {/* 5. Message Toolbar - Moved to the very bottom for consistent placement */}
+          {/* 5. Message Toolbar */}
           <div
             className={cn(
-              "opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-2",
+              "opacity-0 group-hover:opacity-100 transition-all duration-300 mt-3 transform translate-y-1 group-hover:translate-y-0",
               isUser && "self-end"
             )}
           >

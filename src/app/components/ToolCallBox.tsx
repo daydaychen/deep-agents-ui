@@ -7,7 +7,6 @@ import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
 import {
   AlertCircle,
   ChevronDown,
-  ChevronUp,
   CircleCheckBigIcon,
   Loader2,
   StopCircle,
@@ -74,7 +73,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             return `${key}: ${valStr}`;
           })
           .join(", ");
-        return preview.length > 150 ? preview.substring(0, 150) + "..." : preview;
+        return preview.length > 80 ? preview.substring(0, 80) + "..." : preview;
       } catch {
         return "";
       }
@@ -86,62 +85,77 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
 
     const statusIcon = useMemo(() => {
       switch (status) {
-        case "completed": return <CircleCheckBigIcon size={14} className="text-green-600" />;
-        case "error": return <AlertCircle size={14} className="text-destructive" />;
-        case "pending": return <Loader2 size={14} className="animate-spin text-blue-600" />;
-        case "interrupted": return <StopCircle size={14} className="text-orange-500" />;
-        default: return <Terminal size={14} className="text-muted-foreground" />;
+        case "completed": return <CircleCheckBigIcon size={13} className="text-emerald-500" />;
+        case "error": return <AlertCircle size={13} className="text-destructive" />;
+        case "pending": return <Loader2 size={13} className="animate-spin text-blue-500" />;
+        case "interrupted": return <StopCircle size={13} className="text-orange-500" />;
+        default: return <Terminal size={13} className="text-muted-foreground" />;
       }
     }, [status]);
 
     return (
       <div
         className={cn(
-          "w-full min-w-0 overflow-hidden rounded-xl border border-l-[3px] border-border shadow-sm bg-card transition-all",
-          status === "completed" ? "border-l-green-600" : 
-          status === "error" ? "border-l-destructive" : 
-          status === "pending" ? "border-l-blue-600" : 
-          status === "interrupted" ? "border-l-orange-500" : "border-l-border",
-          isExpanded && hasContent && "bg-accent/5"
+          "w-full min-w-0 overflow-hidden rounded-xl border shadow-sm transition-all duration-300",
+          status === "completed" ? "border-emerald-500/20 bg-emerald-500/[0.02]" : 
+          status === "error" ? "border-destructive/20 bg-destructive/[0.02]" : 
+          status === "pending" ? "border-blue-500/20 bg-blue-500/[0.02]" : 
+          status === "interrupted" ? "border-orange-500/20 bg-orange-500/[0.02]" : "border-border bg-card",
+          isExpanded && hasContent && "ring-1 ring-border/40 shadow-md"
         )}
       >
-        {/* Header - Replaced Div with Button for accessibility */}
+        {/* Header */}
         <button 
           onClick={() => hasContent && setIsExpanded(!isExpanded)}
           disabled={!hasContent}
           aria-expanded={isExpanded}
           className={cn(
-            "grid grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-3 min-w-0 w-full text-left transition-colors",
+            "grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2.5 min-w-0 w-full text-left transition-colors",
             hasContent ? "cursor-pointer hover:bg-muted/30" : "cursor-default"
           )}
         >
-          {/* Tool Name */}
-          <div className="flex items-center gap-2.5 shrink-0 min-w-0 max-w-[200px]">
-            <div className="shrink-0">{statusIcon}</div>
-            <span className="text-sm font-bold tracking-tight text-foreground truncate">
+          {/* Tool Status & Name */}
+          <div className="flex items-center gap-2.5 shrink-0 min-w-0">
+            <div className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-md border shadow-inner",
+              status === "completed" ? "bg-emerald-500/10 border-emerald-500/20" : 
+              status === "error" ? "bg-destructive/10 border-destructive/20" : 
+              status === "pending" ? "bg-blue-500/10 border-blue-500/20" : 
+              status === "interrupted" ? "bg-orange-500/10 border-orange-500/20" : "bg-muted border-border"
+            )}>
+              {statusIcon}
+            </div>
+            <span className="text-[13px] font-bold tracking-tight text-foreground/90 truncate">
               {name}
             </span>
           </div>
           
-          {/* Arguments Preview - High priority visibility */}
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="truncate text-[11px] font-mono text-muted-foreground/80">
-              {argsPreview || <span className="italic opacity-30 font-sans tracking-normal">no arguments</span>}
+          {/* Arguments Preview */}
+          <div className="min-w-0 flex-1 overflow-hidden px-2 flex items-center">
+            <div className="truncate font-mono text-[10px] leading-none text-muted-foreground/60 bg-muted/20 rounded px-1.5 py-1 border border-border/10 inline-block max-w-full">
+              {argsPreview || "no-args"}
             </div>
           </div>
 
-          {/* Icon */}
-          <div className="shrink-0 ml-1">
+          {/* Expand Icon */}
+          <div className="shrink-0">
             {hasContent && (
-              isExpanded ? <ChevronUp size={16} className="text-muted-foreground/60" /> : <ChevronDown size={16} className="text-muted-foreground/60" />
+              <div className={cn(
+                "flex h-5 w-5 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
+                isExpanded && "rotate-180"
+              )}>
+                <ChevronDown size={12} />
+              </div>
             )}
           </div>
         </button>
 
         {isExpanded && hasContent && (
-          <div className="px-4 pb-4 border-t border-border/10">
+          <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-border/40 to-transparent mb-4" />
+            
             {uiComponent && stream && graphId ? (
-              <div className="mt-4 min-w-0 overflow-hidden">
+              <div className="min-w-0 overflow-hidden rounded-lg border bg-background/50 p-1">
                 <LoadExternalComponent
                   key={uiComponent.id}
                   stream={stream}
@@ -151,7 +165,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 />
               </div>
             ) : actionRequest && onResume ? (
-              <div className="mt-4 min-w-0">
+              <div className="min-w-0">
                 <ToolApprovalInterrupt
                   actionRequest={actionRequest}
                   reviewConfig={reviewConfig}
@@ -160,24 +174,26 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 />
               </div>
             ) : (
-              <div className="min-w-0">
+              <div className="space-y-4 min-w-0">
                 {Object.keys(finalArgs).length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 px-1">Arguments</h4>
-                    <div className="space-y-1.5">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-1">
+                      <Terminal size={10} className="text-muted-foreground/40" />
+                      <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">Input Parameters</h4>
+                    </div>
+                    <div className="grid gap-1.5">
                       {Object.entries(finalArgs).map(([key, value]) => (
-                        <div key={key} className="rounded-md border border-border/50 bg-background/30 overflow-hidden shadow-sm">
+                        <div key={key} className="group overflow-hidden rounded-lg border border-border/40 bg-muted/10 transition-colors hover:border-border/80">
                           <button
                             onClick={(e) => { e.stopPropagation(); setExpandedArgs(p => ({ ...p, [key]: !p[key] })); }}
-                            aria-expanded={expandedArgs[key]}
-                            className="flex w-full items-center justify-between bg-muted/20 p-2.5 text-left text-xs font-medium hover:bg-muted/40 transition-colors"
+                            className="flex w-full items-center justify-between px-3 py-2 text-left"
                           >
-                            <span className="font-mono text-primary/70 truncate pr-2">{key}</span>
-                            {expandedArgs[key] ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                            <span className="font-mono text-[11px] font-semibold text-primary/80 group-hover:text-primary transition-colors">{key}</span>
+                            <ChevronDown size={12} className={cn("text-muted-foreground/40 transition-transform", expandedArgs[key] && "rotate-180")} />
                           </button>
                           {expandedArgs[key] && (
-                            <div className="border-t border-border/30 bg-muted/5 p-3 overflow-x-auto">
-                              <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/90">
+                            <div className="border-t border-border/20 bg-zinc-950 p-3 shadow-inner">
+                              <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-zinc-300">
                                 {typeof value === "string" ? value : JSON.stringify(value, null, 2)}
                               </pre>
                             </div>
@@ -188,10 +204,13 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                   </div>
                 )}
                 {toolCall.result && (
-                  <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 px-1">Result</h4>
-                    <div className="rounded-md border border-border/50 bg-muted/10 p-3 shadow-inner overflow-x-auto">
-                      <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/90">
+                  <div className="space-y-2 pt-2">
+                    <div className="flex items-center gap-2 px-1">
+                      <CircleCheckBigIcon size={10} className="text-emerald-500/50" />
+                      <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">Execution Result</h4>
+                    </div>
+                    <div className="rounded-lg border border-emerald-500/10 bg-zinc-950 p-4 shadow-inner overflow-x-auto">
+                      <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-emerald-400/90 selection:bg-emerald-500/20">
                         {typeof toolCall.result === "string" ? toolCall.result : JSON.stringify(toolCall.result, null, 2)}
                       </pre>
                     </div>

@@ -12,7 +12,7 @@ import {
   Loader2,
   ScrollText,
 } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 
 interface SubAgentIndicatorProps {
   subAgent: SubAgent;
@@ -74,38 +74,100 @@ const getStatusBorderColor = (status: SubAgent["status"]) => {
 
 export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
   ({ subAgent, onToggleExpand, onShowLogs, isExpanded = false, isActiveInSidebar = false }) => {
+    const status = subAgent.status || "pending";
+    const name = subAgent.agentName && subAgent.agentName !== subAgent.subAgentName
+                  ? `${subAgent.agentName} (${subAgent.subAgentName})`
+                  : subAgent.agentName || subAgent.subAgentName;
+
+    // Deep Arg Extraction for SubAgent Input Preview
+    const argsPreview = useMemo(() => {
+      const input = subAgent.input || {};
+      
+      // 1. Priority: If 'description' exists, show it directly (most meaningful)
+      if (input.description && typeof input.description === 'string') {
+        const desc = input.description;
+        return desc.length > 300 ? desc.substring(0, 300) + "..." : desc;
+      }
+
+      // 2. Fallback: Filter out redundant 'subagent_type' and join others
+      const entries = Object.entries(input).filter(([key]) => key !== 'subagent_type');
+      if (entries.length === 0) return "";
+      
+      try {
+        const preview = entries
+          .map(([key, value]) => {
+            let valStr = "";
+            if (value === null || value === undefined) valStr = "null";
+            else if (typeof value === 'object') valStr = Array.isArray(value) ? "[...]" : "{...}";
+            else valStr = String(value);
+            return `${key}: ${valStr}`;
+          })
+          .join(", ");
+        return preview.length > 300 ? preview.substring(0, 300) + "..." : preview;
+      } catch {
+        return "";
+      }
+    }, [subAgent.input]);
+
     return (
       <div
         className={cn(
-          "w-full overflow-hidden rounded-xl border border-l-[3px] border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md",
-          getStatusBorderColor(subAgent.status),
-          isActiveInSidebar && "ring-1 ring-primary/20 bg-primary/5"
+          "w-full overflow-hidden rounded-xl border shadow-sm transition-all duration-300",
+          status === "completed" ? "border-emerald-500/20 bg-emerald-500/[0.02]" : 
+          status === "error" ? "border-destructive/20 bg-destructive/[0.02]" : 
+          status === "active" ? "border-blue-500/20 bg-blue-500/[0.02] ring-1 ring-blue-500/10" : 
+          status === "interrupted" ? "border-orange-500/20 bg-orange-500/[0.02]" : "border-border bg-card",
+          isActiveInSidebar && "ring-2 ring-primary/20 border-primary/30 bg-primary/[0.03] shadow-md shadow-primary/5"
         )}
       >
-        <div className="flex items-center">
-          {/* Main Click Area - Toggles local Input/Output visibility */}
+        <div className="flex items-center gap-1 pr-1.5">
+          {/* Main Click Area */}
           <button
             type="button"
             onClick={onToggleExpand}
-            className="flex flex-1 items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-200 hover:bg-muted/50"
-          >
-            <div className="flex items-center gap-2">
-              {getStatusIcon(subAgent.status)}
-              <span className="font-sans text-sm font-bold tracking-tight text-foreground">
-                {subAgent.agentName && subAgent.agentName !== subAgent.subAgentName
-                  ? `${subAgent.agentName} (${subAgent.subAgentName})`
-                  : subAgent.agentName || subAgent.subAgentName}
-              </span>
-            </div>
-            {isExpanded ? (
-              <ChevronUp size={14} className="text-muted-foreground" />
-            ) : (
-              <ChevronDown size={14} className="text-muted-foreground" />
+            className={cn(
+              "flex flex-1 items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-200 min-w-0",
+              "hover:bg-muted/30 active:bg-muted/50"
             )}
+          >
+            <div className="flex items-center gap-4 min-w-0 flex-1">
+              <div className={cn(
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border shadow-inner transition-transform duration-500",
+                status === "completed" ? "bg-emerald-500/10 border-emerald-500/20" : 
+                status === "error" ? "bg-destructive/10 border-destructive/20" : 
+                status === "active" ? "bg-blue-500/10 border-blue-500/20 scale-105" : 
+                status === "interrupted" ? "bg-orange-500/10 border-orange-500/20" : "bg-muted border-border"
+              )}>
+                {getStatusIcon(status)}
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-0.5 min-w-0">
+                  <span className="text-[13px] font-bold tracking-tight text-foreground/90 shrink-0">
+                    {name}
+                  </span>
+                  {argsPreview && (
+                    <div className="flex-1 min-w-0 flex items-center">
+                      <div className="truncate font-mono text-[9px] leading-none text-muted-foreground/50 bg-muted/20 rounded px-1.5 py-1 border border-border/10">
+                        {argsPreview}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
+                  {status === "active" ? "Sub-Process Active" : `Status: ${status}`}
+                </span>
+              </div>
+            </div>
+            <div className={cn(
+              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
+              isExpanded && "rotate-180"
+            )}>
+              <ChevronDown size={12} />
+            </div>
           </button>
 
-          {/* Logs Button - Toggles the Global Sidebar Detail */}
-          <div className="flex items-center px-1">
+          {/* Logs Button */}
+          <div className="flex items-center border-l border-border/20 pl-1 py-1 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -114,14 +176,14 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                 onShowLogs();
               }}
               className={cn(
-                "h-8 w-8 rounded-lg transition-all",
+                "h-9 w-9 rounded-xl transition-all duration-300",
                 isActiveInSidebar 
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 scale-105" 
+                  : "text-muted-foreground hover:bg-muted hover:text-primary"
               )}
-              title="View Internal Logs"
+              title="View Internal Core Trace"
             >
-              <ScrollText size={16} />
+              <ScrollText size={16} className={cn(isActiveInSidebar && "animate-pulse")} />
             </Button>
           </div>
         </div>
