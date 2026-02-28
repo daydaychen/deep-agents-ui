@@ -243,18 +243,10 @@ export function useChat({
         return;
       }
 
-      const newConfig = await client.threads.updateState(threadId!, {
-        values: null,
-        checkpoint: metadata.firstSeenState.parent_checkpoint,
-      });
-
-      stream.submit(undefined, {
+      stream.submit(null, {
+        threadId: threadId!,
         config: activeAssistant?.config,
-        checkpoint: {
-          checkpoint_id: newConfig?.configurable?.checkpoint_id,
-          checkpoint_ns: "",
-          checkpoint_map: {},
-        },
+        checkpoint: metadata.firstSeenState.parent_checkpoint,
         metadata: {
           langfuse_session_id: sessionId,
           langfuse_user_id: config.userId || "user",
@@ -264,24 +256,15 @@ export function useChat({
         streamResumable: true,
       });
     },
-    [
-      stream,
-      client.threads,
-      threadId,
-      activeAssistant?.config,
-      sessionId,
-      config.userId,
-    ]
+    [stream, threadId, activeAssistant?.config, sessionId, config.userId]
   );
 
   const editMessage = useCallback(
     async (message: Message, index: number) => {
-      // Find the actual index of this message in stream.messages by ID
       const actualIndex = stream.messages.findIndex(
         (msg) => msg.id === message.id
       );
       const indexToUse = actualIndex !== -1 ? actualIndex : index;
-      const isFirstMessage = indexToUse === 0;
 
       const metadata = stream.getMessagesMetadata(message, indexToUse);
       if (!metadata?.firstSeenState?.parent_checkpoint) {
@@ -289,20 +272,12 @@ export function useChat({
         return;
       }
 
-      if (isFirstMessage) {
-        const newConfig = await client.threads.updateState(threadId!, {
-          values: {
-            messages: [message],
-          },
-          checkpoint: metadata.firstSeenState.parent_checkpoint,
-        });
-        stream.submit(undefined, {
+      stream.submit(
+        { messages: [message] },
+        {
+          threadId: threadId!,
           config: activeAssistant?.config,
-          checkpoint: {
-            checkpoint_id: newConfig?.configurable?.checkpoint_id,
-            checkpoint_ns: "",
-            checkpoint_map: {},
-          },
+          checkpoint: metadata.firstSeenState.parent_checkpoint,
           metadata: {
             langfuse_session_id: sessionId,
             langfuse_user_id: config.userId || "user",
@@ -310,32 +285,10 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-        });
-      } else {
-        stream.submit(
-          { messages: [message] },
-          {
-            config: activeAssistant?.config,
-            checkpoint: metadata.firstSeenState.parent_checkpoint,
-            metadata: {
-              langfuse_session_id: sessionId,
-              langfuse_user_id: config.userId || "user",
-            },
-            streamMode: ["messages", "updates"],
-            streamSubgraphs: true,
-            streamResumable: true,
-          }
-        );
-      }
+        }
+      );
     },
-    [
-      stream,
-      client.threads,
-      threadId,
-      activeAssistant?.config,
-      sessionId,
-      config.userId,
-    ]
+    [stream, threadId, activeAssistant?.config, sessionId, config.userId]
   );
 
   // Helper function to get branch information for a specific message
@@ -392,10 +345,12 @@ export function useChat({
         if (startIdx !== -1 && endIdx > startIdx) {
           const jsonStr = errorMessage.substring(startIdx, endIdx);
           const parsed = JSON.parse(jsonStr);
-          
+
           if (parsed.detail) {
             if (Array.isArray(parsed.detail)) {
-              errorMessage = parsed.detail.map((d: any) => typeof d === 'string' ? d : JSON.stringify(d)).join(", ");
+              errorMessage = parsed.detail
+                .map((d: any) => (typeof d === "string" ? d : JSON.stringify(d)))
+                .join(", ");
             } else if (typeof parsed.detail === "object") {
               errorMessage = JSON.stringify(parsed.detail);
             } else {
@@ -404,7 +359,10 @@ export function useChat({
           } else if (parsed.message) {
             errorMessage = String(parsed.message);
           } else if (parsed.error) {
-            errorMessage = typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error);
+            errorMessage =
+              typeof parsed.error === "string"
+                ? parsed.error
+                : JSON.stringify(parsed.error);
           }
         }
       } catch (e) {
