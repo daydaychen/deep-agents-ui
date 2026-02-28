@@ -1,11 +1,11 @@
 "use client";
 
-import { useClient } from "@/providers/ClientProvider";
+import { useClient } from "@/providers/client-context";
 import { useCallback } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 
-interface Namespace {
+export interface Namespace {
   namespace: string[];
   count: number;
 }
@@ -25,8 +25,9 @@ export function useMemory() {
         limit: 100,
         offset: 0,
       });
+      // result.namespaces is string[][]
       return result.namespaces.map(
-        (ns): Namespace => ({
+        (ns: string[]): Namespace => ({
           namespace: ns,
           count: 0, // Note: The API doesn't return count, we'll need to fetch items to get accurate count
         })

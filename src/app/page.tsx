@@ -1,23 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
-import { useQueryState } from "nuqs";
-import { getConfig, saveConfig, StandaloneConfig } from "@/lib/config";
+import { ChatInterface } from "@/app/components/ChatInterface";
 import { ConfigDialog } from "@/app/components/ConfigDialog";
-import { Button } from "@/components/ui/button";
-import { Assistant } from "@langchain/langgraph-sdk";
-import { ClientProvider, useClient } from "@/providers/ClientProvider";
-import { Settings, MessagesSquare, SquarePen, Database, X } from "lucide-react";
-import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Memory } from "@/app/components/Memory";
+import { ThreadList } from "@/app/components/ThreadList";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { ThreadList } from "@/app/components/ThreadList";
-import { ChatProvider } from "@/providers/ChatProvider";
-import { ChatInterface } from "@/app/components/ChatInterface";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -25,6 +18,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getConfig, saveConfig, StandaloneConfig } from "@/lib/config";
+import { ChatProvider } from "@/providers/ChatProvider";
+import { ClientProvider } from "@/providers/ClientProvider";
+import { useClient } from "@/providers/client-context";
+import { Assistant } from "@langchain/langgraph-sdk";
+import { Database, MessagesSquare, Settings, SquarePen, X } from "lucide-react";
+import { useQueryState } from "nuqs";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import useSWR from "swr";
 
 interface HomePageInnerProps {
   config: StandaloneConfig;
@@ -46,71 +48,47 @@ function HomePageInner({
 
   const [mutateThreads, setMutateThreads] = useState<(() => void) | null>(null);
   const [interruptCount, setInterruptCount] = useState(0);
-  const [assistant, setAssistant] = useState<Assistant | null>(null);
 
-  const fetchAssistant = useCallback(async () => {
-    const isUUID =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        config.assistantId
-      );
-
-    if (isUUID) {
-      // We should try to fetch the assistant directly with this UUID
+  // 使用 SWR 替代 useEffect/useState 获取 Assistant
+  const { data: assistant } = useSWR(
+    client && config.assistantId ? ["assistant", config.assistantId] : null,
+    async ([, id]) => {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      
       try {
-        const data = await client.assistants.get(config.assistantId);
-        setAssistant(data);
-      } catch (error) {
-        console.error("Failed to fetch assistant:", error);
-        setAssistant({
-          assistant_id: config.assistantId,
-          graph_id: config.assistantId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          config: {},
-          metadata: {},
-          version: 1,
-          name: "Assistant",
-          context: {},
-        });
-      }
-    } else {
-      try {
-        // We should try to list out the assistants for this graph, and then use the default one.
-        // TODO: Paginate this search, but 100 should be enough for graph name
-        const assistants = await client.assistants.search({
-          graphId: config.assistantId,
-          limit: 100,
-        });
-        const defaultAssistant = assistants.find(
-          (assistant) => assistant.metadata?.["created_by"] === "system"
-        );
-        if (defaultAssistant === undefined) {
-          throw new Error("No default assistant found");
+        if (isUUID) {
+          return await client.assistants.get(id);
+        } else {
+          const assistants = await client.assistants.search({
+            graphId: id,
+            limit: 100,
+          });
+          const defaultAssistant = assistants.find(
+            (a) => a.metadata?.["created_by"] === "system"
+          );
+          if (!defaultAssistant) throw new Error("No default assistant found");
+          return defaultAssistant;
         }
-        setAssistant(defaultAssistant);
       } catch (error) {
-        console.error(
-          "Failed to find default assistant from graph_id: try setting the assistant_id directly:",
-          error
-        );
-        setAssistant({
-          assistant_id: config.assistantId,
-          graph_id: config.assistantId,
+        console.error("Failed to fetch assistant, using fallback:", error);
+        return {
+          assistant_id: id,
+          graph_id: id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           config: {},
           metadata: {},
           version: 1,
-          name: config.assistantId,
+          name: id,
           context: {},
-        });
+        } as Assistant;
       }
+    },
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false
     }
-  }, [client, config.assistantId]);
-
-  useEffect(() => {
-    fetchAssistant();
-  }, [fetchAssistant]);
+  );
 
   return (
     <TooltipProvider>
@@ -257,12 +235,12 @@ function HomePageInner({
               }
             >
               <ChatProvider
-                activeAssistant={assistant}
+                activeAssistant={assistant ?? null}
                 onHistoryRevalidate={() => mutateThreads?.()}
                 recursionLimit={config.recursionLimit}
                 config={config}
               >
-                <ChatInterface assistant={assistant} />
+                <ChatInterface assistant={assistant ?? null} />
               </ChatProvider>
             </ResizablePanel>
           </ResizablePanelGroup>

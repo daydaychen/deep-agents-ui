@@ -6,9 +6,8 @@ import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
 import { extractSubAgentContent } from "@/app/utils/utils";
+import { ArrowDownRight, Terminal } from "lucide-react";
 import React from "react";
-import { Terminal, ArrowDownRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface SubAgentDetailsProps {
   subAgent: SubAgent;

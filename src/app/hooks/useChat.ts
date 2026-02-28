@@ -2,7 +2,7 @@
 
 import type { TodoItem } from "@/app/types/types";
 import type { StandaloneConfig } from "@/lib/config";
-import { useClient } from "@/providers/ClientProvider";
+import { useClient } from "@/providers/client-context";
 import {
   type Assistant,
   type Checkpoint,

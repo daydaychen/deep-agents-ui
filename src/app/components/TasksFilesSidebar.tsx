@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { TodoItem, FileItem } from "@/app/types/types";
-import { useChatContext } from "@/providers/ChatProvider";
+import { useChatState } from "@/providers/chat-context";
 import { cn } from "@/lib/utils";
 import { FileViewDialog } from "@/app/components/FileViewDialog";
 
@@ -114,7 +114,7 @@ export const TasksFilesSidebar = React.memo<{
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
 }>(({ todos, files, setFiles }) => {
-  const { isLoading, interrupt } = useChatContext();
+  const { isLoading, interrupt } = useChatState();
   const [tasksOpen, setTasksOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(true);
 

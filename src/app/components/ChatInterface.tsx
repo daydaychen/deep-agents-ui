@@ -14,7 +14,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
-import { useChatActions, useChatState } from "@/providers/ChatProvider";
+import { useChatActions, useChatState } from "@/providers/chat-context";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { AlertCircle } from "lucide-react";
 import React, { FormEvent, useCallback, useMemo, useState } from "react";

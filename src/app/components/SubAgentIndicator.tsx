@@ -8,7 +8,6 @@ import {
   Bot,
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
   Loader2,
   ScrollText,
 } from "lucide-react";
@@ -53,22 +52,6 @@ const getStatusIcon = (status: SubAgent["status"]) => {
           className="text-muted-foreground"
         />
       );
-  }
-};
-
-const getStatusBorderColor = (status: SubAgent["status"]) => {
-  switch (status) {
-    case "completed":
-      return "border-l-green-600";
-    case "error":
-      return "border-l-destructive";
-    case "pending":
-    case "active":
-      return "border-l-blue-600";
-    case "interrupted":
-      return "border-l-orange-500";
-    default:
-      return "border-l-border";
   }
 };
 
