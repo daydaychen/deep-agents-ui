@@ -110,7 +110,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
 
         {metaOpen && (
           <>
-            <div className="sticky top-0 flex items-stretch bg-sidebar text-sm">
+            <div className="sticky top-0 flex items-stretch border-b border-border/50 bg-sidebar text-sm">
               {hasTasks && (
                 <button
                   type="button"
@@ -146,7 +146,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
             </div>
             <div
               ref={tasksContainerRef}
-              className="px-[18px]"
+              className="px-[18px] pt-4"
             >
               {metaOpen === "tasks" &&
                 Object.entries(groupedTodos)
@@ -156,7 +156,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
                       key={status}
                       className="mb-4"
                     >
-                      <h3 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-tertiary">
+                      <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-tertiary">
                         {
                           {
                             pending: "Pending",
