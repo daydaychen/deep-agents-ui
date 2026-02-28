@@ -88,7 +88,9 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             <div className="flex items-center gap-2">
               {getStatusIcon(subAgent.status)}
               <span className="font-sans text-[15px] font-bold leading-[140%] tracking-[-0.6px] text-[#3F3F46]">
-                {subAgent.subAgentName}
+                {subAgent.agentName && subAgent.agentName !== subAgent.subAgentName
+                  ? `${subAgent.agentName} (${subAgent.subAgentName})`
+                  : subAgent.agentName || subAgent.subAgentName}
               </span>
             </div>
             {isExpanded ? (

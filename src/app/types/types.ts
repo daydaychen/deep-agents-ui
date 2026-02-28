@@ -10,7 +10,8 @@ export interface ToolCall {
 export interface SubAgent {
   id: string;
   name: string;
-  subAgentName: string;
+  subAgentName: string; // The type/purpose from tool args
+  agentName?: string; // The semantic name from lc_agent_name metadata
   input: Record<string, unknown>;
   output?: Record<string, unknown>;
   status: "pending" | "active" | "completed" | "error" | "interrupted";

@@ -57,7 +57,10 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
                   taskReviewConfig={reviewConfigsMap?.get("task")}
                   onResumeInterrupt={onResumeInterrupt}
                   isLoading={isLoading}
-                  subagentMessages={subagentMessagesMap?.get(subAgent.id)}
+                  subagentMessages={
+                    subagentMessagesMap?.get(subAgent.id) ||
+                    subagentMessagesMap?.get(subAgent.agentName!)
+                  }
                 />
               </div>
             )}

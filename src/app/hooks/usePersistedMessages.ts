@@ -74,23 +74,40 @@ export function usePersistedMessages(
         };
       }
 
+      // Map of agentName to the most recent toolCallId (to link messages to the correct instance)
+      const lastToolCallIdByAgentName = new Map<string, string>();
+
       streamMessages.forEach((message, index) => {
         const metadata = getMessagesMetadata(message, index);
-        const toolCallId = metadata?.streamMetadata?.tool_call_id as
-          | string
-          | undefined;
+        const agentNameFromMetadata = metadata?.streamMetadata?.lc_agent_name as string | undefined;
 
-        if (toolCallId) {
-          // subagent 消息
-          if (!subagentMap.has(toolCallId)) {
-            subagentMap.set(toolCallId, []);
+        // If it's a main message, it might contain a tool call that updates our mapping
+        if (message.type === "ai" && (message as any).tool_calls?.length > 0) {
+          (message as any).tool_calls.forEach((tc: any) => {
+            if (tc.name === "task" && tc.args?.subagent_type) {
+              lastToolCallIdByAgentName.set(tc.args.subagent_type, tc.id);
+            }
+          });
+        }
+
+        // A message belongs to a subagent if it has an lc_agent_name
+        if (agentNameFromMetadata) {
+          // Find the instance (tool_call_id) this message belongs to.
+          // We look up the most recent tool_call_id for this agent name.
+          const toolCallId = lastToolCallIdByAgentName.get(agentNameFromMetadata);
+          
+          // Use toolCallId if found, otherwise fallback to agentName (though might cause collisions)
+          const mappingKey = toolCallId || agentNameFromMetadata;
+
+          if (!subagentMap.has(mappingKey)) {
+            subagentMap.set(mappingKey, []);
           }
-          subagentMap.get(toolCallId)!.push(message);
+          subagentMap.get(mappingKey)!.push(message);
           if (message.id) {
             subagentIds.add(message.id);
           }
         } else {
-          // 主消息
+          // 主消息 (No lc_agent_name)
           main.push(message);
         }
       });
