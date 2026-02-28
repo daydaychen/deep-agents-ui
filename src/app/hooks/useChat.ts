@@ -12,6 +12,7 @@ import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { usePersistedMessages } from "./usePersistedMessages";
 
@@ -375,13 +376,57 @@ export function useChat({
   );
 
   const latestError = useMemo(() => {
-    const error = stream.error as string | undefined;
+    const error = stream.error;
+    if (!error) return undefined;
+
+    let errorMessage =
+      typeof error === "string"
+        ? error
+        : (error as any).message || JSON.stringify(error);
+
+    // Try to parse JSON if the error message contains a JSON object
+    if (errorMessage.includes("{") && errorMessage.includes("}")) {
+      try {
+        const startIdx = errorMessage.indexOf("{");
+        const endIdx = errorMessage.lastIndexOf("}") + 1;
+        if (startIdx !== -1 && endIdx > startIdx) {
+          const jsonStr = errorMessage.substring(startIdx, endIdx);
+          const parsed = JSON.parse(jsonStr);
+          
+          if (parsed.detail) {
+            if (Array.isArray(parsed.detail)) {
+              errorMessage = parsed.detail.map((d: any) => typeof d === 'string' ? d : JSON.stringify(d)).join(", ");
+            } else if (typeof parsed.detail === "object") {
+              errorMessage = JSON.stringify(parsed.detail);
+            } else {
+              errorMessage = String(parsed.detail);
+            }
+          } else if (parsed.message) {
+            errorMessage = String(parsed.message);
+          } else if (parsed.error) {
+            errorMessage = typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error);
+          }
+        }
+      } catch (e) {
+        // Ignore parsing errors and keep original
+      }
+    }
+
     // Filter out CancelledError as it's not a real error
-    if (error && error?.includes("CancelledError")) {
+    if (errorMessage && errorMessage.includes("CancelledError")) {
       return undefined;
     }
-    return error;
+    return errorMessage;
   }, [stream.error]);
+
+  useEffect(() => {
+    if (latestError) {
+      toast.error(latestError, {
+        duration: 5000,
+        id: `chat-error-${latestError.substring(0, 50)}`, // Avoid duplicate toasts for the same message
+      });
+    }
+  }, [latestError]);
 
   const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
 
