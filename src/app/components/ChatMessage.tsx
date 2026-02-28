@@ -215,7 +215,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                   ? (editedMessage) => onEdit(editedMessage, messageIndex)
                   : undefined
               }
-              showEdit={false}
+              showEdit={isUser}
               branchOptions={branchOptions}
               currentBranchIndex={currentBranchIndex}
               onSelectBranch={setBranch}
