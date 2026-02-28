@@ -93,7 +93,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const allToolCalls = useMemo(() => {
     return processedMessages.flatMap((m) => m.toolCalls);
   }, [processedMessages]);
-  const allSubAgents = useSubAgents(allToolCalls);
+  const allSubAgents = useSubAgents(allToolCalls, subagentMessagesMap);
 
   // Parse out any action requests or review configs from the interrupt
   const actionRequestsMap: Map<string, ActionRequest> | null = useMemo(() => {

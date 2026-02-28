@@ -11,7 +11,7 @@ import {
 import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { usePersistedMessages } from "./usePersistedMessages";
@@ -60,9 +60,9 @@ export function useChat({
             // Thread exists but no session_id, generate and potentially update
             setSessionId(uuidv4());
           }
-        } catch (error) {
+        } catch {
           // Failed to fetch thread, generate new session_id
-          console.warn("Failed to fetch thread metadata:", error);
+          console.warn("Failed to fetch thread metadata:");
           setSessionId(uuidv4());
         }
       } else {
@@ -87,14 +87,15 @@ export function useChat({
     onCreated: onHistoryRevalidate,
     fetchStateHistory: true,
     thread: thread,
-  });
+    filterSubagentMessages: true,
+    streamSubgraphs: true,
+  } as any);
 
-  // 消息拆分和缓存 - 返回 mainMessages 和 subagentMessagesMap
-  const { mainMessages, subagentMessagesMap } = usePersistedMessages(
+  // 消息持久化和缓存 - 返回 subagentMessagesMap
+  const { subagentMessagesMap } = usePersistedMessages(
     threadId,
-    stream.messages,
-    stream.isLoading,
-    stream.getMessagesMetadata
+    stream.subagents,
+    stream.isLoading
   );
 
   const sendMessage = useCallback(
@@ -170,9 +171,7 @@ export function useChat({
 
   const setFiles = useCallback(
     async (files: Record<string, string>) => {
-      if (!threadId) return;
-      // TODO: missing a way how to revalidate the internal state
-      // I think we do want to have the ability to externally manage the state
+      if (!threadId || !client) return;
       await client.threads.updateState(threadId, { values: { files } });
     },
     [client, threadId]
@@ -365,7 +364,7 @@ export function useChat({
                 : JSON.stringify(parsed.error);
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore parsing errors and keep original
       }
     }
@@ -387,29 +386,32 @@ export function useChat({
   }, [latestError]);
 
   const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
+  const lastAutoActivatedIdRef = useRef<string | null>(null);
 
   // Auto-activate subagent when it starts streaming
   useEffect(() => {
-    if (stream.isLoading) {
-      // Find a subagent that has recent messages and is likely active
-      const subagentIds = Array.from(subagentMessagesMap.keys());
-      if (subagentIds.length > 0) {
-        const lastId = subagentIds[subagentIds.length - 1];
-        if (!activeSubAgentId) {
-          setActiveSubAgentId(lastId);
-        }
+    if (stream.activeSubagents.length > 0) {
+      const lastActive =
+        stream.activeSubagents[stream.activeSubagents.length - 1];
+      
+      // Only auto-activate if it's a NEW subagent we haven't activated yet
+      if (lastActive.id !== lastAutoActivatedIdRef.current) {
+        lastAutoActivatedIdRef.current = lastActive.id;
+        setActiveSubAgentId(lastActive.id);
       }
     }
-  }, [stream.isLoading, subagentMessagesMap, activeSubAgentId]);
+  }, [stream.activeSubagents]);
 
-  return {
+  // Stable return object to prevent downstream infinite loops in providers/consumers
+  return useMemo(() => ({
     stream,
     todos: stream.values.todos ?? [],
     files: stream.values.files ?? {},
     email: stream.values.email,
     ui: stream.values.ui,
     setFiles,
-    messages: mainMessages,
+    messages: stream.messages,
+    subagents: stream.subagents,
     subagentMessagesMap,
     activeSubAgentId,
     setActiveSubAgentId,
@@ -430,5 +432,20 @@ export function useChat({
     resumeInterrupt,
     retryFromMessage,
     editMessage,
-  };
+  }), [
+    stream,
+    subagentMessagesMap,
+    activeSubAgentId,
+    latestError,
+    setFiles,
+    getMessageBranchInfo,
+    sendMessage,
+    runSingleStep,
+    continueStream,
+    stopStream,
+    markCurrentThreadAsResolved,
+    resumeInterrupt,
+    retryFromMessage,
+    editMessage
+  ]);
 }

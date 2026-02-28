@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { Message } from "@langchain/langgraph-sdk";
 import { MessageContent } from "./MessageContent";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
@@ -19,7 +19,9 @@ interface SubAgentPanelProps {
   onClose: () => void;
 }
 
-export const SubAgentPanel: React.FC<SubAgentPanelProps> = ({
+const EMPTY_MESSAGES: Message[] = [];
+
+export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
   subAgentId,
   subAgents,
   subagentMessagesMap,
@@ -27,13 +29,23 @@ export const SubAgentPanel: React.FC<SubAgentPanelProps> = ({
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const subAgent = subAgents.find((s) => s.id === subAgentId);
-  
-  // Robust message lookup
-  const rawMessages = (subAgentId ? subagentMessagesMap.get(subAgentId) : []) || 
-                      (subAgent?.agentName ? subagentMessagesMap.get(subAgent.agentName) : []) || 
-                      [];
-  
+  const subAgent = useMemo(
+    () => subAgents.find((s) => s.id === subAgentId),
+    [subAgents, subAgentId]
+  );
+
+  // Robust message lookup with memoization to stabilize reference
+  const rawMessages = useMemo(() => {
+    if (!subAgentId) return EMPTY_MESSAGES;
+    const fromMap = subagentMessagesMap.get(subAgentId);
+    if (fromMap) return fromMap;
+    if (subAgent?.agentName) {
+      const fromAgentName = subagentMessagesMap.get(subAgent.agentName);
+      if (fromAgentName) return fromAgentName;
+    }
+    return EMPTY_MESSAGES;
+  }, [subAgentId, subagentMessagesMap, subAgent?.agentName]);
+
   // Use the hook to process subagent messages and extract tool calls
   const processedMessages = useProcessedMessages(rawMessages, undefined);
   
@@ -156,4 +168,6 @@ export const SubAgentPanel: React.FC<SubAgentPanelProps> = ({
       </div>
     </div>
   );
-};
+});
+
+SubAgentPanel.displayName = "SubAgentPanel";

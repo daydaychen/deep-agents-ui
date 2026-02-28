@@ -70,7 +70,7 @@ export function useProcessedMessages(
             type?: string;
             args?: unknown;
             input?: unknown;
-          }) => {
+          }, tcIndex) => {
             const name =
               toolCall.function?.name ||
               toolCall.name ||
@@ -82,7 +82,7 @@ export function useProcessedMessages(
               toolCall.input ||
               {};
             return {
-              id: toolCall.id || `tool-${Math.random()}`,
+              id: toolCall.id || `${message.id}-tool-${tcIndex}`,
               name,
               args,
               status: interrupt ? "interrupted" : ("pending" as const),

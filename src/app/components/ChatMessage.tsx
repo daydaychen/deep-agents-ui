@@ -62,6 +62,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     canRetry = false,
     activeSubAgentId,
     setActiveSubAgentId,
+    subagentMessagesMap,
   }) => {
     const isUser = message.type === "human";
     const messageContent = extractStringFromMessageContent(message);
@@ -69,7 +70,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     const hasToolCalls = toolCalls.length > 0;
 
     // Use custom hook to extract subagents
-    const subAgents = useSubAgents(toolCalls);
+    const subAgents = useSubAgents(toolCalls, subagentMessagesMap);
 
     // Find orphaned action requests
     const orphanedApprovals = useOrphanedActionRequests(
