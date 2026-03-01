@@ -3,10 +3,7 @@
 import { Message } from "@langchain/langgraph-sdk";
 import type { SubagentStreamInterface } from "@langchain/langgraph-sdk/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-const DB_NAME = "deep-agents-ui";
-const DB_VERSION = 3;
-const STORE_NAME = "subagent_messages";
+import { DB_NAME, DB_VERSION, STORE_NAME } from "@/app/utils/db";
 
 // 批量写入的间隔时间（毫秒）
 const BATCH_WRITE_INTERVAL = 1000;

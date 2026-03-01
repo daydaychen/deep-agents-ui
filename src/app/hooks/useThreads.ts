@@ -2,6 +2,7 @@ import { getConfig } from "@/lib/config";
 import type { Thread } from "@langchain/langgraph-sdk";
 import { Client } from "@langchain/langgraph-sdk";
 import useSWRInfinite from "swr/infinite";
+import { deleteThreadData } from "@/app/utils/db";
 
 export interface ThreadItem {
   id: string;
@@ -162,6 +163,16 @@ export function useDeleteThread() {
       });
 
       await client.threads.delete(threadId);
+
+      // Also delete data from IndexedDB
+      try {
+        await deleteThreadData(threadId);
+      } catch (error) {
+        console.error(
+          `Failed to delete IndexedDB data for thread ${threadId}:`,
+          error
+        );
+      }
     },
   };
 }
