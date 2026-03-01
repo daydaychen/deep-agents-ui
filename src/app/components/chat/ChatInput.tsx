@@ -1,9 +1,32 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Square, Command } from "lucide-react";
+import { ArrowUp, Square, Command, Sparkles, Zap, Brain, SlidersHorizontal, Info } from "lucide-react";
 import React, { FormEvent, useCallback, useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useChatState, useChatActions } from "@/providers/chat-context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ChatInputProps {
   input: string;
@@ -19,6 +42,9 @@ export const ChatInput = React.memo<ChatInputProps>(
     const isComposingRef = useRef(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isFocused, setIsFocused] = useState(false);
+
+    const { overrideConfig, config } = useChatState();
+    const { setOverrideConfig } = useChatActions();
 
     // Auto-resize textarea based on content
     React.useLayoutEffect(() => {
@@ -50,6 +76,12 @@ export const ChatInput = React.memo<ChatInputProps>(
     }, []);
 
     const hasInput = input.trim().length > 0;
+
+    const models = [
+      { id: "claude-3-5-sonnet-latest", name: "Claude 3.5 Sonnet", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "gpt-4o", name: "GPT-4o", icon: <Zap className="h-3 w-3 text-green-500" /> },
+      { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash", icon: <Brain className="h-3 w-3 text-blue-500" /> },
+    ];
 
     return (
       <div className="px-2 pb-3">
@@ -90,20 +122,116 @@ export const ChatInput = React.memo<ChatInputProps>(
           </div>
           
           <div className="flex items-center justify-between px-2 pb-2">
-            <div className="flex items-center gap-4 text-muted-foreground/30">
-              <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest uppercase">
-                <div className="flex items-center gap-0.5 rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-[8px]">
-                  <Command size={8} />
-                  <span>Enter</span>
+            <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 gap-1.5 text-muted-foreground hover:text-foreground">
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Run Options</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 p-3 bg-popover/95 backdrop-blur-sm border-border/50">
+                  <DropdownMenuLabel className="px-1 pb-2 flex items-center justify-between">
+                    <span className="text-xs">Runtime Overrides</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[200px] text-[11px]">
+                        These settings override assistant defaults for the next run.
+                      </TooltipContent>
+                    </Tooltip>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="mb-3" />
+                  
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        Model Provider
+                      </Label>
+                      <Select
+                        value={overrideConfig.model || models[0].id}
+                        onValueChange={(val) => setOverrideConfig(prev => ({ ...prev, model: val }))}
+                      >
+                        <SelectTrigger className="h-8 text-xs bg-muted/30">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {models.map(m => (
+                            <SelectItem key={m.id} value={m.id}>
+                              <div className="flex items-center gap-2">
+                                {m.icon}
+                                <span>{m.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Recursion Limit
+                        </Label>
+                        <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                          {overrideConfig.recursionLimit || config.recursionLimit || 100}
+                        </span>
+                      </div>
+                      <Input
+                        type="range"
+                        min="1"
+                        max="200"
+                        step="1"
+                        value={overrideConfig.recursionLimit || config.recursionLimit || 100}
+                        onChange={(e) => setOverrideConfig(prev => ({ ...prev, recursionLimit: parseInt(e.target.value) }))}
+                        className="h-4 p-0 accent-primary"
+                      />
+                    </div>
+
+                    <div className="grid gap-3">
+                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Node Interruptions
+                      </Label>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px]">Interrupt Before Tools</span>
+                        <Switch
+                          checked={overrideConfig.interruptBefore?.includes("tools") || false}
+                          onCheckedChange={(checked) => 
+                            setOverrideConfig(prev => ({
+                              ...prev,
+                              interruptBefore: checked ? ["tools"] : []
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px]">Interrupt After Tools</span>
+                        <Switch
+                          checked={overrideConfig.interruptAfter?.includes("tools") || false}
+                          onCheckedChange={(checked) => 
+                            setOverrideConfig(prev => ({
+                              ...prev,
+                              interruptAfter: checked ? ["tools"] : []
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="h-3 w-[1px] bg-border/40" />
+
+              <div className="flex items-center gap-4 text-muted-foreground/30">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest uppercase">
+                  <div className="flex items-center gap-0.5 rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-[8px]">
+                    <Command size={8} />
+                    <span>Enter</span>
+                  </div>
+                  <span>Send</span>
                 </div>
-                <span>Send</span>
-              </div>
-              <div className="h-2 w-[1px] bg-border/40" />
-              <div className="flex items-center gap-1 text-[9px] font-bold tracking-widest uppercase">
-                <div className="rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-[8px]">Shift</div>
-                <span>+</span>
-                <div className="rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-[8px]">Enter</div>
-                <span>NewLine</span>
               </div>
             </div>
 

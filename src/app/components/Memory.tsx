@@ -8,6 +8,7 @@ import { useMemory } from "@/app/hooks/useMemory";
 import type { MemoryItem } from "@/app/types/types";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -17,9 +18,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Item } from "@langchain/langgraph-sdk";
-import { Loader2, Plus, Brain, Trash2, AlertCircle } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import { Loader2, Plus, Brain, Trash2, AlertCircle, Search, Sparkles, Filter } from "lucide-react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Memory = React.memo(() => {
   const {
@@ -32,6 +34,16 @@ export const Memory = React.memo(() => {
     isDeletingItem,
     mutateNamespaces,
   } = useMemory();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const {
     selectedNamespace,
@@ -107,6 +119,30 @@ export const Memory = React.memo(() => {
     });
   }, []);
 
+  // Performance: Filtered results based on semantic query if provided
+  const [searchResults, setSearchResults] = useState<Item[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!debouncedQuery) {
+        setSearchResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        // Search globally across all namespaces (empty prefix)
+        const items = await searchItems([], { query: debouncedQuery, limit: 20 });
+        setSearchResults(items);
+      } catch (error) {
+        console.error("Semantic search failed:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+    performSearch();
+  }, [debouncedQuery, searchItems]);
+
   const sortedNamespaces = useMemo(() => {
     return [...namespaces].sort((a, b) => {
       return a.namespace.join(".").localeCompare(b.namespace.join("."));
@@ -114,8 +150,8 @@ export const Memory = React.memo(() => {
   }, [namespaces]);
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col">
-      <div className="flex items-center justify-between px-4 pb-3 pt-2">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col gap-4">
+      <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Brain className="h-4 w-4 text-primary" />
           <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Long-term Memory</h2>
@@ -124,7 +160,7 @@ export const Memory = React.memo(() => {
           onClick={handleCreateNew}
           variant="outline"
           size="sm"
-          className="h-7 border-dashed px-2.5 text-[11px]"
+          className="h-7 border-dashed px-2.5 text-[11px] hover:bg-primary/5 hover:text-primary transition-colors"
           disabled={isPuttingItem || isDeletingItem}
         >
           <Plus
@@ -134,8 +170,48 @@ export const Memory = React.memo(() => {
           Add Entry
         </Button>
       </div>
-      <ScrollArea className="h-full px-1">
-        {isLoadingNamespaces ? (
+
+      <div className="relative group px-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+        <Input
+          placeholder="Semantic search memories..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-9 pl-9 text-xs bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/30 transition-all shadow-sm"
+        />
+        {isSearching && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />
+        )}
+      </div>
+
+      <ScrollArea className="h-full px-1 -mx-1">
+        {debouncedQuery ? (
+          <div className="space-y-4 pb-4">
+            <div className="flex items-center gap-2 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-tighter">
+              <Sparkles className="h-3 w-3 text-orange-400" />
+              Semantic Search Results
+            </div>
+            {isSearching ? (
+              <div className="flex justify-center p-8">
+                <Loader2 size={20} className="animate-spin text-muted-foreground/30" />
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="text-center p-8 opacity-60">
+                <p className="text-xs text-muted-foreground">No matching memories found</p>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <MemoryItemsList
+                  items={searchResults}
+                  isLoading={false}
+                  onSelectItem={handleSelectItem}
+                  onDeleteItem={handleDeleteItem}
+                  isDeleting={isDeletingItem}
+                />
+              </div>
+            )}
+          </div>
+        ) : isLoadingNamespaces ? (
           <div className="flex h-full items-center justify-center p-8">
             <Loader2
               size={24}
@@ -148,36 +224,45 @@ export const Memory = React.memo(() => {
             <p className="text-xs text-muted-foreground">No memory entries found</p>
           </div>
         ) : (
-          <div className="space-y-1 pb-4">
-            {sortedNamespaces.map((ns) => {
-              const namespaceStr = ns.namespace.join(".");
-              const isExpanded = selectedNamespace?.join(".") === namespaceStr;
+          <div className="space-y-2 pb-4">
+            <div className="flex items-center gap-2 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-tighter">
+              <Filter className="h-3 w-3" />
+              Hierarchical Namespaces
+            </div>
+            <div className="grid gap-1.5">
+              {sortedNamespaces.map((ns) => {
+                const namespaceStr = ns.namespace.join(".");
+                const isExpanded = selectedNamespace?.join(".") === namespaceStr;
 
-              return (
-                <div
-                  key={namespaceStr}
-                  className="space-y-0.5"
-                >
-                  <MemoryNamespaceItem
-                    namespace={namespaceStr}
-                    isExpanded={isExpanded}
-                    onClick={() => handleNamespaceClick(ns.namespace)}
-                  />
+                return (
+                  <div
+                    key={namespaceStr}
+                    className={cn(
+                      "rounded-xl border border-border/40 overflow-hidden transition-all",
+                      isExpanded ? "bg-muted/10 border-primary/20 shadow-sm" : "hover:bg-muted/5"
+                    )}
+                  >
+                    <MemoryNamespaceItem
+                      namespace={namespaceStr}
+                      isExpanded={isExpanded}
+                      onClick={() => handleNamespaceClick(ns.namespace)}
+                    />
 
-                  {isExpanded && (
-                    <div className="ml-3 pl-2 border-l border-zinc-200 dark:border-zinc-800 my-1 space-y-1">
-                      <MemoryItemsList
-                        items={namespaceItems}
-                        isLoading={isLoadingItems}
-                        onSelectItem={handleSelectItem}
-                        onDeleteItem={handleDeleteItem}
-                        isDeleting={isDeletingItem}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    {isExpanded && (
+                      <div className="px-3 pb-3 pt-1 border-t border-border/20 bg-background/40">
+                        <MemoryItemsList
+                          items={namespaceItems}
+                          isLoading={isLoadingItems}
+                          onSelectItem={handleSelectItem}
+                          onDeleteItem={handleDeleteItem}
+                          isDeleting={isDeletingItem}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </ScrollArea>

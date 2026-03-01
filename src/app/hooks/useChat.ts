@@ -28,6 +28,13 @@ export type StateType = {
   ui?: any;
 };
 
+export type OverrideConfig = {
+  model?: string;
+  recursionLimit?: number;
+  interruptBefore?: string[];
+  interruptAfter?: string[];
+};
+
 export function useChat({
   activeAssistant,
   onHistoryRevalidate,
@@ -45,6 +52,7 @@ export function useChat({
   const client = useClient();
   const [sessionId, setSessionId] = useState<string>(() => uuidv4());
   const isSubmittingRef = useRef(false);
+  const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>({});
 
   // Manage session_id: reuse from thread metadata or generate new one
   useEffect(() => {
@@ -109,8 +117,23 @@ export function useChat({
 
   const sendMessage = useCallback(
     (content: string) => {
+      if (stream.isLoading || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
       setActiveSubAgentId(null);
       const newMessage: Message = { id: uuidv4(), type: "human", content };
+      
+      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalInterruptBefore = overrideConfig.interruptBefore;
+      const finalInterruptAfter = overrideConfig.interruptAfter;
+      
+      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
+      if (overrideConfig.model) {
+        assistantConfig.configurable = { 
+          ...(assistantConfig.configurable ?? {}),
+          model: overrideConfig.model 
+        };
+      }
+
       stream.submit(
         { messages: [newMessage] },
         {
@@ -122,16 +145,18 @@ export function useChat({
             langfuse_user_id: config.userId || "user",
           },
           config: {
-            ...(activeAssistant?.config ?? {}),
-            recursion_limit: recursionLimit,
+            ...assistantConfig,
+            recursion_limit: finalRecursionLimit,
           },
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
+          ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
+          ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
         }
       );
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig]
   );
 
   const runSingleStep = useCallback(
@@ -141,8 +166,22 @@ export function useChat({
       isRerunningSubagent?: boolean,
       optimisticMessages?: Message[]
     ) => {
-      if (stream.isLoading) return;
+      if (stream.isLoading || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
       setActiveSubAgentId(null);
+
+      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalInterruptBefore = overrideConfig.interruptBefore || (isRerunningSubagent ? undefined : ["tools"]);
+      const finalInterruptAfter = overrideConfig.interruptAfter || (isRerunningSubagent ? ["tools"] : undefined);
+
+      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
+      if (overrideConfig.model) {
+        assistantConfig.configurable = { 
+          ...(assistantConfig.configurable ?? {}),
+          model: overrideConfig.model 
+        };
+      }
+
       if (checkpoint) {
         stream.submit(undefined, {
           ...(optimisticMessages
@@ -153,16 +192,15 @@ export function useChat({
             langfuse_user_id: config.userId || "user",
           },
           config: {
-            ...(activeAssistant?.config ?? {}),
-            recursion_limit: recursionLimit,
+            ...assistantConfig,
+            recursion_limit: finalRecursionLimit,
           },
           checkpoint: checkpoint,
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(isRerunningSubagent
-            ? { interruptAfter: ["tools"] }
-            : { interruptBefore: ["tools"] }),
+          ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
+          ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
         });
       } else {
         stream.submit(
@@ -173,18 +211,19 @@ export function useChat({
               langfuse_user_id: config.userId || "user",
             },
             config: {
-              ...(activeAssistant?.config ?? {}),
-              recursion_limit: recursionLimit,
+              ...assistantConfig,
+              recursion_limit: finalRecursionLimit,
             },
-            interruptBefore: ["tools"],
             streamMode: ["messages", "updates"],
             streamSubgraphs: true,
             streamResumable: true,
+            ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : { interruptBefore: ["tools"] }),
+            ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
           }
         );
       }
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig]
   );
 
   const setFiles = useCallback(
@@ -197,30 +236,45 @@ export function useChat({
 
   const continueStream = useCallback(
     (hasTaskToolCall?: boolean) => {
-      if (stream.isLoading) return;
+      if (stream.isLoading || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
       // We don't reset activeSubAgentId here because continue often means 
       // resuming a subagent or the next step in the same chain
+
+      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalInterruptBefore = overrideConfig.interruptBefore || (hasTaskToolCall ? undefined : ["tools"]);
+      const finalInterruptAfter = overrideConfig.interruptAfter || (hasTaskToolCall ? ["tools"] : undefined);
+
+      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
+      if (overrideConfig.model) {
+        assistantConfig.configurable = { 
+          ...(assistantConfig.configurable ?? {}),
+          model: overrideConfig.model 
+        };
+      }
+
       stream.submit(undefined, {
         metadata: {
           langfuse_session_id: sessionId,
           langfuse_user_id: config.userId || "user",
         },
         config: {
-          ...(activeAssistant?.config || {}),
-          recursion_limit: recursionLimit,
+          ...assistantConfig,
+          recursion_limit: finalRecursionLimit,
         },
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
-        ...(hasTaskToolCall
-          ? { interruptAfter: ["tools"] }
-          : { interruptBefore: ["tools"] }),
+        ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
+        ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
       });
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig]
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
+    if (stream.isLoading || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setActiveSubAgentId(null);
     stream.submit(null, {
       command: { goto: "__end__", update: null },
@@ -228,11 +282,14 @@ export function useChat({
         langfuse_session_id: sessionId,
         langfuse_user_id: config.userId || "user",
       },
+      streamResumable: true,
     });
   }, [stream, sessionId, config.userId]);
 
   const resumeInterrupt = useCallback(
     (value: any) => {
+      if (stream.isLoading || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
       // Keep activeSubAgentId if any
       stream.submit(null, {
         command: { resume: value },
@@ -274,14 +331,24 @@ export function useChat({
       if (!parentCheckpoint) {
         console.warn("No parent checkpoint found for message", message.id);
         toast.error("Unable to retry: checkpoint not found for this message");
+        isSubmittingRef.current = false;
         return;
+      }
+
+      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
+      if (overrideConfig.model) {
+        assistantConfig.configurable = { 
+          ...(assistantConfig.configurable ?? {}),
+          model: overrideConfig.model 
+        };
       }
 
       stream.submit(undefined, {
         checkpoint: parentCheckpoint,
         config: {
-          ...(activeAssistant?.config ?? {}),
-          recursion_limit: recursionLimit,
+          ...assistantConfig,
+          recursion_limit: finalRecursionLimit,
         },
         metadata: {
           langfuse_session_id: sessionId,
@@ -290,9 +357,11 @@ export function useChat({
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
+        ...(overrideConfig.interruptBefore ? { interruptBefore: overrideConfig.interruptBefore } : {}),
+        ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
       });
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig]
   );
 
   const editMessage = useCallback(
@@ -309,6 +378,7 @@ export function useChat({
       if (!parentCheckpoint) {
         console.warn("No parent checkpoint found for message", message.id);
         toast.error("Unable to edit: checkpoint not found for this message");
+        isSubmittingRef.current = false;
         return;
       }
 
@@ -318,13 +388,22 @@ export function useChat({
         content: message.content,
       };
 
+      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
+      if (overrideConfig.model) {
+        assistantConfig.configurable = { 
+          ...(assistantConfig.configurable ?? {}),
+          model: overrideConfig.model 
+        };
+      }
+
       stream.submit(
         { messages: [newMessage] },
         {
           checkpoint: parentCheckpoint,
           config: {
-            ...(activeAssistant?.config ?? {}),
-            recursion_limit: recursionLimit,
+            ...assistantConfig,
+            recursion_limit: finalRecursionLimit,
           },
           metadata: {
             langfuse_session_id: sessionId,
@@ -333,10 +412,12 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
+          ...(overrideConfig.interruptBefore ? { interruptBefore: overrideConfig.interruptBefore } : {}),
+          ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
         }
       );
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig]
   );
 
   // Helper function to get branch information for a specific message
@@ -489,6 +570,8 @@ export function useChat({
       resumeInterrupt,
       retryFromMessage,
       editMessage,
+      overrideConfig,
+      setOverrideConfig,
       config,
     }),
     [
@@ -506,6 +589,7 @@ export function useChat({
       resumeInterrupt,
       retryFromMessage,
       editMessage,
+      overrideConfig,
       config,
     ]
   );

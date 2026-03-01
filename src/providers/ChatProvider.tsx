@@ -56,6 +56,7 @@ export function ChatProvider({
       branch: chat.branch,
       history: chat.history,
       getMessageBranchInfo: chat.getMessageBranchInfo,
+      overrideConfig: chat.overrideConfig,
       config: chat.config,
     }),
     [
@@ -76,6 +77,7 @@ export function ChatProvider({
       chat.branch,
       chat.history,
       chat.getMessageBranchInfo,
+      chat.overrideConfig,
       chat.config,
     ]
   );
@@ -93,6 +95,7 @@ export function ChatProvider({
       setFiles: chat.setFiles,
       setActiveSubAgentId: chat.setActiveSubAgentId,
       setBranch: chat.setBranch,
+      setOverrideConfig: chat.setOverrideConfig,
     }),
     [
       chat.sendMessage,
@@ -106,6 +109,7 @@ export function ChatProvider({
       chat.setFiles,
       chat.setActiveSubAgentId,
       chat.setBranch,
+      chat.setOverrideConfig,
     ]
   );
 

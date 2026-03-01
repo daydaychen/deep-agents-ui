@@ -17,6 +17,7 @@ export type ChatStateContextType = Omit<
   | "setFiles"
   | "setActiveSubAgentId"
   | "setBranch"
+  | "setOverrideConfig"
 >;
 
 export type ChatActionsContextType = Pick<
@@ -32,6 +33,7 @@ export type ChatActionsContextType = Pick<
   | "setFiles"
   | "setActiveSubAgentId"
   | "setBranch"
+  | "setOverrideConfig"
 >;
 
 export const ChatStateContext = createContext<ChatStateContextType | undefined>(
