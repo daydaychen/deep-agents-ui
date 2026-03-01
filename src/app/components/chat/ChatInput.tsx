@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useChatState, useChatActions } from "@/providers/chat-context";
-import { type LLMOverrideConfig } from "@/app/hooks/useChat";
+import { type LLMOverrideConfig, type OverrideConfig } from "@/app/hooks/useChat";
 import {
   Select,
   SelectContent,
