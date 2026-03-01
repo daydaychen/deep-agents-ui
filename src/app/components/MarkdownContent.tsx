@@ -79,7 +79,7 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
                 const headerBg = mounted && isDark ? "bg-zinc-900/80" : "bg-muted/40";
 
                 return (
-                  <div className={cn("group relative my-4 overflow-hidden rounded-lg border border-border shadow-sm", containerBg)}>
+                  <div className={cn("group relative my-2 overflow-hidden rounded-lg border border-border shadow-sm", containerBg)}>
                     <div className={cn("flex items-center justify-between px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 border-b border-border", headerBg)}>
                       <span>{match[1]}</span>
                     </div>
@@ -131,12 +131,12 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
               <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary">{children}</a>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="my-4 border-l-4 border-primary/30 bg-muted/30 px-4 py-2 italic text-muted-foreground">{children}</blockquote>
+              <blockquote className="my-2 border-l-4 border-primary/30 bg-muted/30 px-4 py-2 italic text-muted-foreground">{children}</blockquote>
             ),
             table: ({ children }) => {
               const childrenArray = React.Children.toArray(children) as any[];
               return (
-                <div className="my-4 overflow-x-auto rounded-lg border border-border">
+                <div className="my-2 overflow-x-auto rounded-lg border border-border">
                   <table className="w-full border-collapse text-sm">
                     <thead><tr className="bg-muted/50">{childrenArray[0]?.props?.children}</tr></thead>
                     <tbody className="[&_tr:last-child]:border-0">{childrenArray[1]?.props?.children}</tbody>

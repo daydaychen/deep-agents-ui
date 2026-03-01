@@ -15,10 +15,10 @@ export const MessageContent = React.memo<MessageContentProps>(
       <div className={cn("relative flex flex-col gap-2 group")}>
         <div
           className={cn(
-            "mt-1 overflow-hidden break-words text-sm font-normal leading-relaxed",
+            "mt-0.5 overflow-hidden break-words text-sm font-normal leading-relaxed",
             isUser
-              ? "rounded-2xl rounded-tr-none border border-border px-4 py-3 text-foreground shadow-sm"
-              : "rounded-2xl rounded-tl-none bg-accent/30 px-5 py-4 text-primary"
+              ? "rounded-2xl rounded-tr-none border border-border px-3 py-2 text-foreground shadow-sm"
+              : "rounded-2xl rounded-tl-none bg-accent/30 px-4 py-3 text-primary"
           )}
           style={
             isUser
