@@ -86,17 +86,18 @@ export const ChatInput = React.memo<ChatInputProps>(
     const hasInput = input.trim().length > 0;
 
     const models = [
-      { id: "qwen3.5-397b-a17b", name: "Qwen 3.5 397B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "qwen3.5-122b-a10b", name: "Qwen 3.5 122B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "qwen3-coder", name: "Qwen 3 Coder", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "qwen3-coder-30b", name: "Qwen 3 Coder 30B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "qwen3-30b-a3b-instruct", name: "Qwen 3 30B Instruct", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "qwen3-30b-a3b-thinking", name: "Qwen 3 30B Thinking", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "qwen3-235b", name: "Qwen 3 235B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "qwen3-235b-thinking", name: "Qwen 3 235B Thinking", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "minimax-m2.5", name: "MiniMax M2.5", icon: <Zap className="h-3 w-3 text-yellow-500" /> },
-      { id: "glm-5", name: "GLM-5", icon: <Brain className="h-3 w-3 text-cyan-500" /> },
-      { id: "kimi-k2.5", name: "Kimi K2.5", icon: <Zap className="h-3 w-3 text-emerald-500" /> },
+      { id: "Qwen/Qwen3.5-397B-A17B", name: "Qwen 3.5 397B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "Qwen/Qwen3.5-122B-A10B", name: "Qwen 3.5 122B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "Qwen/Qwen3-Coder-480B-A35B-Instruct", name: "Qwen 3 Coder", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "Qwen/Qwen3-Coder-30B-A3B-Instruct", name: "Qwen 3 Coder 30B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "Qwen/Qwen3-30B-A3B-Instruct-2507", name: "Qwen 3 30B Instruct", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "Qwen/Qwen3-30B-A3B-Thinking-2507", name: "Qwen 3 30B Thinking", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "Qwen/Qwen3-235B-A22B-Instruct-2507", name: "Qwen 3 235B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "Qwen/Qwen3-235B-A22B-Thinking-2507", name: "Qwen 3 235B Thinking", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "deepseek-ai/DeepSeek-V3.2", name: "DeepSeek V3.2", icon: <Sparkles className="h-3 w-3 text-blue-500" /> },
+      { id: "MiniMax/MiniMax-M2.5", name: "MiniMax M2.5", icon: <Zap className="h-3 w-3 text-yellow-500" /> },
+      { id: "ZhipuAI/GLM-5", name: "GLM-5", icon: <Brain className="h-3 w-3 text-cyan-500" /> },
+      { id: "moonshotai/Kimi-K2.5", name: "Kimi K2.5", icon: <Zap className="h-3 w-3 text-emerald-500" /> },
     ];
 
     const updateOverride = (agentKey: keyof Omit<OverrideConfig, 'recursionLimit' | 'interruptBefore' | 'interruptAfter'>, field: keyof LLMOverrideConfig, value: any) => {
