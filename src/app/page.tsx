@@ -35,6 +35,40 @@ interface HomePageInnerProps {
   handleSaveConfig: (config: StandaloneConfig) => void;
 }
 
+const fetchAssistant = async ([, id]: [string, string], client: ReturnType<typeof useClient>) => {
+  if (!client) throw new Error("Client not available");
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  try {
+    if (isUUID) {
+      return await client.assistants.get(id);
+    } else {
+      const assistants = await client.assistants.search({
+        graphId: id,
+        limit: 100,
+      });
+      const defaultAssistant = assistants.find(
+        (a) => a.metadata?.["created_by"] === "system"
+      );
+      if (!defaultAssistant) throw new Error("No default assistant found");
+      return defaultAssistant;
+    }
+  } catch (error) {
+    console.error("Failed to fetch assistant, using fallback:", error);
+    return {
+      assistant_id: id,
+      graph_id: id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      config: {},
+      metadata: {},
+      version: 1,
+      name: id,
+      context: {},
+    } as Assistant;
+  }
+};
+
 function HomePageInner({
   config,
   configDialogOpen,
@@ -52,38 +86,7 @@ function HomePageInner({
   // 使用 SWR 替代 useEffect/useState 获取 Assistant
   const { data: assistant } = useSWR(
     client && config.assistantId ? ["assistant", config.assistantId] : null,
-    async ([, id]) => {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      
-      try {
-        if (isUUID) {
-          return await client.assistants.get(id);
-        } else {
-          const assistants = await client.assistants.search({
-            graphId: id,
-            limit: 100,
-          });
-          const defaultAssistant = assistants.find(
-            (a) => a.metadata?.["created_by"] === "system"
-          );
-          if (!defaultAssistant) throw new Error("No default assistant found");
-          return defaultAssistant;
-        }
-      } catch (error) {
-        console.error("Failed to fetch assistant, using fallback:", error);
-        return {
-          assistant_id: id,
-          graph_id: id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          config: {},
-          metadata: {},
-          version: 1,
-          name: id,
-          context: {},
-        } as Assistant;
-      }
-    },
+    (key) => fetchAssistant(key, client),
     {
       revalidateOnFocus: false,
       shouldRetryOnError: false
@@ -271,10 +274,10 @@ function HomePageContent() {
 
   // If config changes, update the assistantId
   useEffect(() => {
-    if (config && !assistantId) {
+    if (config?.assistantId && config.assistantId !== assistantId) {
       setAssistantId(config.assistantId);
     }
-  }, [config, assistantId, setAssistantId]);
+  }, [config?.assistantId, assistantId, setAssistantId]);
 
   const handleSaveConfig = useCallback((newConfig: StandaloneConfig) => {
     saveConfig(newConfig);

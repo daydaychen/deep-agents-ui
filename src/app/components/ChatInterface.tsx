@@ -23,6 +23,9 @@ import { useStickToBottom } from "use-stick-to-bottom";
 interface ChatInterfaceProps {
   assistant: Assistant | null;
 }
+
+const loadingSkeletons = [1, 2, 3];
+
 export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
   const [input, setInput] = useState("");
@@ -115,8 +118,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel 
-          defaultSize={100} 
+        <ResizablePanel
+          defaultSize={100}
           minSize={30}
         >
           <div className="relative flex h-full flex-col overflow-hidden">
@@ -132,7 +135,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
               >
                 {isThreadLoading && processedMessages.length === 0 ? (
                   <div className="flex flex-col gap-6 p-8">
-                    {[1, 2, 3].map((i) => (
+                    {loadingSkeletons.map((i) => (
                       <div key={i} className="flex flex-col gap-3">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
@@ -152,7 +155,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                         (u: any) => u.metadata?.message_id === data.message.id
                       );
                       const isLastMessage = index === processedMessages.length - 1;
-                      
+
                       // Get branch information for this message
                       const branchInfo = getMessageBranchInfo?.(data.message, index);
                       const branchOptions = branchInfo?.branchOptions || [];
@@ -223,19 +226,19 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle 
-          withHandle 
+        <ResizableHandle
+          withHandle
           className={cn(
-            "bg-border/50 transition-opacity duration-300", 
+            "bg-border/50 transition-opacity duration-300",
             !isPanelOpen && "opacity-0 w-0 pointer-events-none"
-          )} 
+          )}
         />
-        
-        <ResizablePanel 
+
+        <ResizablePanel
           ref={sidebarPanelRef}
-          defaultSize={40} 
-          minSize={25} 
-          collapsible 
+          defaultSize={40}
+          minSize={25}
+          collapsible
           onCollapse={() => setActiveSubAgentId(null)}
           className="bg-background"
         >
