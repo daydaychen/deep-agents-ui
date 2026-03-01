@@ -85,7 +85,7 @@ export function useChat({
     onFinish: onHistoryRevalidate,
     onError: onHistoryRevalidate,
     onCreated: onHistoryRevalidate,
-    fetchStateHistory: true,
+    fetchStateHistory: { limit: 100 },
     thread: thread,
     filterSubagentMessages: true,
     streamSubgraphs: true,
@@ -230,22 +230,26 @@ export function useChat({
   }, [stream]);
 
   const retryFromMessage = useCallback(
-    async (message: Message, index: number) => {
+    (message: Message, index: number) => {
+      if (stream.isLoading) return;
+
       const actualIndex = stream.messages.findIndex(
         (msg) => msg.id === message.id
       );
       const indexToUse = actualIndex !== -1 ? actualIndex : index;
 
       const metadata = stream.getMessagesMetadata(message, indexToUse);
-      if (!metadata?.firstSeenState?.parent_checkpoint) {
+      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+
+      if (!parentCheckpoint) {
         console.warn("No parent checkpoint found for message", message.id);
+        toast.error("Unable to retry: checkpoint not found for this message");
         return;
       }
 
-      stream.submit(null, {
-        threadId: threadId!,
+      stream.submit(undefined, {
+        checkpoint: parentCheckpoint,
         config: activeAssistant?.config,
-        checkpoint: metadata.firstSeenState.parent_checkpoint,
         metadata: {
           langfuse_session_id: sessionId,
           langfuse_user_id: config.userId || "user",
@@ -255,28 +259,38 @@ export function useChat({
         streamResumable: true,
       });
     },
-    [stream, threadId, activeAssistant?.config, sessionId, config.userId]
+    [stream, activeAssistant?.config, sessionId, config.userId]
   );
 
   const editMessage = useCallback(
-    async (message: Message, index: number) => {
+    (message: Message, index: number) => {
+      if (stream.isLoading) return;
+
       const actualIndex = stream.messages.findIndex(
         (msg) => msg.id === message.id
       );
       const indexToUse = actualIndex !== -1 ? actualIndex : index;
 
       const metadata = stream.getMessagesMetadata(message, indexToUse);
-      if (!metadata?.firstSeenState?.parent_checkpoint) {
+      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+
+      if (!parentCheckpoint) {
         console.warn("No parent checkpoint found for message", message.id);
+        toast.error("Unable to edit: checkpoint not found for this message");
         return;
       }
 
+      // Minimal message — do NOT spread original message properties
+      const newMessage: Message = {
+        type: "human",
+        content: message.content,
+      };
+
       stream.submit(
-        { messages: [message] },
+        { messages: [newMessage] },
         {
-          threadId: threadId!,
+          checkpoint: parentCheckpoint,
           config: activeAssistant?.config,
-          checkpoint: metadata.firstSeenState.parent_checkpoint,
           metadata: {
             langfuse_session_id: sessionId,
             langfuse_user_id: config.userId || "user",
@@ -287,7 +301,7 @@ export function useChat({
         }
       );
     },
-    [stream, threadId, activeAssistant?.config, sessionId, config.userId]
+    [stream, activeAssistant?.config, sessionId, config.userId]
   );
 
   // Helper function to get branch information for a specific message
@@ -348,7 +362,9 @@ export function useChat({
           if (parsed.detail) {
             if (Array.isArray(parsed.detail)) {
               errorMessage = parsed.detail
-                .map((d: any) => (typeof d === "string" ? d : JSON.stringify(d)))
+                .map((d: any) =>
+                  typeof d === "string" ? d : JSON.stringify(d)
+                )
                 .join(", ");
             } else if (typeof parsed.detail === "object") {
               errorMessage = JSON.stringify(parsed.detail);
@@ -393,7 +409,7 @@ export function useChat({
     if (stream.activeSubagents.length > 0) {
       const lastActive =
         stream.activeSubagents[stream.activeSubagents.length - 1];
-      
+
       // Only auto-activate if it's a NEW subagent we haven't activated yet
       if (lastActive.id !== lastAutoActivatedIdRef.current) {
         lastAutoActivatedIdRef.current = lastActive.id;
@@ -403,49 +419,52 @@ export function useChat({
   }, [stream.activeSubagents]);
 
   // Stable return object to prevent downstream infinite loops in providers/consumers
-  return useMemo(() => ({
-    stream,
-    todos: stream.values.todos ?? [],
-    files: stream.values.files ?? {},
-    email: stream.values.email,
-    ui: stream.values.ui,
-    setFiles,
-    messages: stream.messages,
-    subagents: stream.subagents,
-    subagentMessagesMap,
-    activeSubAgentId,
-    setActiveSubAgentId,
-    isLoading: stream.isLoading,
-    isThreadLoading: stream.isThreadLoading,
-    interrupt: stream.interrupt,
-    getMessagesMetadata: stream.getMessagesMetadata,
-    error: latestError,
-    branch: stream.branch,
-    setBranch: stream.setBranch,
-    history: stream.history,
-    getMessageBranchInfo,
-    sendMessage,
-    runSingleStep,
-    continueStream,
-    stopStream,
-    markCurrentThreadAsResolved,
-    resumeInterrupt,
-    retryFromMessage,
-    editMessage,
-  }), [
-    stream,
-    subagentMessagesMap,
-    activeSubAgentId,
-    latestError,
-    setFiles,
-    getMessageBranchInfo,
-    sendMessage,
-    runSingleStep,
-    continueStream,
-    stopStream,
-    markCurrentThreadAsResolved,
-    resumeInterrupt,
-    retryFromMessage,
-    editMessage
-  ]);
+  return useMemo(
+    () => ({
+      stream,
+      todos: stream.values.todos ?? [],
+      files: stream.values.files ?? {},
+      email: stream.values.email,
+      ui: stream.values.ui,
+      setFiles,
+      messages: stream.messages,
+      subagents: stream.subagents,
+      subagentMessagesMap,
+      activeSubAgentId,
+      setActiveSubAgentId,
+      isLoading: stream.isLoading,
+      isThreadLoading: stream.isThreadLoading,
+      interrupt: stream.interrupt,
+      getMessagesMetadata: stream.getMessagesMetadata,
+      error: latestError,
+      branch: stream.branch,
+      setBranch: stream.setBranch,
+      history: stream.history,
+      getMessageBranchInfo,
+      sendMessage,
+      runSingleStep,
+      continueStream,
+      stopStream,
+      markCurrentThreadAsResolved,
+      resumeInterrupt,
+      retryFromMessage,
+      editMessage,
+    }),
+    [
+      stream,
+      subagentMessagesMap,
+      activeSubAgentId,
+      latestError,
+      setFiles,
+      getMessageBranchInfo,
+      sendMessage,
+      runSingleStep,
+      continueStream,
+      stopStream,
+      markCurrentThreadAsResolved,
+      resumeInterrupt,
+      retryFromMessage,
+      editMessage,
+    ]
+  );
 }
