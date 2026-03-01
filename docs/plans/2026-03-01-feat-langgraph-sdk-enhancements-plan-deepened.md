@@ -1,7 +1,7 @@
 ---
 title: "Deepened Plan: LangGraph SDK Enhancements (Assistant CRUD, Runtime Overrides, Memory Explorer)"
 type: feat
-status: active
+status: completed
 date: 2026-03-01
 origin: docs/plans/2026-03-01-feat-langgraph-sdk-enhancements-plan.md
 ---
