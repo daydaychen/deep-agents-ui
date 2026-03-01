@@ -2,11 +2,9 @@
 
 import { MarkdownContent } from "@/app/components/MarkdownContent";
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
-import { ToolCallBox } from "@/app/components/ToolCallBox";
-import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
 import { extractSubAgentContent } from "@/app/utils/utils";
-import { ArrowDownRight, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import React from "react";
 
 interface SubAgentDetailsProps {
@@ -25,14 +23,6 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
     onResumeInterrupt,
     isLoading,
   }) => {
-    // Process subagent messages to extract tool calls
-    const processedMessages = useProcessedMessages(subAgent.messages || [], undefined);
-    
-    // Flatten all tool calls from all processed messages
-    const allToolCalls = React.useMemo(() => {
-      return processedMessages.flatMap(m => m.toolCalls);
-    }, [processedMessages]);
-
     const hasInterrupt =
       taskActionRequest &&
       subAgent.status === "interrupted" &&
@@ -51,8 +41,6 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
       );
     }
 
-    const hasToolCalls = allToolCalls.length > 0;
-
     return (
       <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/10 p-4 shadow-sm">
         {/* Input Section */}
@@ -67,27 +55,6 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
             <MarkdownContent content={extractSubAgentContent(subAgent.input)} />
           </div>
         </div>
-
-        {/* Tool Calls Section */}
-        {hasToolCalls && (
-          <div className="space-y-3 pt-1">
-            <div className="flex items-center gap-2 px-1">
-              <ArrowDownRight size={10} className="text-primary/40" />
-              <h4 className="text-[9px] font-bold uppercase tracking-widest text-primary/60">
-                Execution Trace
-              </h4>
-            </div>
-            <div className="flex flex-col gap-2.5 pl-2 border-l-2 border-primary/10 ml-1.5">
-              {allToolCalls.map((toolCall) => (
-                <ToolCallBox
-                  key={toolCall.id}
-                  toolCall={toolCall}
-                  isLoading={isLoading}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Output Section */}
         {subAgent.output && (
