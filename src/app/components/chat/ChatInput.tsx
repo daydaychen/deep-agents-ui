@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Square, Command, Sparkles, Zap, Brain, SlidersHorizontal, Info } from "lucide-react";
+import { ArrowUp, Square, Command, Sparkles, Zap, Brain, SlidersHorizontal, Info, Settings2 } from "lucide-react";
 import React, { FormEvent, useCallback, useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useChatState, useChatActions } from "@/providers/chat-context";
+import { type LLMOverrideConfig } from "@/app/hooks/useChat";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface ChatInputProps {
   input: string;
@@ -78,10 +86,125 @@ export const ChatInput = React.memo<ChatInputProps>(
     const hasInput = input.trim().length > 0;
 
     const models = [
-      { id: "claude-3-5-sonnet-latest", name: "Claude 3.5 Sonnet", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
-      { id: "gpt-4o", name: "GPT-4o", icon: <Zap className="h-3 w-3 text-green-500" /> },
-      { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash", icon: <Brain className="h-3 w-3 text-blue-500" /> },
+      { id: "qwen3.5-397b-a17b", name: "Qwen 3.5 397B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "qwen3.5-122b-a10b", name: "Qwen 3.5 122B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "qwen3-coder", name: "Qwen 3 Coder", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "qwen3-coder-30b", name: "Qwen 3 Coder 30B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "qwen3-30b-a3b-instruct", name: "Qwen 3 30B Instruct", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "qwen3-30b-a3b-thinking", name: "Qwen 3 30B Thinking", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "qwen3-235b", name: "Qwen 3 235B", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "qwen3-235b-thinking", name: "Qwen 3 235B Thinking", icon: <Sparkles className="h-3 w-3 text-orange-500" /> },
+      { id: "minimax-m2.5", name: "MiniMax M2.5", icon: <Zap className="h-3 w-3 text-yellow-500" /> },
+      { id: "glm-5", name: "GLM-5", icon: <Brain className="h-3 w-3 text-cyan-500" /> },
+      { id: "kimi-k2.5", name: "Kimi K2.5", icon: <Zap className="h-3 w-3 text-emerald-500" /> },
     ];
+
+    const updateOverride = (agentKey: keyof Omit<OverrideConfig, 'recursionLimit' | 'interruptBefore' | 'interruptAfter'>, field: keyof LLMOverrideConfig, value: any) => {
+      setOverrideConfig(prev => ({
+        ...prev,
+        [agentKey]: {
+          ...(prev[agentKey] || {}),
+          [field]: value === "" ? undefined : value
+        }
+      }));
+    };
+
+    const renderLLMConfig = (agentKey: keyof Omit<OverrideConfig, 'recursionLimit' | 'interruptBefore' | 'interruptAfter'>) => {
+      const overrides = (overrideConfig as any)[agentKey] || {};
+      return (
+        <div className="grid gap-3 pt-2">
+          <div className="grid gap-1.5">
+            <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Model</Label>
+            <Select
+              value={overrides.model || "__default__"}
+              onValueChange={(val) => updateOverride(agentKey, 'model', val === "__default__" ? "" : val)}
+            >
+              <SelectTrigger className="h-7 text-[11px] bg-muted/20">
+                <SelectValue placeholder="Default Model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__default__">Default</SelectItem>
+                {models.map(m => (
+                  <SelectItem key={m.id} value={m.id}>
+                    <div className="flex items-center gap-2">
+                      {m.icon}
+                      <span>{m.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Temp</Label>
+                <span className="text-[9px] font-mono opacity-50">{overrides.temperature ?? "Default"}</span>
+              </div>
+              <Input
+                type="number"
+                min="0"
+                max="2"
+                step="0.1"
+                placeholder="0.7"
+                value={overrides.temperature ?? ""}
+                onChange={(e) => updateOverride(agentKey, 'temperature', e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                className="h-7 text-[11px] bg-muted/20"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Tokens</Label>
+                <span className="text-[9px] font-mono opacity-50">{overrides.max_completion_tokens ?? "Default"}</span>
+              </div>
+              <Input
+                type="number"
+                placeholder="4096"
+                value={overrides.max_completion_tokens ?? ""}
+                onChange={(e) => updateOverride(agentKey, 'max_completion_tokens', e.target.value === "" ? undefined : parseInt(e.target.value))}
+                className="h-7 text-[11px] bg-muted/20"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Top P</Label>
+                <span className="text-[9px] font-mono opacity-50">{overrides.top_p ?? "Default"}</span>
+              </div>
+              <Input
+                type="number"
+                min="0"
+                max="1"
+                step="0.05"
+                placeholder="1.0"
+                value={overrides.top_p ?? ""}
+                onChange={(e) => updateOverride(agentKey, 'top_p', e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                className="h-7 text-[11px] bg-muted/20"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Presence</Label>
+                <span className="text-[9px] font-mono opacity-50">{overrides.presence_penalty ?? "Default"}</span>
+              </div>
+              <Input
+                type="number"
+                min="-2"
+                max="2"
+                step="0.1"
+                placeholder="0.0"
+                value={overrides.presence_penalty ?? ""}
+                onChange={(e) => updateOverride(agentKey, 'presence_penalty', e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                className="h-7 text-[11px] bg-muted/20"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    };
 
     return (
       <div className="px-2 pb-3">
@@ -130,92 +253,82 @@ export const ChatInput = React.memo<ChatInputProps>(
                     <span className="text-[10px] font-bold uppercase tracking-wider">Run Options</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64 p-3 bg-popover/95 backdrop-blur-sm border-border/50">
-                  <DropdownMenuLabel className="px-1 pb-2 flex items-center justify-between">
-                    <span className="text-xs">Runtime Overrides</span>
+                <DropdownMenuContent align="start" className="w-80 p-0 bg-popover/95 backdrop-blur-sm border-border/50 overflow-hidden shadow-2xl">
+                  <div className="p-3 border-b border-border/50 flex items-center justify-between bg-muted/20">
+                    <div className="flex items-center gap-2">
+                      <Settings2 className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-bold uppercase tracking-tight">Runtime Configuration</span>
+                    </div>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-[200px] text-[11px]">
-                        These settings override assistant defaults for the next run.
+                        Override default parameters for the next execution.
                       </TooltipContent>
                     </Tooltip>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="mb-3" />
+                  </div>
                   
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        Model Provider
-                      </Label>
-                      <Select
-                        value={overrideConfig.model || models[0].id}
-                        onValueChange={(val) => setOverrideConfig(prev => ({ ...prev, model: val }))}
-                      >
-                        <SelectTrigger className="h-8 text-xs bg-muted/30">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {models.map(m => (
-                            <SelectItem key={m.id} value={m.id}>
-                              <div className="flex items-center gap-2">
-                                {m.icon}
-                                <span>{m.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="p-3">
+                    <Tabs defaultValue="model" className="w-full">
+                      <TabsList className="grid w-full grid-cols-5 h-8 bg-muted/30 p-1">
+                        <TabsTrigger value="model" className="text-[9px] px-0">Model</TabsTrigger>
+                        <TabsTrigger value="small_model" className="text-[9px] px-0">Small</TabsTrigger>
+                        <TabsTrigger value="analyst" className="text-[9px] px-0">Analyst</TabsTrigger>
+                        <TabsTrigger value="validator" className="text-[9px] px-0">Validator</TabsTrigger>
+                        <TabsTrigger value="specialist" className="text-[9px] px-0">Config</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="model">{renderLLMConfig('model')}</TabsContent>
+                      <TabsContent value="small_model">{renderLLMConfig('small_model')}</TabsContent>
+                      <TabsContent value="analyst">{renderLLMConfig('analyst')}</TabsContent>
+                      <TabsContent value="validator">{renderLLMConfig('config_validator')}</TabsContent>
+                      <TabsContent value="specialist">{renderLLMConfig('databus_specialist')}</TabsContent>
+                    </Tabs>
 
-                    <div className="grid gap-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          Recursion Limit
-                        </Label>
-                        <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          {overrideConfig.recursionLimit || config.recursionLimit || 100}
-                        </span>
-                      </div>
-                      <Input
-                        type="range"
-                        min="1"
-                        max="200"
-                        step="1"
-                        value={overrideConfig.recursionLimit || config.recursionLimit || 100}
-                        onChange={(e) => setOverrideConfig(prev => ({ ...prev, recursionLimit: parseInt(e.target.value) }))}
-                        className="h-4 p-0 accent-primary"
-                      />
-                    </div>
-
-                    <div className="grid gap-3">
-                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Node Interruptions
-                      </Label>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px]">Interrupt Before Tools</span>
-                        <Switch
-                          checked={overrideConfig.interruptBefore?.includes("tools") || false}
-                          onCheckedChange={(checked) => 
-                            setOverrideConfig(prev => ({
-                              ...prev,
-                              interruptBefore: checked ? ["tools"] : []
-                            }))
-                          }
+                    <div className="mt-4 pt-3 border-t border-border/50 grid gap-3">
+                      <div className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Recursion Limit</Label>
+                          <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                            {overrideConfig.recursionLimit || config.recursionLimit || 100}
+                          </span>
+                        </div>
+                        <Input
+                          type="range"
+                          min="1"
+                          max="200"
+                          step="1"
+                          value={overrideConfig.recursionLimit || config.recursionLimit || 100}
+                          onChange={(e) => setOverrideConfig(prev => ({ ...prev, recursionLimit: parseInt(e.target.value) }))}
+                          className="h-4 p-0 accent-primary"
                         />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px]">Interrupt After Tools</span>
-                        <Switch
-                          checked={overrideConfig.interruptAfter?.includes("tools") || false}
-                          onCheckedChange={(checked) => 
-                            setOverrideConfig(prev => ({
-                              ...prev,
-                              interruptAfter: checked ? ["tools"] : []
-                            }))
-                          }
-                        />
+
+                      <div className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px]">Interrupt Before Tools</span>
+                          <Switch
+                            checked={overrideConfig.interruptBefore?.includes("tools") || false}
+                            onCheckedChange={(checked) => 
+                              setOverrideConfig(prev => ({
+                                ...prev,
+                                interruptBefore: checked ? ["tools"] : []
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px]">Interrupt After Tools</span>
+                          <Switch
+                            checked={overrideConfig.interruptAfter?.includes("tools") || false}
+                            onCheckedChange={(checked) => 
+                              setOverrideConfig(prev => ({
+                                ...prev,
+                                interruptAfter: checked ? ["tools"] : []
+                              }))
+                            }
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

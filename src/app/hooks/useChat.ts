@@ -28,8 +28,20 @@ export type StateType = {
   ui?: any;
 };
 
-export type OverrideConfig = {
+export type LLMOverrideConfig = {
   model?: string;
+  temperature?: number;
+  max_completion_tokens?: number;
+  top_p?: number;
+  presence_penalty?: number;
+};
+
+export type OverrideConfig = {
+  model?: LLMOverrideConfig;
+  small_model?: LLMOverrideConfig;
+  analyst?: LLMOverrideConfig;
+  config_validator?: LLMOverrideConfig;
+  databus_specialist?: LLMOverrideConfig;
   recursionLimit?: number;
   interruptBefore?: string[];
   interruptAfter?: string[];
@@ -108,6 +120,40 @@ export function useChat({
     }
   }, [stream.isLoading]);
 
+  // Helper to map overrides to configurable with prefixes
+  const getFinalConfigurable = useCallback((): Record<string, any> => {
+    const finalConfigurable = { ...(activeAssistant?.config?.configurable ?? {}) };
+    
+    const prefixes = {
+      model: "llm_",
+      small_model: "small_llm_",
+      analyst: "analyst_",
+      config_validator: "config_validator_",
+      databus_specialist: "databus_specialist_",
+    };
+
+    const configKeys: (keyof LLMOverrideConfig)[] = [
+      "model",
+      "temperature",
+      "max_completion_tokens",
+      "top_p",
+      "presence_penalty",
+    ];
+
+    Object.entries(prefixes).forEach(([key, prefix]) => {
+      const overrides = overrideConfig[key as keyof typeof prefixes];
+      if (overrides) {
+        configKeys.forEach((configKey) => {
+          if (overrides[configKey] !== undefined) {
+            finalConfigurable[`${prefix}${configKey}`] = overrides[configKey];
+          }
+        });
+      }
+    });
+
+    return finalConfigurable;
+  }, [activeAssistant, overrideConfig]);
+
   // 消息持久化和缓存 - 返回 subagentMessagesMap
   const { subagentMessagesMap } = usePersistedMessages(
     threadId,
@@ -126,13 +172,10 @@ export function useChat({
       const finalInterruptBefore = overrideConfig.interruptBefore;
       const finalInterruptAfter = overrideConfig.interruptAfter;
       
-      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
-      if (overrideConfig.model) {
-        assistantConfig.configurable = { 
-          ...(assistantConfig.configurable ?? {}),
-          model: overrideConfig.model 
-        };
-      }
+      const assistantConfig = { 
+        ...(activeAssistant?.config ?? {}),
+        configurable: getFinalConfigurable()
+      };
 
       stream.submit(
         { messages: [newMessage] },
@@ -156,7 +199,7 @@ export function useChat({
         }
       );
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig, getFinalConfigurable]
   );
 
   const runSingleStep = useCallback(
@@ -174,13 +217,10 @@ export function useChat({
       const finalInterruptBefore = overrideConfig.interruptBefore || (isRerunningSubagent ? undefined : ["tools"]);
       const finalInterruptAfter = overrideConfig.interruptAfter || (isRerunningSubagent ? ["tools"] : undefined);
 
-      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
-      if (overrideConfig.model) {
-        assistantConfig.configurable = { 
-          ...(assistantConfig.configurable ?? {}),
-          model: overrideConfig.model 
-        };
-      }
+      const assistantConfig = { 
+        ...(activeAssistant?.config ?? {}),
+        configurable: getFinalConfigurable()
+      };
 
       if (checkpoint) {
         stream.submit(undefined, {
@@ -223,7 +263,7 @@ export function useChat({
         );
       }
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig, getFinalConfigurable]
   );
 
   const setFiles = useCallback(
@@ -245,13 +285,10 @@ export function useChat({
       const finalInterruptBefore = overrideConfig.interruptBefore || (hasTaskToolCall ? undefined : ["tools"]);
       const finalInterruptAfter = overrideConfig.interruptAfter || (hasTaskToolCall ? ["tools"] : undefined);
 
-      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
-      if (overrideConfig.model) {
-        assistantConfig.configurable = { 
-          ...(assistantConfig.configurable ?? {}),
-          model: overrideConfig.model 
-        };
-      }
+      const assistantConfig = { 
+        ...(activeAssistant?.config ?? {}),
+        configurable: getFinalConfigurable()
+      };
 
       stream.submit(undefined, {
         metadata: {
@@ -269,7 +306,7 @@ export function useChat({
         ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
       });
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig, getFinalConfigurable]
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
@@ -336,13 +373,10 @@ export function useChat({
       }
 
       const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
-      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
-      if (overrideConfig.model) {
-        assistantConfig.configurable = { 
-          ...(assistantConfig.configurable ?? {}),
-          model: overrideConfig.model 
-        };
-      }
+      const assistantConfig = { 
+        ...(activeAssistant?.config ?? {}),
+        configurable: getFinalConfigurable()
+      };
 
       stream.submit(undefined, {
         checkpoint: parentCheckpoint,
@@ -361,7 +395,7 @@ export function useChat({
         ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
       });
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig, getFinalConfigurable]
   );
 
   const editMessage = useCallback(
@@ -389,13 +423,10 @@ export function useChat({
       };
 
       const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
-      const assistantConfig = { ...(activeAssistant?.config ?? {}) };
-      if (overrideConfig.model) {
-        assistantConfig.configurable = { 
-          ...(assistantConfig.configurable ?? {}),
-          model: overrideConfig.model 
-        };
-      }
+      const assistantConfig = { 
+        ...(activeAssistant?.config ?? {}),
+        configurable: getFinalConfigurable()
+      };
 
       stream.submit(
         { messages: [newMessage] },
@@ -417,7 +448,7 @@ export function useChat({
         }
       );
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig, getFinalConfigurable]
   );
 
   // Helper function to get branch information for a specific message
