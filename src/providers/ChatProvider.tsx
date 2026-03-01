@@ -56,6 +56,7 @@ export function ChatProvider({
       branch: chat.branch,
       history: chat.history,
       getMessageBranchInfo: chat.getMessageBranchInfo,
+      config: chat.config,
     }),
     [
       chat.stream,
@@ -75,6 +76,7 @@ export function ChatProvider({
       chat.branch,
       chat.history,
       chat.getMessageBranchInfo,
+      chat.config,
     ]
   );
 

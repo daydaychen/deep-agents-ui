@@ -11,10 +11,13 @@ import type { StateType } from "@/app/hooks/useChat";
 import type { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
 import { extractStringFromMessageContent, formatDate } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
+import { useChatState } from "@/providers/chat-context";
 import { Message } from "@langchain/langgraph-sdk";
 import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import { Bot, Clock, GitFork, User } from "lucide-react";
 import React from "react";
+
+const ASSISTANT_NAME = "Databus Pilot";
 
 interface ChatMessageProps {
   message: Message;
@@ -65,7 +68,10 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     subagentMessagesMap,
     getMessagesMetadata,
   }) => {
+    const { config } = useChatState();
     const isUser = message.type === "human";
+    const userName = config?.userId || "User Protocol";
+    const displayName = isUser ? userName : ASSISTANT_NAME;
     const messageContent = extractStringFromMessageContent(message);
     const hasContent = messageContent && messageContent.trim() !== "";
     const hasToolCalls = toolCalls.length > 0;
@@ -89,8 +95,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     return (
       <div
         className={cn(
-          "group flex w-full max-w-full overflow-x-hidden gap-3 py-3 px-4 transition-colors hover:bg-muted/5",
-          isUser && "flex-row-reverse"
+          "group flex w-full max-w-full overflow-x-hidden gap-3 py-3 px-4 transition-colors hover:bg-muted/5"
         )}
       >
         {/* Avatar Container */}
@@ -115,19 +120,18 @@ export const ChatMessage = React.memo<ChatMessageProps>(
         <div
           className={cn(
             "flex min-w-0 flex-col gap-1",
-            isUser ? "max-w-[85%] items-end" : "flex-1 max-w-[95%]"
+            isUser ? "max-w-[85%] items-start" : "flex-1 max-w-[95%]"
           )}
         >
           {/* Sender Name/Label & Branch Indicator */}
           <div
             className={cn(
-              "flex items-center justify-between w-full mb-0.5",
-              isUser && "flex-row-reverse"
+              "flex items-center justify-between w-full mb-0.5"
             )}
           >
             <div className="flex items-center gap-2">
               <div className="flex items-center px-1 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
-                {isUser ? "User Protocol" : "Deep Agent Core"}
+                {displayName}
               </div>
               {createdAt && (
                 <div className="flex items-center gap-1 text-[9px] text-muted-foreground/30 font-medium">
@@ -140,7 +144,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             {hasMultipleBranches && (
               <div className={cn(
                 "flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/30 text-[9px] font-medium text-muted-foreground/60 transition-opacity group-hover:opacity-0",
-                isUser ? "mr-2" : "ml-2"
+                "ml-2"
               )}>
                 <GitFork className="h-2 w-2 opacity-50" />
                 <span>{currentBranchIndex + 1} / {branchOptions.length}</span>
@@ -152,7 +156,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           {hasContent && (
             <div className={cn(
               "relative min-w-0 overflow-hidden",
-              isUser ? "text-right" : "text-left w-full pl-2 border-l-2 border-muted/30 ml-0.5"
+              "text-left w-full pl-2 border-l-2 border-muted/30 ml-0.5"
             )}>
               <MessageContent
                 content={messageContent}
@@ -226,8 +230,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           {/* 5. Message Toolbar */}
           <div
             className={cn(
-              "opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-300 mt-1.5 transform translate-y-1 group-hover:translate-y-0",
-              isUser && "self-end"
+              "opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-300 mt-1.5 transform translate-y-1 group-hover:translate-y-0"
             )}
           >
             <MessageToolbar

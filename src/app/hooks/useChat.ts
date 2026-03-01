@@ -489,6 +489,7 @@ export function useChat({
       resumeInterrupt,
       retryFromMessage,
       editMessage,
+      config,
     }),
     [
       stream,
@@ -505,6 +506,7 @@ export function useChat({
       resumeInterrupt,
       retryFromMessage,
       editMessage,
+      config,
     ]
   );
 }
