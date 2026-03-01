@@ -52,12 +52,14 @@ export function useChat({
   onHistoryRevalidate,
   thread,
   recursionLimit = 100,
+  recursionMultiplier = 6,
   config,
 }: {
   activeAssistant: Assistant | null;
   onHistoryRevalidate?: () => void;
   thread?: UseStreamThread<StateType>;
   recursionLimit?: number;
+  recursionMultiplier?: number;
   config: StandaloneConfig;
 }) {
   const [threadId, setThreadId] = useQueryState("threadId");
@@ -168,7 +170,7 @@ export function useChat({
       setActiveSubAgentId(null);
       const newMessage: Message = { id: uuidv4(), type: "human", content };
       
-      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
       const finalInterruptBefore = overrideConfig.interruptBefore;
       const finalInterruptAfter = overrideConfig.interruptAfter;
       
@@ -199,7 +201,7 @@ export function useChat({
         }
       );
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig, getFinalConfigurable]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
   );
 
   const runSingleStep = useCallback(
@@ -213,7 +215,7 @@ export function useChat({
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
 
-      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
       const finalInterruptBefore = overrideConfig.interruptBefore || (isRerunningSubagent ? undefined : ["tools"]);
       const finalInterruptAfter = overrideConfig.interruptAfter || (isRerunningSubagent ? ["tools"] : undefined);
 
@@ -263,7 +265,7 @@ export function useChat({
         );
       }
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig, getFinalConfigurable]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
   );
 
   const setFiles = useCallback(
@@ -281,7 +283,7 @@ export function useChat({
       // We don't reset activeSubAgentId here because continue often means 
       // resuming a subagent or the next step in the same chain
 
-      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
       const finalInterruptBefore = overrideConfig.interruptBefore || (hasTaskToolCall ? undefined : ["tools"]);
       const finalInterruptAfter = overrideConfig.interruptAfter || (hasTaskToolCall ? ["tools"] : undefined);
 
@@ -306,7 +308,7 @@ export function useChat({
         ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
       });
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, overrideConfig, getFinalConfigurable]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
@@ -372,7 +374,7 @@ export function useChat({
         return;
       }
 
-      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
       const assistantConfig = { 
         ...(activeAssistant?.config ?? {}),
         configurable: getFinalConfigurable()
@@ -395,7 +397,7 @@ export function useChat({
         ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
       });
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig, getFinalConfigurable]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, recursionMultiplier, resolveMessageIndex, overrideConfig, getFinalConfigurable]
   );
 
   const editMessage = useCallback(
@@ -422,7 +424,7 @@ export function useChat({
         content: message.content,
       };
 
-      const finalRecursionLimit = overrideConfig.recursionLimit || recursionLimit;
+      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
       const assistantConfig = { 
         ...(activeAssistant?.config ?? {}),
         configurable: getFinalConfigurable()
@@ -448,7 +450,7 @@ export function useChat({
         }
       );
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex, overrideConfig, getFinalConfigurable]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, recursionMultiplier, resolveMessageIndex, overrideConfig, getFinalConfigurable]
   );
 
   // Helper function to get branch information for a specific message

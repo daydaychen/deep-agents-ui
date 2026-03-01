@@ -1,15 +1,15 @@
 "use client";
 
-import { ReactNode, useMemo } from "react";
-import { Assistant } from "@langchain/langgraph-sdk";
 import { type StateType, useChat } from "@/app/hooks/useChat";
-import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
 import type { StandaloneConfig } from "@/lib/config";
+import { Assistant } from "@langchain/langgraph-sdk";
+import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
+import { ReactNode, useMemo } from "react";
 import {
   ChatActionsContext,
+  ChatActionsContextType,
   ChatStateContext,
   ChatStateContextType,
-  ChatActionsContextType,
 } from "./chat-context";
 
 interface ChatProviderProps {
@@ -18,6 +18,7 @@ interface ChatProviderProps {
   onHistoryRevalidate?: () => void;
   thread?: UseStreamThread<StateType>;
   recursionLimit?: number;
+  recursionMultiplier?: number;
   config: StandaloneConfig;
 }
 
@@ -27,6 +28,7 @@ export function ChatProvider({
   onHistoryRevalidate,
   thread,
   recursionLimit,
+  recursionMultiplier,
   config,
 }: ChatProviderProps) {
   const chat = useChat({
@@ -34,6 +36,7 @@ export function ChatProvider({
     onHistoryRevalidate,
     thread,
     recursionLimit,
+    recursionMultiplier,
     config,
   });
 

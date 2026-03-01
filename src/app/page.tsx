@@ -241,6 +241,7 @@ function HomePageInner({
                 activeAssistant={assistant ?? null}
                 onHistoryRevalidate={() => mutateThreads?.()}
                 recursionLimit={config.recursionLimit}
+                recursionMultiplier={config.recursionMultiplier}
                 config={config}
               >
                 <ChatInterface assistant={assistant ?? null} />

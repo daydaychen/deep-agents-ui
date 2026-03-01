@@ -3,6 +3,7 @@ export interface StandaloneConfig {
   assistantId: string;
   langsmithApiKey?: string;
   recursionLimit?: number;
+  recursionMultiplier?: number;
   userId?: string;
 }
 

@@ -55,6 +55,9 @@ export function ConfigDialog({
   const [recursionLimit, setRecursionLimit] = useState(
     initialConfig?.recursionLimit?.toString() || "100"
   );
+  const [recursionMultiplier, setRecursionMultiplier] = useState(
+    initialConfig?.recursionMultiplier?.toString() || "6"
+  );
   const [userId, setUserId] = useState(initialConfig?.userId || "");
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
@@ -75,6 +78,7 @@ export function ConfigDialog({
       setAssistantId(initialConfig.assistantId);
       setLangsmithApiKey(initialConfig.langsmithApiKey || "");
       setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
+      setRecursionMultiplier(initialConfig.recursionMultiplier?.toString() || "6");
       setUserId(initialConfig.userId || "");
     }
   }, [open, initialConfig]);
@@ -222,6 +226,12 @@ export function ConfigDialog({
       return;
     }
 
+    const parsedRecursionMultiplier = parseInt(recursionMultiplier, 10);
+    if (isNaN(parsedRecursionMultiplier) || parsedRecursionMultiplier < 1) {
+      toast.error("Recursion multiplier must be a positive number");
+      return;
+    }
+
     // Update assistant on server if details are modified
     if (selectedAssistant) {
       try {
@@ -257,6 +267,7 @@ export function ConfigDialog({
       assistantId,
       langsmithApiKey: langsmithApiKey || undefined,
       recursionLimit: parsedRecursionLimit,
+      recursionMultiplier: parsedRecursionMultiplier,
       userId: userId || undefined,
     });
     toast.success("Settings saved successfully");
@@ -466,7 +477,7 @@ export function ConfigDialog({
               className="bg-muted/30"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="recursionLimit" className="flex items-center gap-1.5">
                 <Hash className="h-3.5 w-3.5" />
@@ -479,6 +490,21 @@ export function ConfigDialog({
                 placeholder="100"
                 value={recursionLimit}
                 onChange={(e) => setRecursionLimit(e.target.value)}
+                className="bg-muted/30"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="recursionMultiplier" className="flex items-center gap-1.5">
+                <Hash className="h-3.5 w-3.5" />
+                Model Call Multiplier
+              </Label>
+              <Input
+                id="recursionMultiplier"
+                type="number"
+                min="1"
+                placeholder="6"
+                value={recursionMultiplier}
+                onChange={(e) => setRecursionMultiplier(e.target.value)}
                 className="bg-muted/30"
               />
             </div>
