@@ -27,7 +27,7 @@ interface ChatMessageProps {
   stream?: any;
   onResumeInterrupt?: (value: any) => void;
   onRetry?: (message: Message, index: number) => void;
-  onEdit?: (editedMessage: any, index: number) => void;
+  onEdit?: (editedMessage: Message, index: number) => void;
   getMessagesMetadata?: (
     message: Message,
     index?: number

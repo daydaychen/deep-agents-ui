@@ -44,6 +44,7 @@ export function useChat({
   const [threadId, setThreadId] = useQueryState("threadId");
   const client = useClient();
   const [sessionId, setSessionId] = useState<string>(() => uuidv4());
+  const isSubmittingRef = useRef(false);
 
   // Manage session_id: reuse from thread metadata or generate new one
   useEffect(() => {
@@ -89,7 +90,15 @@ export function useChat({
     thread: thread,
     filterSubagentMessages: true,
     streamSubgraphs: true,
+  // as any: SDK types don't export DeepAgent-specific options (filterSubagentMessages, streamSubgraphs)
   } as any);
+
+  // Reset submit guard when stream finishes
+  useEffect(() => {
+    if (!stream.isLoading) {
+      isSubmittingRef.current = false;
+    }
+  }, [stream.isLoading]);
 
   // 消息持久化和缓存 - 返回 subagentMessagesMap
   const { subagentMessagesMap } = usePersistedMessages(
@@ -131,6 +140,7 @@ export function useChat({
       isRerunningSubagent?: boolean,
       optimisticMessages?: Message[]
     ) => {
+      if (stream.isLoading) return;
       if (checkpoint) {
         stream.submit(undefined, {
           ...(optimisticMessages
@@ -140,7 +150,10 @@ export function useChat({
             langfuse_session_id: sessionId,
             langfuse_user_id: config.userId || "user",
           },
-          config: activeAssistant?.config,
+          config: {
+            ...(activeAssistant?.config ?? {}),
+            recursion_limit: recursionLimit,
+          },
           checkpoint: checkpoint,
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
@@ -157,7 +170,10 @@ export function useChat({
               langfuse_session_id: sessionId,
               langfuse_user_id: config.userId || "user",
             },
-            config: activeAssistant?.config,
+            config: {
+              ...(activeAssistant?.config ?? {}),
+              recursion_limit: recursionLimit,
+            },
             interruptBefore: ["tools"],
             streamMode: ["messages", "updates"],
             streamSubgraphs: true,
@@ -166,7 +182,7 @@ export function useChat({
         );
       }
     },
-    [stream, sessionId, config.userId, activeAssistant?.config]
+    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit]
   );
 
   const setFiles = useCallback(
@@ -179,6 +195,7 @@ export function useChat({
 
   const continueStream = useCallback(
     (hasTaskToolCall?: boolean) => {
+      if (stream.isLoading) return;
       stream.submit(undefined, {
         metadata: {
           langfuse_session_id: sessionId,
@@ -229,14 +246,20 @@ export function useChat({
     stream.stop();
   }, [stream]);
 
+  const resolveMessageIndex = useCallback(
+    (message: Message, fallbackIndex: number) => {
+      const actual = stream.messages.findIndex((msg) => msg.id === message.id);
+      return actual !== -1 ? actual : fallbackIndex;
+    },
+    [stream.messages]
+  );
+
   const retryFromMessage = useCallback(
     (message: Message, index: number) => {
-      if (stream.isLoading) return;
+      if (stream.isLoading || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
 
-      const actualIndex = stream.messages.findIndex(
-        (msg) => msg.id === message.id
-      );
-      const indexToUse = actualIndex !== -1 ? actualIndex : index;
+      const indexToUse = resolveMessageIndex(message, index);
 
       const metadata = stream.getMessagesMetadata(message, indexToUse);
       const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
@@ -249,7 +272,10 @@ export function useChat({
 
       stream.submit(undefined, {
         checkpoint: parentCheckpoint,
-        config: activeAssistant?.config,
+        config: {
+          ...(activeAssistant?.config ?? {}),
+          recursion_limit: recursionLimit,
+        },
         metadata: {
           langfuse_session_id: sessionId,
           langfuse_user_id: config.userId || "user",
@@ -259,17 +285,15 @@ export function useChat({
         streamResumable: true,
       });
     },
-    [stream, activeAssistant?.config, sessionId, config.userId]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex]
   );
 
   const editMessage = useCallback(
     (message: Message, index: number) => {
-      if (stream.isLoading) return;
+      if (stream.isLoading || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
 
-      const actualIndex = stream.messages.findIndex(
-        (msg) => msg.id === message.id
-      );
-      const indexToUse = actualIndex !== -1 ? actualIndex : index;
+      const indexToUse = resolveMessageIndex(message, index);
 
       const metadata = stream.getMessagesMetadata(message, indexToUse);
       const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
@@ -290,7 +314,10 @@ export function useChat({
         { messages: [newMessage] },
         {
           checkpoint: parentCheckpoint,
-          config: activeAssistant?.config,
+          config: {
+            ...(activeAssistant?.config ?? {}),
+            recursion_limit: recursionLimit,
+          },
           metadata: {
             langfuse_session_id: sessionId,
             langfuse_user_id: config.userId || "user",
@@ -301,17 +328,13 @@ export function useChat({
         }
       );
     },
-    [stream, activeAssistant?.config, sessionId, config.userId]
+    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, resolveMessageIndex]
   );
 
   // Helper function to get branch information for a specific message
   const getMessageBranchInfo = useCallback(
     (message: Message, index: number) => {
-      // Find the actual index of this message in stream.messages by ID
-      const actualIndex = stream.messages.findIndex(
-        (msg) => msg.id === message.id
-      );
-      const indexToUse = actualIndex !== -1 ? actualIndex : index;
+      const indexToUse = resolveMessageIndex(message, index);
 
       const metadata = stream.getMessagesMetadata?.(message, indexToUse);
 
@@ -329,8 +352,7 @@ export function useChat({
       // User messages should only support editing, not retrying
       const hasParentCheckpoint = !!metadata?.firstSeenState?.parent_checkpoint;
       const isUserMessage = message.type === "human";
-      const canRetry =
-        hasParentCheckpoint && !!retryFromMessage && !isUserMessage;
+      const canRetry = hasParentCheckpoint && !isUserMessage;
 
       return {
         branchOptions,
@@ -338,7 +360,7 @@ export function useChat({
         canRetry,
       };
     },
-    [stream, retryFromMessage]
+    [stream, resolveMessageIndex]
   );
 
   const latestError = useMemo(() => {

@@ -4,6 +4,7 @@ import { BranchSwitcher } from "@/app/components/BranchSwitcher";
 import { EditMessage } from "@/app/components/EditMessage";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Message } from "@langchain/langgraph-sdk";
 import { Check, Copy, RotateCcw } from "lucide-react";
 import React, { useCallback, useState } from "react";
 
@@ -17,7 +18,7 @@ interface MessageToolbarProps {
   onCopy?: () => void;
 
   // Edit functionality
-  onEdit?: (message: any) => void;
+  onEdit?: (message: Message) => void;
   showEdit?: boolean;
 
   // Retry functionality
@@ -33,7 +34,7 @@ interface MessageToolbarProps {
   // UI customization
   className?: string;
   // For EditMessage component
-  message?: any;
+  message?: Message;
 }
 
 export const MessageToolbar = React.memo<MessageToolbarProps>(
