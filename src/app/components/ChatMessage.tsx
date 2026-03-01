@@ -193,6 +193,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                     reviewConfig={reviewConfig}
                     onResume={onResumeInterrupt}
                     isLoading={isLoading}
+                    messageId={message.id}
                   />
                 );
               })}
@@ -209,6 +210,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               reviewConfigsMap={reviewConfigsMap}
               onResumeInterrupt={onResumeInterrupt}
               isLoading={isLoading}
+              messageId={message.id}
             />
           )}
 

@@ -64,16 +64,20 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
   const isPanelOpen = !!activeSubAgentId;
 
-  // Handle manual panel control for smooth transitions
+  // Handle manual panel control for smooth transitions and forced collapses
   React.useEffect(() => {
     if (sidebarPanelRef.current) {
       if (isPanelOpen) {
-        sidebarPanelRef.current.expand();
+        // Only expand if currently collapsed or size is 0
+        if (sidebarPanelRef.current.isCollapsed()) {
+          sidebarPanelRef.current.expand();
+        }
       } else {
+        // Explicitly collapse on thread switch or when ID is null
         sidebarPanelRef.current.collapse();
       }
     }
-  }, [isPanelOpen]);
+  }, [isPanelOpen, activeSubAgentId]); // Include activeSubAgentId to catch every state change
 
   const submitDisabled = isLoading || !assistant;
   const handleSubmit = useCallback(

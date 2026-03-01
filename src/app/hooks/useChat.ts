@@ -109,6 +109,7 @@ export function useChat({
 
   const sendMessage = useCallback(
     (content: string) => {
+      setActiveSubAgentId(null);
       const newMessage: Message = { id: uuidv4(), type: "human", content };
       stream.submit(
         { messages: [newMessage] },
@@ -141,6 +142,7 @@ export function useChat({
       optimisticMessages?: Message[]
     ) => {
       if (stream.isLoading) return;
+      setActiveSubAgentId(null);
       if (checkpoint) {
         stream.submit(undefined, {
           ...(optimisticMessages
@@ -196,6 +198,8 @@ export function useChat({
   const continueStream = useCallback(
     (hasTaskToolCall?: boolean) => {
       if (stream.isLoading) return;
+      // We don't reset activeSubAgentId here because continue often means 
+      // resuming a subagent or the next step in the same chain
       stream.submit(undefined, {
         metadata: {
           langfuse_session_id: sessionId,
@@ -217,6 +221,7 @@ export function useChat({
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
+    setActiveSubAgentId(null);
     stream.submit(null, {
       command: { goto: "__end__", update: null },
       metadata: {
@@ -228,6 +233,7 @@ export function useChat({
 
   const resumeInterrupt = useCallback(
     (value: any) => {
+      // Keep activeSubAgentId if any
       stream.submit(null, {
         command: { resume: value },
         metadata: {
@@ -258,6 +264,7 @@ export function useChat({
     (message: Message, index: number) => {
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
+      setActiveSubAgentId(null);
 
       const indexToUse = resolveMessageIndex(message, index);
 
@@ -292,6 +299,7 @@ export function useChat({
     (message: Message, index: number) => {
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
+      setActiveSubAgentId(null);
 
       const indexToUse = resolveMessageIndex(message, index);
 
@@ -426,6 +434,12 @@ export function useChat({
   const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
   const lastAutoActivatedIdRef = useRef<string | null>(null);
 
+  // Reset active subagent and tracking ref when thread changes
+  useEffect(() => {
+    setActiveSubAgentId(null);
+    lastAutoActivatedIdRef.current = null;
+  }, [threadId]);
+
   // Auto-activate subagent when it starts streaming
   useEffect(() => {
     if (stream.activeSubagents.length > 0) {
@@ -437,8 +451,12 @@ export function useChat({
         lastAutoActivatedIdRef.current = lastActive.id;
         setActiveSubAgentId(lastActive.id);
       }
+    } else if (!stream.isLoading && lastAutoActivatedIdRef.current) {
+      // Clear the ref when streaming stops so we can re-activate if needed next time
+      lastAutoActivatedIdRef.current = null;
     }
-  }, [stream.activeSubagents]);
+  }, [stream.activeSubagents, stream.isLoading]);
+
 
   // Stable return object to prevent downstream infinite loops in providers/consumers
   return useMemo(

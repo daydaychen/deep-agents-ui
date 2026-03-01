@@ -13,6 +13,7 @@ interface SubAgentSectionProps {
   reviewConfigsMap?: Map<string, ReviewConfig>;
   onResumeInterrupt?: (value: any) => void;
   isLoading?: boolean;
+  messageId?: string; // Optional identifier to trigger resets
 }
 
 export const SubAgentSection = React.memo<SubAgentSectionProps>(
@@ -24,9 +25,61 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
     reviewConfigsMap,
     onResumeInterrupt,
     isLoading,
+    messageId,
   }) => {
     // Local state for main-flow expansion (Input/Output visibility)
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+    const prevSubAgentsRef = React.useRef<SubAgent[]>([]);
+
+    // 1. Thread switch reset
+    React.useEffect(() => {
+      setExpandedIds(new Set());
+      prevSubAgentsRef.current = [];
+    }, [messageId]);
+
+    // 2. Auto-expand/collapse based on status TRANSITIONS (Active -> Expand, Finished -> Collapse)
+    React.useEffect(() => {
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+
+        subAgents.forEach((sa) => {
+          const prevSa = prevSubAgentsRef.current.find(p => p.id === sa.id);
+          const prevStatus = prevSa?.status;
+          const currentStatus = sa.status;
+
+          // Transition to ACTIVE: Auto-expand
+          if (currentStatus === "active" && prevStatus !== "active") {
+            if (!next.has(sa.id)) {
+              next.add(sa.id);
+              changed = true;
+            }
+          }
+          
+          // Transition to FINISHED: Auto-collapse
+          if ((currentStatus === "completed" || currentStatus === "error") && 
+              (prevStatus !== "completed" && prevStatus !== "error" && prevStatus !== undefined)) {
+            if (next.has(sa.id)) {
+              next.delete(sa.id);
+              changed = true;
+            }
+          }
+        });
+
+        // Cleanup: Remove any IDs that no longer exist in the current subAgents list
+        const currentIds = new Set(subAgents.map(sa => sa.id));
+        next.forEach(id => {
+          if (!currentIds.has(id)) {
+            next.delete(id);
+            changed = true;
+          }
+        });
+
+        return changed ? next : prev;
+      });
+
+      prevSubAgentsRef.current = subAgents;
+    }, [subAgents]); // REMOVED activeSubAgentId dependency to fix the bug
 
     const toggleExpand = useCallback((id: string) => {
       setExpandedIds((prev) => {
@@ -37,6 +90,8 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
       });
     }, []);
 
+    // Reset expanded states when component unmounts or context changes 
+    // (though local state handles most thread-switch cases automatically)
     const handleShowLogs = useCallback((id: string) => {
       if (setActiveSubAgentId) {
         // Toggle logic: if already active, close it

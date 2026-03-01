@@ -23,6 +23,7 @@ interface ToolCallBoxProps {
   reviewConfig?: ReviewConfig;
   onResume?: (value: any) => void;
   isLoading?: boolean;
+  messageId?: string;
 }
 
 export const ToolCallBox = React.memo<ToolCallBoxProps>(
@@ -35,10 +36,29 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     reviewConfig,
     onResume,
     isLoading,
+    messageId,
   }) => {
     const [isExpanded, setIsExpanded] = useState(
       () => !!uiComponent || !!actionRequest
     );
+
+    // Reset expansion state when messageId changes (e.g. thread switch)
+    React.useEffect(() => {
+      setIsExpanded(!!uiComponent || !!actionRequest);
+    }, [messageId, !!uiComponent, !!actionRequest]);
+
+    // Auto-expand/collapse based on status
+    React.useEffect(() => {
+      // 1. If currently active or waiting for input, ensure it's expanded
+      if (toolCall.status === "pending" || toolCall.status === "interrupted" || !!actionRequest) {
+        setIsExpanded(true);
+      } 
+      // 2. If finished successfully or with error, auto-collapse unless it has a UI component or active request
+      else if ((toolCall.status === "completed" || toolCall.status === "error") && !uiComponent && !actionRequest) {
+        setIsExpanded(false);
+      }
+    }, [toolCall.status, !!uiComponent, !!actionRequest]);
+
     const [expandedArgs, setExpandedArgs] = useState<Record<string, boolean>>(
       {}
     );
