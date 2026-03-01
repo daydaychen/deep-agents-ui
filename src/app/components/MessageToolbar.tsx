@@ -77,7 +77,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     const hasVisibleCopyButton = hasContent && !isLoading;
     const hasVisibleEditButton = isUser && showEdit && hasContent && !isLoading && onEdit && message;
     const hasVisibleRetryButton = showRetry && !isLoading && onRetry;
-    const hasVisibleBranchSwitcher = showBranchSwitcher && onSelectBranch && branchOptions.length > 1;
+    const hasVisibleBranchSwitcher = showBranchSwitcher && onSelectBranch && branchOptions.length > 0;
     
     const hasAnyVisibleAction = hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton || hasVisibleBranchSwitcher;
 
@@ -155,6 +155,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
               branchOptions={branchOptions}
               currentIndex={currentBranchIndex}
               onSelect={onSelectBranch}
+              isLoading={isLoading}
               className={cn("ml-2", isUser && "ml-0 mr-2")}
             />
           )}

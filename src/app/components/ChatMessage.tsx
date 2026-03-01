@@ -13,7 +13,7 @@ import { extractStringFromMessageContent } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
 import { Message } from "@langchain/langgraph-sdk";
 import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
-import { Bot, User } from "lucide-react";
+import { Bot, User, GitFork } from "lucide-react";
 import React from "react";
 
 interface ChatMessageProps {
@@ -79,6 +79,8 @@ export const ChatMessage = React.memo<ChatMessageProps>(
       toolCalls
     );
 
+    const hasMultipleBranches = branchOptions && branchOptions.length > 1;
+
     return (
       <div
         className={cn(
@@ -111,14 +113,26 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             isUser ? "max-w-[85%] items-end" : "flex-1 max-w-[90%]"
           )}
         >
-          {/* Sender Name/Label */}
+          {/* Sender Name/Label & Branch Indicator */}
           <div
             className={cn(
-              "flex items-center px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40 mb-1",
+              "flex items-center justify-between w-full mb-1",
               isUser && "flex-row-reverse"
             )}
           >
-            {isUser ? "User Protocol" : "Deep Agent Core"}
+            <div className="flex items-center px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40">
+              {isUser ? "User Protocol" : "Deep Agent Core"}
+            </div>
+            
+            {hasMultipleBranches && (
+              <div className={cn(
+                "flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/30 text-[9px] font-medium text-muted-foreground/60 transition-opacity group-hover:opacity-0",
+                isUser ? "mr-2" : "ml-2"
+              )}>
+                <GitFork className="h-2.5 w-2.5 opacity-50" />
+                <span>{currentBranchIndex + 1} / {branchOptions.length}</span>
+              </div>
+            )}
           </div>
 
           {/* 1. Text Content (Message Bubble) */}
