@@ -2,6 +2,11 @@
 
 import { extractStringFromMessageContent } from "@/app/utils/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Message } from "@langchain/langgraph-sdk";
 import { Check, Edit, X } from "lucide-react";
 import React, { useCallback, useRef, useState } from "react";
@@ -10,10 +15,11 @@ interface EditMessageProps {
   message: Message;
   onEdit: (message: Message) => void;
   className?: string;
+  showText?: boolean;
 }
 
 export const EditMessage = React.memo<EditMessageProps>(
-  ({ message, onEdit, className }) => {
+  ({ message, onEdit, className, showText = true }) => {
     const [editing, setEditing] = useState(false);
     const [content, setContent] = useState(
       extractStringFromMessageContent(message)
@@ -65,17 +71,35 @@ export const EditMessage = React.memo<EditMessageProps>(
     );
 
     if (!editing) {
-      return (
+      const button = (
         <Button
           variant="ghost"
-          size="sm"
+          size={showText ? "sm" : "icon"}
           onClick={() => setEditing(true)}
-          className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-[background-color,color,opacity,transform] duration-200 hover:bg-accent/50 hover:text-foreground"
-          title="Edit message"
+          className={
+            showText 
+              ? "group h-7 gap-1 px-2 text-xs text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground"
+              : "h-6 w-6 rounded-full text-muted-foreground transition-all duration-200 hover:bg-accent/60 hover:text-foreground"
+          }
         >
-          <Edit className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
-          <span className="transition-[background-color,color,opacity,transform] duration-200">Edit</span>
+          <Edit className="h-3 w-3" />
+          {showText && (
+            <span className="transition-[background-color,color,opacity,transform] duration-200">Edit</span>
+          )}
         </Button>
+      );
+
+      if (showText) return button;
+
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {button}
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-[10px] px-2 py-1">
+            <span>Edit message</span>
+          </TooltipContent>
+        </Tooltip>
       );
     }
 

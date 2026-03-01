@@ -2,10 +2,16 @@
 
 import { BranchSwitcher } from "@/app/components/BranchSwitcher";
 import { EditMessage } from "@/app/components/EditMessage";
+import { formatTokenCount } from "@/app/utils/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Message } from "@langchain/langgraph-sdk";
-import { Check, Copy, RotateCcw } from "lucide-react";
+import { AIMessage } from "@langchain/langgraph-sdk";
+import { Check, Copy, Cpu, RotateCcw, Zap } from "lucide-react";
 import React, { useCallback, useState } from "react";
 
 interface MessageToolbarProps {
@@ -18,7 +24,7 @@ interface MessageToolbarProps {
   onCopy?: () => void;
 
   // Edit functionality
-  onEdit?: (message: Message) => void;
+  onEdit?: (message: any) => void;
   showEdit?: boolean;
 
   // Retry functionality
@@ -34,7 +40,7 @@ interface MessageToolbarProps {
   // UI customization
   className?: string;
   // For EditMessage component
-  message?: Message;
+  message?: any;
 }
 
 export const MessageToolbar = React.memo<MessageToolbarProps>(
@@ -80,86 +86,159 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     const hasVisibleRetryButton = showRetry && !isLoading && onRetry;
     const hasVisibleBranchSwitcher = showBranchSwitcher && onSelectBranch && branchOptions.length > 0;
     
-    const hasAnyVisibleAction = hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton || hasVisibleBranchSwitcher;
+    // Metadata visibility - response_metadata is on BaseMessage, usage_metadata on AIMessage
+    const modelName = (message?.response_metadata?.model_name || message?.response_metadata?.model) as string | undefined;
+    const modelProvider = message?.response_metadata?.model_provider as string | undefined;
+    const stopReason = message?.response_metadata?.stop_reason as string | undefined;
+    const usage = message?.type === "ai" ? (message as AIMessage).usage_metadata : undefined;
+    const hasMetadata = !isUser && (!!modelName || !!usage);
+
+    const hasAnyVisibleAction = hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton || hasVisibleBranchSwitcher || hasMetadata;
 
     // If nothing to show, don't render anything at all
     if (!hasAnyVisibleAction) return null;
+
+    const hasVisibleActionButtons = hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton;
 
     return (
       <div className={className}>
         <div
           className={cn(
-            "flex items-center gap-2",
-            isUser ? "flex-row-reverse justify-between" : "justify-between"
+            "flex items-center justify-between gap-4"
           )}
         >
-          {/* Action buttons */}
-          <div
-            className={cn(
-              "flex items-center gap-1",
-              isUser && "flex-row-reverse"
-            )}
-          >
-            {/* Copy button */}
-            {hasVisibleCopyButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopy}
-                aria-label={copySuccess ? "Message copied" : "Copy message to clipboard"}
-                className={`group h-7 gap-1 px-2 text-xs transition-[background-color,color,opacity,transform] duration-200 hover:bg-accent/50 ${
-                  copySuccess
-                    ? "text-success hover:text-success"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title={copySuccess ? "Copied!" : "Copy message"}
-              >
-                {copySuccess ? (
-                  <Check className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
-                ) : (
-                  <Copy className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
-                )}
-                <span className="transition-[background-color,color,opacity,transform] duration-200">
-                  {copySuccess ? "Copied" : "Copy"}
-                </span>
-              </Button>
-            )}
-
-            {/* Edit button */}
-            {hasVisibleEditButton && (
-              <EditMessage
-                message={message}
-                onEdit={onEdit}
-                className="self-start"
+          {/* Left Side: Branch Switcher and Action Buttons */}
+          <div className="flex items-center gap-2">
+            {/* 1. Branch switcher */}
+            {hasVisibleBranchSwitcher && (
+              <BranchSwitcher
+                branchOptions={branchOptions}
+                currentIndex={currentBranchIndex}
+                onSelect={onSelectBranch}
+                isLoading={isLoading}
               />
             )}
 
-            {/* Retry button */}
-            {hasVisibleRetryButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRetry}
-                aria-label="Retry generation from this message"
-                className="group h-7 gap-1 px-2 text-xs text-muted-foreground transition-[background-color,color,opacity,transform] duration-200 hover:bg-accent/50 hover:text-foreground"
-                title="Retry from this message"
-              >
-                <RotateCcw className="h-3 w-3 transition-transform duration-200 group-hover:scale-110" />
-                <span className="transition-[background-color,color,opacity,transform] duration-200">Retry</span>
-              </Button>
+            {/* 2. Action buttons - Style aligned with BranchSwitcher */}
+            {hasVisibleActionButtons && (
+              <div className="flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-accent/30 border border-accent/50 transition-all duration-200">
+                {/* Copy button */}
+                {hasVisibleCopyButton && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCopy}
+                        aria-label={copySuccess ? "Message copied" : "Copy message"}
+                        className={cn(
+                          "h-6 w-6 rounded-full transition-all duration-200",
+                          copySuccess ? "text-success hover:bg-success/10" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                        )}
+                      >
+                        {copySuccess ? (
+                          <Check className="h-3 w-3" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-[10px] px-2 py-1">
+                      <span>{copySuccess ? "Copied!" : "Copy message"}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {/* Edit button */}
+                {hasVisibleEditButton && (
+                  <EditMessage
+                    message={message}
+                    onEdit={onEdit}
+                    showText={false}
+                  />
+                )}
+
+                {/* Retry button */}
+                {hasVisibleRetryButton && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onRetry}
+                        aria-label="Retry generation"
+                        className="h-6 w-6 rounded-full text-muted-foreground transition-all duration-200 hover:bg-accent/60 hover:text-foreground"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-[10px] px-2 py-1">
+                      <span>Retry generation</span>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Branch switcher */}
-          {hasVisibleBranchSwitcher && (
-            <BranchSwitcher
-              branchOptions={branchOptions}
-              currentIndex={currentBranchIndex}
-              onSelect={onSelectBranch}
-              isLoading={isLoading}
-              className={cn("ml-2", isUser && "ml-0 mr-2")}
-            />
-          )}
+          {/* Right Side: Metadata */}
+          <div className="flex items-center">
+            {hasMetadata && (
+              <div className="flex items-center gap-3 px-2">
+                {modelName && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40 font-medium cursor-help hover:text-muted-foreground/60 transition-colors">
+                        <Cpu className="h-2.5 w-2.5" />
+                        <span>{modelName.split("/").pop()}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="flex flex-col gap-1 p-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-primary-foreground/70">Provider:</span>
+                        <span>{modelProvider || "Unknown"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-primary-foreground/70">Model:</span>
+                        <span>{modelName}</span>
+                      </div>
+                      {stopReason && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-primary-foreground/70">Stop Reason:</span>
+                          <span>{stopReason}</span>
+                        </div>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {usage && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40 font-medium cursor-help hover:text-muted-foreground/60 transition-colors">
+                        <Zap className="h-2.5 w-2.5" />
+                        <span>{formatTokenCount(usage.total_tokens || 0)}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="flex flex-col gap-1 p-2">
+                      <div className="flex items-center gap-4 justify-between">
+                        <span className="font-semibold text-primary-foreground/70">Input:</span>
+                        <span>{usage.input_tokens || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-4 justify-between">
+                        <span className="font-semibold text-primary-foreground/70">Output:</span>
+                        <span>{usage.output_tokens || 0}</span>
+                      </div>
+                      <div className="border-t border-primary-foreground/10 my-1 pt-1 flex items-center gap-4 justify-between">
+                        <span className="font-semibold text-primary-foreground/70">Total:</span>
+                        <span>{usage.total_tokens || 0}</span>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );

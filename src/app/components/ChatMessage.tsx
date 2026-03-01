@@ -1,19 +1,19 @@
 "use client";
 
-import { MessageToolbar } from "@/app/components/MessageToolbar";
 import { MessageContent } from "@/app/components/message/MessageContent";
 import { OrphanedApprovals } from "@/app/components/message/OrphanedApprovals";
 import { SubAgentSection } from "@/app/components/message/SubAgentSection";
+import { MessageToolbar } from "@/app/components/MessageToolbar";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useOrphanedActionRequests } from "@/app/hooks/message/useOrphanedActionRequests";
 import { useSubAgents } from "@/app/hooks/message/useSubAgents";
 import type { StateType } from "@/app/hooks/useChat";
 import type { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
-import { extractStringFromMessageContent } from "@/app/utils/utils";
+import { extractStringFromMessageContent, formatDate } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
 import { Message } from "@langchain/langgraph-sdk";
 import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
-import { Bot, User, GitFork } from "lucide-react";
+import { Bot, Clock, GitFork, User } from "lucide-react";
 import React from "react";
 
 interface ChatMessageProps {
@@ -63,6 +63,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     activeSubAgentId,
     setActiveSubAgentId,
     subagentMessagesMap,
+    getMessagesMetadata,
   }) => {
     const isUser = message.type === "human";
     const messageContent = extractStringFromMessageContent(message);
@@ -80,6 +81,10 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     );
 
     const hasMultipleBranches = branchOptions && branchOptions.length > 1;
+
+    // Get metadata for timestamp
+    const metadata = getMessagesMetadata?.(message, messageIndex);
+    const createdAt = metadata?.firstSeenState?.created_at;
 
     return (
       <div
@@ -120,8 +125,16 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               isUser && "flex-row-reverse"
             )}
           >
-            <div className="flex items-center px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40">
-              {isUser ? "User Protocol" : "Deep Agent Core"}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40">
+                {isUser ? "User Protocol" : "Deep Agent Core"}
+              </div>
+              {createdAt && (
+                <div className="flex items-center gap-1 text-[9px] text-muted-foreground/30 font-medium">
+                  <Clock className="h-2.5 w-2.5" />
+                  <span>{formatDate(createdAt)}</span>
+                </div>
+              )}
             </div>
             
             {hasMultipleBranches && (
