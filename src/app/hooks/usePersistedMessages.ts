@@ -39,7 +39,7 @@ export function usePersistedMessages(
 
   // ============ 合并逻辑 (节流更新 UI) ============
   useEffect(() => {
-    if (!isLoading || subagents.size === 0) return;
+    if (subagents.size === 0) return;
 
     let hasChanges = false;
     subagents.forEach((subagent, toolCallId) => {
@@ -186,7 +186,15 @@ export function usePersistedMessages(
   }, [threadId, loadSubagentMessages]);
 
   useEffect(() => {
-    if (!isLoading || !pendingWriteRef.current) return;
+    if (!pendingWriteRef.current) return;
+
+    if (!isLoading) {
+      // Stream finished - save immediately
+      batchSaveToIndexedDB(messagesCacheRef.current);
+      pendingWriteRef.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       if (pendingWriteRef.current) {
         batchSaveToIndexedDB(messagesCacheRef.current);
