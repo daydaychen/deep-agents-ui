@@ -1,9 +1,9 @@
 "use client";
 
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
-import { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
+import type { UIToolCall } from "@/app/types/messages";
+import type { ActionRequest, ReviewConfig } from "@/app/types/types";
 import { cn } from "@/lib/utils";
-import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
 import {
   AlertCircle,
   ChevronDown,
@@ -15,10 +15,7 @@ import {
 import React, { useMemo, useState } from "react";
 
 interface ToolCallBoxProps {
-  toolCall: ToolCall;
-  uiComponent?: any;
-  stream?: any;
-  graphId?: string;
+  toolCall: UIToolCall;
   actionRequest?: ActionRequest;
   reviewConfig?: ReviewConfig;
   onResume?: (value: any) => void;
@@ -29,9 +26,6 @@ interface ToolCallBoxProps {
 export const ToolCallBox = React.memo<ToolCallBoxProps>(
   ({
     toolCall,
-    uiComponent,
-    stream,
-    graphId,
     actionRequest,
     reviewConfig,
     onResume,
@@ -39,25 +33,22 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     messageId,
   }) => {
     const [isExpanded, setIsExpanded] = useState(
-      () => !!uiComponent || !!actionRequest
+      () => !!actionRequest
     );
 
-    // Reset expansion state when messageId changes (e.g. thread switch)
+    // Reset expansion state when messageId changes
     React.useEffect(() => {
-      setIsExpanded(!!uiComponent || !!actionRequest);
-    }, [messageId, !!uiComponent, !!actionRequest]);
+      setIsExpanded(!!actionRequest);
+    }, [messageId, !!actionRequest]);
 
     // Auto-expand/collapse based on status
     React.useEffect(() => {
-      // 1. If currently active or waiting for input, ensure it's expanded
       if (toolCall.status === "pending" || toolCall.status === "interrupted" || !!actionRequest) {
         setIsExpanded(true);
-      } 
-      // 2. If finished successfully or with error, auto-collapse unless it has a UI component or active request
-      else if ((toolCall.status === "completed" || toolCall.status === "error") && !uiComponent && !actionRequest) {
+      } else if ((toolCall.status === "completed" || toolCall.status === "error") && !actionRequest) {
         setIsExpanded(false);
       }
-    }, [toolCall.status, !!uiComponent, !!actionRequest]);
+    }, [toolCall.status, !!actionRequest]);
 
     const [expandedArgs, setExpandedArgs] = useState<Record<string, boolean>>(
       {}
@@ -65,12 +56,11 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
 
     // Deep Arg Extraction
     const finalArgs = useMemo(() => {
-      const raw = (toolCall.args as any) ?? (toolCall as any).input ?? (toolCall as any).function?.arguments ?? (toolCall as any).arguments;
-      if (!raw) return {};
+      const raw = toolCall.args ?? {};
       if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
       if (typeof raw === 'string' && (raw as string).trim() !== "") {
         try {
-          const parsed = JSON.parse(raw);
+          const parsed = JSON.parse(raw as string);
           return typeof parsed === 'object' ? parsed : { value: parsed };
         } catch {
           return { text: raw };
@@ -93,7 +83,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             return `${key}: ${valStr}`;
           })
           .join(", ");
-        return preview.length > 80 ? preview.substring(0, 80) + "…" : preview;
+        return preview.length > 80 ? preview.substring(0, 80) + "..." : preview;
       } catch {
         return "";
       }
@@ -117,15 +107,15 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       <div
         className={cn(
           "w-full min-w-0 overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
-          status === "completed" ? "border-emerald-500/20 bg-emerald-500/[0.02]" : 
-          status === "error" ? "border-destructive/20 bg-destructive/[0.02]" : 
-          status === "pending" ? "border-blue-500/20 bg-blue-500/[0.02]" : 
+          status === "completed" ? "border-emerald-500/20 bg-emerald-500/[0.02]" :
+          status === "error" ? "border-destructive/20 bg-destructive/[0.02]" :
+          status === "pending" ? "border-blue-500/20 bg-blue-500/[0.02]" :
           status === "interrupted" ? "border-orange-500/20 bg-orange-500/[0.02]" : "border-border bg-card",
           isExpanded && hasContent && "ring-1 ring-border/40 shadow-md"
         )}
       >
         {/* Header */}
-        <button 
+        <button
           onClick={() => hasContent && setIsExpanded(!isExpanded)}
           disabled={!hasContent}
           aria-expanded={isExpanded}
@@ -138,9 +128,9 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           <div className="flex items-center gap-2.5 shrink-0 min-w-0">
             <div className={cn(
               "flex h-6 w-6 items-center justify-center rounded-md border shadow-inner",
-              status === "completed" ? "bg-emerald-500/10 border-emerald-500/20" : 
-              status === "error" ? "bg-destructive/10 border-destructive/20" : 
-              status === "pending" ? "bg-blue-500/10 border-blue-500/20" : 
+              status === "completed" ? "bg-emerald-500/10 border-emerald-500/20" :
+              status === "error" ? "bg-destructive/10 border-destructive/20" :
+              status === "pending" ? "bg-blue-500/10 border-blue-500/20" :
               status === "interrupted" ? "bg-orange-500/10 border-orange-500/20" : "bg-muted border-border"
             )}>
               {statusIcon}
@@ -149,7 +139,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
               {name}
             </span>
           </div>
-          
+
           {/* Arguments Preview */}
           <div className="min-w-0 flex-1 overflow-hidden px-2 flex items-center">
             <div className="truncate font-mono text-[10px] leading-none text-muted-foreground/60 bg-muted/20 rounded px-1.5 py-1 border border-border/10 inline-block max-w-full">
@@ -173,18 +163,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
         {isExpanded && hasContent && (
           <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-border/40 to-transparent mb-4" />
-            
-            {uiComponent && stream && graphId ? (
-              <div className="min-w-0 overflow-hidden rounded-lg border bg-background/50 p-1">
-                <LoadExternalComponent
-                  key={uiComponent.id}
-                  stream={stream}
-                  message={uiComponent}
-                  namespace={graphId}
-                  meta={{ status, args: finalArgs, result: toolCall.result ?? "No Result Yet" }}
-                />
-              </div>
-            ) : actionRequest && onResume ? (
+
+            {actionRequest && onResume ? (
               <div className="min-w-0">
                 <ToolApprovalInterrupt
                   actionRequest={actionRequest}

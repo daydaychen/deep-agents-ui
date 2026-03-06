@@ -1,23 +1,19 @@
 import { getConfig } from "@/lib/config";
-import type { Thread } from "@langchain/langgraph-sdk";
-import { Client } from "@langchain/langgraph-sdk";
 import useSWRInfinite from "swr/infinite";
-import { deleteThreadData } from "@/app/utils/db";
 
 export interface ThreadItem {
   id: string;
   updatedAt: Date;
-  status: Thread["status"];
+  status: "idle" | "busy" | "interrupted" | "error";
   title: string;
   description: string;
   messageCount: number;
-  assistantId?: string;
 }
 
 const DEFAULT_PAGE_SIZE = 20;
 
 export function useThreads(props: {
-  status?: Thread["status"];
+  status?: string;
   limit?: number;
 }) {
   const pageSize = props.limit || DEFAULT_PAGE_SIZE;
@@ -25,117 +21,63 @@ export function useThreads(props: {
   return useSWRInfinite(
     (pageIndex: number, previousPageData: ThreadItem[] | null) => {
       const config = getConfig();
-      const apiKey =
-        config?.langsmithApiKey ||
-        process.env.NEXT_PUBLIC_LANGSMITH_API_KEY ||
-        "";
+      if (!config) return null;
 
-      if (!config) {
-        return null;
-      }
-
-      // If the previous page returned no items, we've reached the end
-      if (previousPageData && previousPageData.length === 0) {
-        return null;
-      }
+      // If previous page was empty, we've reached the end
+      if (previousPageData && previousPageData.length === 0) return null;
 
       return {
         kind: "threads" as const,
         pageIndex,
         pageSize,
-        deploymentUrl: config.deploymentUrl,
-        assistantId: config.assistantId,
-        apiKey,
+        apiKey: config.apiKey,
         status: props?.status,
       };
     },
     async ({
-      deploymentUrl,
-      assistantId,
       apiKey,
-      status,
       pageIndex,
       pageSize,
     }: {
       kind: "threads";
       pageIndex: number;
       pageSize: number;
-      deploymentUrl: string;
-      assistantId: string;
       apiKey: string;
-      status?: Thread["status"];
+      status?: string;
     }) => {
-      const client = new Client({
-        apiUrl: deploymentUrl,
-        defaultHeaders: apiKey ? { "X-Api-Key": apiKey } : {},
+      const response = await fetch("/api/threads", {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
       });
 
-      // Check if assistantId is a UUID (deployed) or graph name (local)
-      const isUUID =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          assistantId
-        );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch threads: ${response.status}`);
+      }
 
-      const threads = await client.threads.search({
-        limit: pageSize,
-        offset: pageIndex * pageSize,
-        sortBy: "updated_at" as const,
-        sortOrder: "desc" as const,
-        status,
-        // Only filter by assistant_id metadata for deployed graphs (UUIDs)
-        // Local dev graphs don't set this metadata
-        ...(isUUID ? { metadata: { assistant_id: assistantId } } : {}),
-      });
+      const allThreads: Array<{
+        id: string;
+        title: string;
+        description: string;
+        updatedAt: string;
+        status: string;
+        messageCount: number;
+      }> = await response.json();
 
-      return threads.map((thread): ThreadItem => {
-        let title = "Untitled Thread";
-        let description = "";
-        let messageCount = 0;
+      // Client-side pagination
+      const start = pageIndex * pageSize;
+      const page = allThreads.slice(start, start + pageSize);
 
-        try {
-          if (thread.values && typeof thread.values === "object") {
-            const values = thread.values as any;
-            // Count messages
-            if (Array.isArray(values.messages)) {
-              messageCount = values.messages.length;
-            }
-
-            const firstHumanMessage = values.messages.find(
-              (m: any) => m.type === "human"
-            );
-            if (firstHumanMessage?.content) {
-              const content =
-                typeof firstHumanMessage.content === "string"
-                  ? firstHumanMessage.content
-                  : firstHumanMessage.content[0]?.text || "";
-              title = content.slice(0, 50) + (content.length > 50 ? "…" : "");
-            }
-            const firstAiMessage = values.messages.find(
-              (m: any) => m.type === "ai"
-            );
-            if (firstAiMessage?.content) {
-              const content =
-                typeof firstAiMessage.content === "string"
-                  ? firstAiMessage.content
-                  : firstAiMessage.content[0]?.text || "";
-              description = content.slice(0, 100);
-            }
-          }
-        } catch {
-          // Fallback to thread ID
-          title = `Thread ${thread.thread_id.slice(0, 8)}`;
-        }
-
-        return {
-          id: thread.thread_id,
-          updatedAt: new Date(thread.updated_at),
-          status: thread.status,
-          title,
-          description,
-          messageCount,
-          assistantId,
-        };
-      });
+      return page.map(
+        (thread): ThreadItem => ({
+          id: thread.id,
+          updatedAt: new Date(thread.updatedAt),
+          status: (thread.status as ThreadItem["status"]) || "idle",
+          title: thread.title,
+          description: thread.description,
+          messageCount: thread.messageCount,
+        })
+      );
     },
     {
       revalidateFirstPage: true,
@@ -145,72 +87,24 @@ export function useThreads(props: {
 }
 
 export function useDeleteThread() {
-  const config = getConfig();
-  const apiKey =
-    config?.langsmithApiKey || process.env.NEXT_PUBLIC_LANGSMITH_API_KEY || "";
-
-  if (!config || !apiKey) {
-    throw new Error("Configuration or API key not found");
-  }
-
+  // Stub — SDK sessions are file-based, no remote deletion
   return {
     trigger: async ({ threadId }: { threadId: string }) => {
-      const client = new Client({
-        apiUrl: config.deploymentUrl,
-        defaultHeaders: {
-          "X-Api-Key": apiKey,
-        },
-      });
-
-      await client.threads.delete(threadId);
-
-      // Also delete data from IndexedDB
-      try {
-        await deleteThreadData(threadId);
-      } catch (error) {
-        console.error(
-          `Failed to delete IndexedDB data for thread ${threadId}:`,
-          error
-        );
-      }
+      console.warn("Thread deletion not yet implemented for SDK sessions:", threadId);
     },
   };
 }
 
 export function useMarkThreadAsResolved() {
-  const config = getConfig();
-  const apiKey =
-    config?.langsmithApiKey || process.env.NEXT_PUBLIC_LANGSMITH_API_KEY || "";
-
-  if (!config || !apiKey) {
-    throw new Error("Configuration or API key not found");
-  }
-
+  // Stub — no LangGraph goto command in SDK
   return {
     trigger: async ({
       threadId,
-      assistantId,
     }: {
       threadId: string;
       assistantId?: string;
     }) => {
-      const client = new Client({
-        apiUrl: config.deploymentUrl,
-        defaultHeaders: {
-          "X-Api-Key": apiKey,
-        },
-      });
-
-      // Get the assistant ID from config if not provided
-      const finalAssistantId = assistantId || config.assistantId;
-
-      // Mark thread as resolved by sending a goto command
-      await client.runs.create(threadId, finalAssistantId, {
-        command: { goto: "__end__", update: null },
-        metadata: {
-          langfuse_user_id: config.userId || "user",
-        },
-      });
+      console.warn("Mark as resolved not yet implemented for SDK sessions:", threadId);
     },
   };
 }

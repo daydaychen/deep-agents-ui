@@ -1,43 +1,28 @@
 "use client";
 
 import { MessageContent } from "@/app/components/message/MessageContent";
-import { OrphanedApprovals } from "@/app/components/message/OrphanedApprovals";
 import { SubAgentSection } from "@/app/components/message/SubAgentSection";
 import { MessageToolbar } from "@/app/components/MessageToolbar";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
-import { useOrphanedActionRequests } from "@/app/hooks/message/useOrphanedActionRequests";
-import type { StateType } from "@/app/hooks/useChat";
-import type { ActionRequest, ReviewConfig, SubAgent, ToolCall } from "@/app/types/types";
+import type { UIMessage, UIToolCall, UISubAgent } from "@/app/types/messages";
 import { extractStringFromMessageContent, formatDate } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
 import { useChatState } from "@/providers/chat-context";
-import { Message } from "@langchain/langgraph-sdk";
-import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import { Bot, Clock, GitFork, User } from "lucide-react";
 import React, { useMemo } from "react";
 
 const ASSISTANT_NAME = "Databus Pilot";
 
 interface ChatMessageProps {
-  message: Message;
+  message: UIMessage;
   messageIndex: number;
-  toolCalls: ToolCall[];
-  subAgents?: SubAgent[];
+  toolCalls: UIToolCall[];
+  subAgents?: UISubAgent[];
   isLoading?: boolean;
   isStreaming?: boolean;
-  actionRequestsMap?: Map<string, ActionRequest>;
-  reviewConfigsMap?: Map<string, ReviewConfig>;
-  ui?: any[];
-  stream?: any;
-  onResumeInterrupt?: (value: any) => void;
-  onRetry?: (message: Message, index: number) => void;
-  onEdit?: (editedMessage: Message, index: number) => void;
-  getMessagesMetadata?: (
-    message: Message,
-    index?: number
-  ) => MessageMetadata<StateType> | undefined;
+  onRetry?: (message: UIMessage, index: number) => void;
+  onEdit?: (editedMessage: UIMessage, index: number) => void;
   setBranch?: (branch: string) => void;
-  graphId?: string;
   branchOptions?: string[];
   currentBranchIndex?: number;
   canRetry?: boolean;
@@ -53,26 +38,18 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     subAgents = [],
     isLoading,
     isStreaming,
-    actionRequestsMap,
-    reviewConfigsMap,
-    ui,
-    stream,
-    onResumeInterrupt,
     onRetry,
     onEdit,
-    graphId,
     branchOptions = [],
     currentBranchIndex = 0,
     setBranch,
     canRetry = false,
     activeSubAgentId,
     setActiveSubAgentId,
-    getMessagesMetadata,
   }) => {
     const { config } = useChatState();
 
-    // Memoize computed values to prevent unnecessary re-computations
-    const isUser = message.type === "human";
+    const isUser = message.role === "user";
     const userName = config?.userId || "User Protocol";
     const displayName = isUser ? userName : ASSISTANT_NAME;
     const messageContent = useMemo(
@@ -82,31 +59,10 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     const hasContent = messageContent && messageContent.trim() !== "";
     const hasToolCalls = toolCalls.length > 0;
 
-    // Memoize UI lookup map for O(1) access instead of .find() per tool call
-    const uiByToolCallId = useMemo(() => {
-      if (!ui) return new Map<string, any>();
-      const map = new Map<string, any>();
-      for (const u of ui) {
-        const toolCallId = u.metadata?.tool_call_id;
-        if (toolCallId) {
-          map.set(toolCallId, u);
-        }
-      }
-      return map;
-    }, [ui]);
-
-    // Find orphaned action requests
-    const orphanedApprovals = useOrphanedActionRequests(
-      actionRequestsMap,
-      reviewConfigsMap,
-      toolCalls
-    );
-
     const hasMultipleBranches = branchOptions && branchOptions.length > 1;
 
-    // Get metadata for timestamp
-    const metadata = getMessagesMetadata?.(message, messageIndex);
-    const createdAt = metadata?.firstSeenState?.created_at;
+    // Get timestamp from metadata
+    const createdAt = message.metadata?.created_at;
 
     return (
       <div
@@ -196,22 +152,12 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                   <div className="h-[1px] flex-1 bg-border" />
                 </div>
               )}
-              {toolCalls.map((toolCall: ToolCall) => {
-                if (toolCall.name === "task") return null;
-                // O(1) lookup from memoized map instead of .find()
-                const toolCallGenUiComponent = uiByToolCallId.get(toolCall.id);
-                const actionRequest = actionRequestsMap?.get(toolCall.name);
-                const reviewConfig = reviewConfigsMap?.get(toolCall.name);
+              {toolCalls.map((toolCall) => {
+                if (toolCall.name === "Agent") return null;
                 return (
                   <ToolCallBox
                     key={toolCall.id}
                     toolCall={toolCall}
-                    uiComponent={toolCallGenUiComponent}
-                    stream={stream}
-                    graphId={graphId}
-                    actionRequest={actionRequest}
-                    reviewConfig={reviewConfig}
-                    onResume={onResumeInterrupt}
                     isLoading={isLoading}
                     messageId={message.id}
                   />
@@ -226,24 +172,12 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               subAgents={subAgents}
               activeSubAgentId={activeSubAgentId}
               setActiveSubAgentId={setActiveSubAgentId}
-              actionRequestsMap={actionRequestsMap}
-              reviewConfigsMap={reviewConfigsMap}
-              onResumeInterrupt={onResumeInterrupt}
               isLoading={isLoading}
               messageId={message.id}
             />
           )}
 
-          {/* 4. Orphaned Approvals */}
-          {!isUser && onResumeInterrupt && (
-            <OrphanedApprovals
-              orphanedApprovals={orphanedApprovals}
-              onResumeInterrupt={onResumeInterrupt}
-              isLoading={isLoading}
-            />
-          )}
-
-          {/* 5. Message Toolbar */}
+          {/* 4. Message Toolbar */}
           <div
             className={cn(
               "opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-300 mt-1.5 transform translate-y-1 group-hover:translate-y-0"
@@ -261,7 +195,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               showRetry={canRetry}
               onEdit={
                 onEdit
-                  ? (editedMessage) => onEdit(editedMessage, messageIndex)
+                  ? (editedMessage) => onEdit(editedMessage as UIMessage, messageIndex)
                   : undefined
               }
               showEdit={isUser}

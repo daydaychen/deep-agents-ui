@@ -1,627 +1,343 @@
 "use client";
 
+import type { UIMessage, UISubAgent } from "@/app/types/messages";
 import type { TodoItem } from "@/app/types/types";
 import type { StandaloneConfig } from "@/lib/config";
-import { useClient } from "@/providers/client-context";
+import { parseSSEStream } from "@/lib/sse-parser";
 import {
-  type Assistant,
-  type Checkpoint,
-  type Message,
-} from "@langchain/langgraph-sdk";
-import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
-import { useStream } from "@langchain/langgraph-sdk/react";
+  createProcessorState,
+  getMainMessages,
+  getSubagentMessagesMap,
+  getSubagents,
+  processSDKMessage,
+  type ProcessorState,
+} from "@/lib/sdk-message-processor";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { usePersistedMessages } from "./usePersistedMessages";
 
-export type StateType = {
-  messages: Message[];
-  todos: TodoItem[];
-  files: Record<string, string>;
-  email?: {
-    id?: string;
-    subject?: string;
-    page_content?: string;
-  };
-  ui?: any;
-};
-
-export type LLMOverrideConfig = {
-  model?: string;
-  temperature?: number;
-  max_completion_tokens?: number;
-  top_p?: number;
-  presence_penalty?: number;
-};
+// ---- Public API types ----
 
 export type OverrideConfig = {
-  model?: LLMOverrideConfig;
-  small_model?: LLMOverrideConfig;
-  analyst?: LLMOverrideConfig;
-  config_validator?: LLMOverrideConfig;
-  databus_specialist?: LLMOverrideConfig;
-  recursionLimit?: number;
-  interruptBefore?: string[];
-  interruptAfter?: string[];
+  maxTurns?: number;
+  model?: string;
 };
 
 export function useChat({
-  activeAssistant,
   onHistoryRevalidate,
-  thread,
-  recursionLimit = 100,
-  recursionMultiplier = 6,
   config,
 }: {
-  activeAssistant: Assistant | null;
   onHistoryRevalidate?: () => void;
-  thread?: UseStreamThread<StateType>;
-  recursionLimit?: number;
-  recursionMultiplier?: number;
   config: StandaloneConfig;
 }) {
   const [threadId, setThreadId] = useQueryState("threadId");
-  const client = useClient();
-  const [sessionId, setSessionId] = useState<string>(() => uuidv4());
-  const isSubmittingRef = useRef(false);
+  const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+  const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [subagents, setSubagents] = useState<UISubAgent[]>([]);
+  const [subagentMessagesMap, setSubagentMessagesMap] = useState<Map<string, UIMessage[]>>(new Map());
+  const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
   const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>({});
 
-  // Manage session_id: reuse from thread metadata or generate new one
+  const abortRef = useRef<AbortController | null>(null);
+  const processorRef = useRef<ProcessorState>(createProcessorState());
+  const isSubmittingRef = useRef(false);
+  const lastAutoActivatedIdRef = useRef<string | null>(null);
+
+  // Reset state when thread changes
   useEffect(() => {
-    const fetchSessionId = async () => {
-      if (threadId && client) {
-        try {
-          const threadData = await client.threads.get(threadId);
-          const existingSessionId = threadData.metadata?.langfuse_session_id as
-            | string
-            | undefined;
-          if (existingSessionId) {
-            setSessionId(existingSessionId);
-          } else {
-            // Thread exists but no session_id, generate and potentially update
-            setSessionId(uuidv4());
-          }
-        } catch {
-          // Failed to fetch thread, generate new session_id
-          console.warn("Failed to fetch thread metadata:");
-          setSessionId(uuidv4());
-        }
-      } else {
-        // New thread, generate new session_id
-        setSessionId(uuidv4());
-      }
-    };
+    setMessages([]);
+    setTodos([]);
+    setSubagents([]);
+    setSubagentMessagesMap(new Map());
+    setActiveSubAgentId(null);
+    setError(undefined);
+    lastAutoActivatedIdRef.current = null;
+    processorRef.current = createProcessorState();
+  }, [threadId]);
 
-    fetchSessionId();
-  }, [threadId, client]);
+  // ---- Core SSE streaming function ----
+  const streamSSE = useCallback(
+    async (body: { message: string; threadId?: string; config?: Record<string, unknown> }) => {
+      const abortController = new AbortController();
+      abortRef.current = abortController;
 
-  const stream = useStream<StateType>({
-    assistantId: activeAssistant?.assistant_id || "",
-    client: client ?? undefined,
-    reconnectOnMount: true,
-    threadId: threadId ?? null,
-    onThreadId: setThreadId,
-    defaultHeaders: { "x-auth-scheme": "langsmith" },
-    // Revalidate thread list when stream finishes, errors, or creates new thread
-    onFinish: onHistoryRevalidate,
-    onError: onHistoryRevalidate,
-    onCreated: onHistoryRevalidate,
-    fetchStateHistory: { limit: 100 },
-    thread: thread,
-    filterSubagentMessages: true,
-    streamSubgraphs: true,
-  // as any: SDK types don't export DeepAgent-specific options (filterSubagentMessages, streamSubgraphs)
-  } as any);
+      setIsLoading(true);
+      setError(undefined);
 
-  // Reset submit guard when stream finishes
-  useEffect(() => {
-    if (!stream.isLoading) {
-      isSubmittingRef.current = false;
-    }
-  }, [stream.isLoading]);
+      // Reset processor state for new stream but keep existing messages
+      const processor = createProcessorState();
+      // Carry over existing finalized messages
+      processor.messages = [...processorRef.current.messages];
+      processor.todos = [...processorRef.current.todos];
+      // Copy subagents
+      processorRef.current.subagents.forEach((v, k) => processor.subagents.set(k, v));
+      processorRef.current = processor;
 
-  // Helper to map overrides to configurable with prefixes
-  const getFinalConfigurable = useCallback((): Record<string, any> => {
-    const finalConfigurable = { ...(activeAssistant?.config?.configurable ?? {}) };
-    
-    const prefixes = {
-      model: "llm_",
-      small_model: "small_llm_",
-      analyst: "analyst_",
-      config_validator: "config_validator_",
-      databus_specialist: "databus_specialist_",
-    };
-
-    const configKeys: (keyof LLMOverrideConfig)[] = [
-      "model",
-      "temperature",
-      "max_completion_tokens",
-      "top_p",
-      "presence_penalty",
-    ];
-
-    Object.entries(prefixes).forEach(([key, prefix]) => {
-      const overrides = overrideConfig[key as keyof typeof prefixes];
-      if (overrides) {
-        configKeys.forEach((configKey) => {
-          if (overrides[configKey] !== undefined) {
-            finalConfigurable[`${prefix}${configKey}`] = overrides[configKey];
-          }
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${config.apiKey}`,
+          },
+          body: JSON.stringify(body),
+          signal: abortController.signal,
         });
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          let errorMessage: string;
+          try {
+            const parsed = JSON.parse(errorBody);
+            errorMessage = parsed.error || parsed.message || `HTTP ${response.status}`;
+          } catch {
+            errorMessage = errorBody || `HTTP ${response.status}`;
+          }
+          throw new Error(errorMessage);
+        }
+
+        // Extract thread ID from response header
+        const responseThreadId = response.headers.get("X-Thread-Id");
+        if (responseThreadId && !threadId) {
+          setThreadId(responseThreadId);
+        }
+
+        // Stream SSE events
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("No response body");
+
+        for await (const sseEvent of parseSSEStream(reader)) {
+          if (abortController.signal.aborted) break;
+
+          // Handle special SSE events
+          if (sseEvent.event === "done") break;
+          if (sseEvent.event === "aborted") break;
+          if (sseEvent.event === "error") {
+            const errorData = JSON.parse(sseEvent.data);
+            throw new Error(errorData.error || "Stream error");
+          }
+
+          // Parse and process the SDK message
+          try {
+            const sdkMessage = JSON.parse(sseEvent.data);
+            processSDKMessage(processor, sdkMessage);
+
+            // Update React state from processor
+            setMessages(getMainMessages(processor));
+            setTodos([...processor.todos]);
+            setSubagents(getSubagents(processor));
+            setSubagentMessagesMap(getSubagentMessagesMap(processor));
+
+            // Auto-activate subagent
+            const currentSubagents = getSubagents(processor);
+            const activeOnes = currentSubagents.filter((s) => s.status === "active");
+            if (activeOnes.length > 0) {
+              const lastActive = activeOnes[activeOnes.length - 1];
+              if (lastActive.id !== lastAutoActivatedIdRef.current) {
+                lastAutoActivatedIdRef.current = lastActive.id;
+                setActiveSubAgentId(lastActive.id);
+              }
+            }
+          } catch {
+            // Skip unparseable events
+          }
+        }
+
+        // Final state sync
+        setMessages(getMainMessages(processor));
+        setTodos([...processor.todos]);
+        setSubagents(getSubagents(processor));
+        setSubagentMessagesMap(getSubagentMessagesMap(processor));
+        onHistoryRevalidate?.();
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          // User cancelled — not an error
+        } else {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          setError(errorMessage);
+          toast.error(errorMessage, {
+            duration: 5000,
+            id: `chat-error-${errorMessage.substring(0, 50)}`,
+          });
+        }
+        onHistoryRevalidate?.();
+      } finally {
+        setIsLoading(false);
+        isSubmittingRef.current = false;
+        abortRef.current = null;
       }
-    });
-
-    return finalConfigurable;
-  }, [activeAssistant, overrideConfig]);
-
-  // 消息持久化和缓存 - 返回 subagentMessagesMap
-  const { subagentMessagesMap } = usePersistedMessages(
-    threadId,
-    stream.subagents,
-    stream.isLoading
+    },
+    [config.apiKey, threadId, setThreadId, onHistoryRevalidate]
   );
+
+  // ---- Public actions ----
 
   const sendMessage = useCallback(
     (content: string) => {
-      if (stream.isLoading || isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      setActiveSubAgentId(null);
-      const newMessage: Message = { id: uuidv4(), type: "human", content };
-      
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const finalInterruptBefore = overrideConfig.interruptBefore;
-      const finalInterruptAfter = overrideConfig.interruptAfter;
-      
-      const assistantConfig = { 
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
-      };
-
-      stream.submit(
-        { messages: [newMessage] },
-        {
-          optimisticValues: (prev) => ({
-            messages: [...(prev.messages ?? []), newMessage],
-          }),
-          metadata: {
-            langfuse_session_id: sessionId,
-            langfuse_user_id: config.userId || "user",
-          },
-          config: {
-            ...assistantConfig,
-            recursion_limit: finalRecursionLimit,
-          },
-          streamMode: ["messages", "updates"],
-          streamSubgraphs: true,
-          streamResumable: true,
-          ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
-          ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
-        }
-      );
-    },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
-  );
-
-  const runSingleStep = useCallback(
-    (
-      messages: Message[],
-      checkpoint?: Checkpoint,
-      isRerunningSubagent?: boolean,
-      optimisticMessages?: Message[]
-    ) => {
-      if (stream.isLoading || isSubmittingRef.current) return;
+      if (isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
 
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const finalInterruptBefore = overrideConfig.interruptBefore || (isRerunningSubagent ? undefined : ["tools"]);
-      const finalInterruptAfter = overrideConfig.interruptAfter || (isRerunningSubagent ? ["tools"] : undefined);
-
-      const assistantConfig = { 
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
+      // Optimistically add user message
+      const userMessage: UIMessage = {
+        id: uuidv4(),
+        role: "user",
+        content,
+        parentToolUseId: null,
       };
 
-      if (checkpoint) {
-        stream.submit(undefined, {
-          ...(optimisticMessages
-            ? { optimisticValues: { messages: optimisticMessages } }
-            : {}),
-          metadata: {
-            langfuse_session_id: sessionId,
-            langfuse_user_id: config.userId || "user",
-          },
-          config: {
-            ...assistantConfig,
-            recursion_limit: finalRecursionLimit,
-          },
-          checkpoint: checkpoint,
-          streamMode: ["messages", "updates"],
-          streamSubgraphs: true,
-          streamResumable: true,
-          ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
-          ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
-        });
-      } else {
-        stream.submit(
-          { messages },
-          {
-            metadata: {
-              langfuse_session_id: sessionId,
-              langfuse_user_id: config.userId || "user",
-            },
-            config: {
-              ...assistantConfig,
-              recursion_limit: finalRecursionLimit,
-            },
-            streamMode: ["messages", "updates"],
-            streamSubgraphs: true,
-            streamResumable: true,
-            ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : { interruptBefore: ["tools"] }),
-            ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
-          }
-        );
+      const processor = processorRef.current;
+      processor.messages.push(userMessage);
+      setMessages(getMainMessages(processor));
+
+      // Build request body
+      const body: Record<string, unknown> = {
+        message: content,
+      };
+      if (threadId) {
+        body.threadId = threadId;
       }
+      const reqConfig: Record<string, unknown> = {};
+      if (overrideConfig.maxTurns) reqConfig.maxTurns = overrideConfig.maxTurns;
+      if (overrideConfig.model) reqConfig.model = overrideConfig.model;
+      if (Object.keys(reqConfig).length > 0) body.config = reqConfig;
+
+      streamSSE(body as { message: string; threadId?: string; config?: Record<string, unknown> });
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
-  );
-
-  const setFiles = useCallback(
-    async (files: Record<string, string>) => {
-      if (!threadId || !client) return;
-      await client.threads.updateState(threadId, { values: { files } });
-    },
-    [client, threadId]
-  );
-
-  const continueStream = useCallback(
-    (hasTaskToolCall?: boolean) => {
-      if (stream.isLoading || isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      // We don't reset activeSubAgentId here because continue often means 
-      // resuming a subagent or the next step in the same chain
-
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const finalInterruptBefore = overrideConfig.interruptBefore || (hasTaskToolCall ? undefined : ["tools"]);
-      const finalInterruptAfter = overrideConfig.interruptAfter || (hasTaskToolCall ? ["tools"] : undefined);
-
-      const assistantConfig = { 
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
-      };
-
-      stream.submit(undefined, {
-        metadata: {
-          langfuse_session_id: sessionId,
-          langfuse_user_id: config.userId || "user",
-        },
-        config: {
-          ...assistantConfig,
-          recursion_limit: finalRecursionLimit,
-        },
-        streamMode: ["messages", "updates"],
-        streamSubgraphs: true,
-        streamResumable: true,
-        ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
-        ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
-      });
-    },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
-  );
-
-  const markCurrentThreadAsResolved = useCallback(() => {
-    if (stream.isLoading || isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-    setActiveSubAgentId(null);
-    stream.submit(null, {
-      command: { goto: "__end__", update: null },
-      metadata: {
-        langfuse_session_id: sessionId,
-        langfuse_user_id: config.userId || "user",
-      },
-      streamResumable: true,
-    });
-  }, [stream, sessionId, config.userId]);
-
-  const resumeInterrupt = useCallback(
-    (value: any) => {
-      if (stream.isLoading || isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      // Keep activeSubAgentId if any
-      stream.submit(null, {
-        command: { resume: value },
-        metadata: {
-          langfuse_session_id: sessionId,
-          langfuse_user_id: config.userId || "user",
-        },
-        streamMode: ["messages", "updates"],
-        streamSubgraphs: true,
-        streamResumable: true,
-      });
-    },
-    [stream, sessionId, config.userId]
+    [isLoading, threadId, overrideConfig, streamSSE]
   );
 
   const stopStream = useCallback(() => {
-    stream.stop();
-  }, [stream]);
+    abortRef.current?.abort();
 
-  const resolveMessageIndex = useCallback(
-    (message: Message, fallbackIndex: number) => {
-      const actual = stream.messages.findIndex((msg) => msg.id === message.id);
-      return actual !== -1 ? actual : fallbackIndex;
-    },
-    [stream.messages]
-  );
-
-  const retryFromMessage = useCallback(
-    (message: Message, index: number) => {
-      if (stream.isLoading || isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      setActiveSubAgentId(null);
-
-      const indexToUse = resolveMessageIndex(message, index);
-
-      const metadata = stream.getMessagesMetadata(message, indexToUse);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
-
-      if (!parentCheckpoint) {
-        console.warn("No parent checkpoint found for message", message.id);
-        toast.error("Unable to retry: checkpoint not found for this message");
-        isSubmittingRef.current = false;
-        return;
-      }
-
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const assistantConfig = { 
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
-      };
-
-      stream.submit(undefined, {
-        checkpoint: parentCheckpoint,
-        config: {
-          ...assistantConfig,
-          recursion_limit: finalRecursionLimit,
+    // Also POST to stop endpoint if we have a threadId
+    const tid = threadId;
+    if (tid) {
+      fetch(`/api/chat/${tid}/stop`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
         },
-        metadata: {
-          langfuse_session_id: sessionId,
-          langfuse_user_id: config.userId || "user",
-        },
-        streamMode: ["messages", "updates"],
-        streamSubgraphs: true,
-        streamResumable: true,
-        ...(overrideConfig.interruptBefore ? { interruptBefore: overrideConfig.interruptBefore } : {}),
-        ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
+      }).catch(() => {
+        // Best effort — ignore errors
       });
-    },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, recursionMultiplier, resolveMessageIndex, overrideConfig, getFinalConfigurable]
-  );
+    }
+  }, [threadId, config.apiKey]);
 
-  const editMessage = useCallback(
-    (message: Message, index: number) => {
-      if (stream.isLoading || isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      setActiveSubAgentId(null);
+  // ---- P2 stubs ----
 
-      const indexToUse = resolveMessageIndex(message, index);
+  const continueStream = useCallback(() => {
+    // No-op stub — deferred to P3
+  }, []);
 
-      const metadata = stream.getMessagesMetadata(message, indexToUse);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+  const editMessage = useCallback((_message: UIMessage, _index: number) => {
+    // No-op stub — requires forkSession (deferred to P3)
+  }, []);
 
-      if (!parentCheckpoint) {
-        console.warn("No parent checkpoint found for message", message.id);
-        toast.error("Unable to edit: checkpoint not found for this message");
-        isSubmittingRef.current = false;
-        return;
-      }
+  const retryFromMessage = useCallback((_message: UIMessage, _index: number) => {
+    // No-op stub — requires resumeSessionAt (deferred to P3)
+  }, []);
 
-      // Minimal message — do NOT spread original message properties
-      const newMessage: Message = {
-        type: "human",
-        content: message.content,
-      };
+  const setBranch = useCallback((_branch: string) => {
+    // No-op stub — branching deferred to P3
+  }, []);
 
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const assistantConfig = { 
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
-      };
+  const markCurrentThreadAsResolved = useCallback(() => {
+    // No-op stub
+  }, []);
 
-      stream.submit(
-        { messages: [newMessage] },
-        {
-          checkpoint: parentCheckpoint,
-          config: {
-            ...assistantConfig,
-            recursion_limit: finalRecursionLimit,
-          },
-          metadata: {
-            langfuse_session_id: sessionId,
-            langfuse_user_id: config.userId || "user",
-          },
-          streamMode: ["messages", "updates"],
-          streamSubgraphs: true,
-          streamResumable: true,
-          ...(overrideConfig.interruptBefore ? { interruptBefore: overrideConfig.interruptBefore } : {}),
-          ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
-        }
-      );
-    },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, recursionMultiplier, resolveMessageIndex, overrideConfig, getFinalConfigurable]
-  );
+  const resumeInterrupt = useCallback((_value: unknown) => {
+    // No-op stub — tool approval deferred to P2
+  }, []);
 
-  // Helper function to get branch information for a specific message
+  const runSingleStep = useCallback(() => {
+    // No-op stub — single-step execution deferred to P3
+  }, []);
+
+  const setFiles = useCallback(async (_files: Record<string, string>) => {
+    // No-op stub
+  }, []);
+
+  // ---- Derived state ----
+
   const getMessageBranchInfo = useCallback(
-    (message: Message, index: number) => {
-      const indexToUse = resolveMessageIndex(message, index);
-
-      const metadata = stream.getMessagesMetadata?.(message, indexToUse);
-
-      // Get branch options from metadata
-      const branchOptions =
-        (metadata?.branchOptions as string[] | undefined) || [];
-
-      // Find current branch index
-      const currentBranch = metadata?.branch;
-      const currentBranchIndex = currentBranch
-        ? branchOptions.indexOf(currentBranch)
-        : 0;
-
-      // Determine if this message can be retried
-      // User messages should only support editing, not retrying
-      const hasParentCheckpoint = !!metadata?.firstSeenState?.parent_checkpoint;
-      const isUserMessage = message.type === "human";
-      const canRetry = hasParentCheckpoint && !isUserMessage;
-
-      return {
-        branchOptions,
-        currentBranchIndex: currentBranchIndex >= 0 ? currentBranchIndex : 0,
-        canRetry,
-      };
-    },
-    [stream, resolveMessageIndex]
+    (_message: UIMessage, _index: number) => ({
+      branchOptions: [] as string[],
+      currentBranchIndex: 0,
+      canRetry: false,
+    }),
+    []
   );
 
-  const latestError = useMemo(() => {
-    const error = stream.error;
-    if (!error) return undefined;
+  const getMessagesMetadata = useCallback(
+    (_message: UIMessage, _index?: number) => undefined,
+    []
+  );
 
-    let errorMessage =
-      typeof error === "string"
-        ? error
-        : (error as any).message || JSON.stringify(error);
-
-    // Try to parse JSON if the error message contains a JSON object
-    if (errorMessage.includes("{") && errorMessage.includes("}")) {
-      try {
-        const startIdx = errorMessage.indexOf("{");
-        const endIdx = errorMessage.lastIndexOf("}") + 1;
-        if (startIdx !== -1 && endIdx > startIdx) {
-          const jsonStr = errorMessage.substring(startIdx, endIdx);
-          const parsed = JSON.parse(jsonStr);
-
-          if (parsed.detail) {
-            if (Array.isArray(parsed.detail)) {
-              errorMessage = parsed.detail
-                .map((d: any) =>
-                  typeof d === "string" ? d : JSON.stringify(d)
-                )
-                .join(", ");
-            } else if (typeof parsed.detail === "object") {
-              errorMessage = JSON.stringify(parsed.detail);
-            } else {
-              errorMessage = String(parsed.detail);
-            }
-          } else if (parsed.message) {
-            errorMessage = String(parsed.message);
-          } else if (parsed.error) {
-            errorMessage =
-              typeof parsed.error === "string"
-                ? parsed.error
-                : JSON.stringify(parsed.error);
-          }
-        }
-      } catch {
-        // Ignore parsing errors and keep original
-      }
-    }
-
-    // Filter out CancelledError as it's not a real error
-    if (errorMessage && errorMessage.includes("CancelledError")) {
-      return undefined;
-    }
-    return errorMessage;
-  }, [stream.error]);
-
+  // Error toast effect
   useEffect(() => {
-    if (latestError) {
-      toast.error(latestError, {
+    if (error) {
+      toast.error(error, {
         duration: 5000,
-        id: `chat-error-${latestError.substring(0, 50)}`, // Avoid duplicate toasts for the same message
+        id: `chat-error-${error.substring(0, 50)}`,
       });
     }
-  }, [latestError]);
+  }, [error]);
 
-  const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
-  const lastAutoActivatedIdRef = useRef<string | null>(null);
-
-  // Reset active subagent and tracking ref when thread changes
-  useEffect(() => {
-    setActiveSubAgentId(null);
-    lastAutoActivatedIdRef.current = null;
-  }, [threadId]);
-
-  // Auto-activate subagent when it starts streaming
-  useEffect(() => {
-    if (stream.activeSubagents.length > 0) {
-      const lastActive =
-        stream.activeSubagents[stream.activeSubagents.length - 1];
-
-      // Only auto-activate if it's a NEW subagent we haven't activated yet
-      if (lastActive.id !== lastAutoActivatedIdRef.current) {
-        lastAutoActivatedIdRef.current = lastActive.id;
-        setActiveSubAgentId(lastActive.id);
-      }
-    } else if (!stream.isLoading && lastAutoActivatedIdRef.current) {
-      // Clear the ref when streaming stops so we can re-activate if needed next time
-      lastAutoActivatedIdRef.current = null;
-    }
-  }, [stream.activeSubagents, stream.isLoading]);
-
-
-  // Stable return object to prevent downstream infinite loops in providers/consumers
+  // Stable return object
   return useMemo(
     () => ({
-      stream,
-      todos: stream.values.todos ?? [],
-      files: stream.values.files ?? {},
-      email: stream.values.email,
-      ui: stream.values.ui,
-      setFiles,
-      messages: stream.messages,
-      subagents: stream.subagents,
+      messages,
+      todos,
+      files: {} as Record<string, string>,
+      subagents,
       subagentMessagesMap,
       activeSubAgentId,
       setActiveSubAgentId,
-      isLoading: stream.isLoading,
-      isThreadLoading: stream.isThreadLoading,
-      interrupt: stream.interrupt,
-      getMessagesMetadata: stream.getMessagesMetadata,
-      error: latestError,
-      branch: stream.branch,
-      setBranch: stream.setBranch,
-      history: stream.history,
+      isLoading,
+      isStreaming: isLoading,
+      error,
+      threadId,
       getMessageBranchInfo,
+      getMessagesMetadata,
       sendMessage,
-      runSingleStep,
-      continueStream,
       stopStream,
+      continueStream,
+      editMessage,
+      retryFromMessage,
+      setBranch,
       markCurrentThreadAsResolved,
       resumeInterrupt,
-      retryFromMessage,
-      editMessage,
+      runSingleStep,
+      setFiles,
       overrideConfig,
       setOverrideConfig,
       config,
     }),
     [
-      stream,
+      messages,
+      todos,
+      subagents,
       subagentMessagesMap,
       activeSubAgentId,
-      latestError,
-      setFiles,
+      isLoading,
+      error,
+      threadId,
       getMessageBranchInfo,
+      getMessagesMetadata,
       sendMessage,
-      runSingleStep,
-      continueStream,
       stopStream,
+      continueStream,
+      editMessage,
+      retryFromMessage,
+      setBranch,
       markCurrentThreadAsResolved,
       resumeInterrupt,
-      retryFromMessage,
-      editMessage,
+      runSingleStep,
+      setFiles,
       overrideConfig,
       config,
     ]

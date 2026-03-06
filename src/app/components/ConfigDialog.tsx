@@ -12,27 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { StandaloneConfig } from "@/lib/config";
-import { Client } from "@langchain/langgraph-sdk";
-import type { Assistant } from "@langchain/langgraph-sdk";
 import { toast } from "sonner";
-import { Loader2, Settings2, Globe, Key, ListFilter, Hash, User, Calendar, Trash2, AlertCircle } from "lucide-react";
+import { Settings2, Key, Hash, User } from "lucide-react";
 
 interface ConfigDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (config: StandaloneConfig) => void;
   initialConfig?: StandaloneConfig;
-  currentDeploymentUrl?: string;
-  currentApiKey?: string;
 }
 
 export function ConfigDialog({
@@ -40,497 +28,132 @@ export function ConfigDialog({
   onOpenChange,
   onSave,
   initialConfig,
-  currentDeploymentUrl,
-  currentApiKey,
 }: ConfigDialogProps) {
-  const [deploymentUrl, setDeploymentUrl] = useState(
-    initialConfig?.deploymentUrl || ""
-  );
-  const [assistantId, setAssistantId] = useState(
-    initialConfig?.assistantId || ""
-  );
-  const [langsmithApiKey, setLangsmithApiKey] = useState(
-    initialConfig?.langsmithApiKey || ""
-  );
-  const [recursionLimit, setRecursionLimit] = useState(
-    initialConfig?.recursionLimit?.toString() || "100"
-  );
-  const [recursionMultiplier, setRecursionMultiplier] = useState(
-    initialConfig?.recursionMultiplier?.toString() || "6"
+  const [apiKey, setApiKey] = useState(initialConfig?.apiKey || "");
+  const [model, setModel] = useState(initialConfig?.model || "");
+  const [maxTurns, setMaxTurns] = useState(
+    initialConfig?.maxTurns?.toString() || ""
   );
   const [userId, setUserId] = useState(initialConfig?.userId || "");
-  const [assistants, setAssistants] = useState<Assistant[]>([]);
-  const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
-  const [loadingAssistants, setLoadingAssistants] = useState(false);
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const [useCustomId, setUseCustomId] = useState(false);
-
-  const [assistantConfig, setAssistantConfig] = useState("{}");
-  const [assistantMetadata, setAssistantMetadata] = useState("{}");
-  const [configError, setConfigError] = useState<string | null>(null);
-  const [metadataError, setMetadataError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (open && initialConfig) {
-      setDeploymentUrl(initialConfig.deploymentUrl);
-      setAssistantId(initialConfig.assistantId);
-      setLangsmithApiKey(initialConfig.langsmithApiKey || "");
-      setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
-      setRecursionMultiplier(initialConfig.recursionMultiplier?.toString() || "6");
+      setApiKey(initialConfig.apiKey || "");
+      setModel(initialConfig.model || "");
+      setMaxTurns(initialConfig.maxTurns?.toString() || "");
       setUserId(initialConfig.userId || "");
     }
   }, [open, initialConfig]);
 
-  // Fetch assistants when deployment URL is available
-  useEffect(() => {
-    const fetchAssistants = async () => {
-      const urlToUse = deploymentUrl || currentDeploymentUrl;
-      const apiKeyToUse = langsmithApiKey || currentApiKey;
-
-      if (!urlToUse || !open) {
-        return;
-      }
-
-      setLoadingAssistants(true);
-      try {
-        const client = new Client({
-          apiUrl: urlToUse,
-          defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
-        });
-
-        const assistantsList = await client.assistants.search({
-          limit: 100,
-        });
-
-        setAssistants(assistantsList);
-      } catch (error) {
-        console.error("Failed to fetch assistants:", error);
-        setAssistants([]);
-      } finally {
-        setLoadingAssistants(false);
-      }
-    };
-
-    fetchAssistants();
-  }, [
-    deploymentUrl,
-    currentDeploymentUrl,
-    langsmithApiKey,
-    currentApiKey,
-    open,
-  ]);
-
-  // Fetch selected assistant details
-  useEffect(() => {
-    const fetchDetails = async () => {
-      const urlToUse = deploymentUrl || currentDeploymentUrl;
-      const apiKeyToUse = langsmithApiKey || currentApiKey;
-
-      if (!urlToUse || !assistantId || !open) {
-        setSelectedAssistant(null);
-        return;
-      }
-
-      setLoadingDetails(true);
-      try {
-        const client = new Client({
-          apiUrl: urlToUse,
-          defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
-        });
-
-        const assistant = await client.assistants.get(assistantId);
-        setSelectedAssistant(assistant);
-        setAssistantConfig(JSON.stringify(assistant.config || {}, null, 2));
-        setAssistantMetadata(JSON.stringify(assistant.metadata || {}, null, 2));
-        setConfigError(null);
-        setMetadataError(null);
-      } catch (error) {
-        console.error("Failed to fetch assistant details:", error);
-        setSelectedAssistant(null);
-      } finally {
-        setLoadingDetails(false);
-      }
-    };
-
-    fetchDetails();
-  }, [assistantId, deploymentUrl, currentDeploymentUrl, langsmithApiKey, currentApiKey, open]);
-
-  const handleConfigChange = (val: string) => {
-    setAssistantConfig(val);
-    try {
-      JSON.parse(val);
-      setConfigError(null);
-    } catch (e) {
-      setConfigError((e as Error).message);
-    }
-  };
-
-  const handleMetadataChange = (val: string) => {
-    setAssistantMetadata(val);
-    try {
-      JSON.parse(val);
-      setMetadataError(null);
-    } catch (e) {
-      setMetadataError((e as Error).message);
-    }
-  };
-
-  const handleDeleteAssistant = async () => {
-    if (!selectedAssistant) return;
-
-    const urlToUse = deploymentUrl || currentDeploymentUrl;
-    const apiKeyToUse = langsmithApiKey || currentApiKey;
-
-    if (!urlToUse) return;
-
-    setIsDeleting(true);
-    try {
-      const client = new Client({
-        apiUrl: urlToUse,
-        defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
-      });
-
-      await client.assistants.delete(selectedAssistant.assistant_id);
-      toast.success("Assistant deleted successfully");
-      setAssistantId("");
-      setAssistants(prev => prev.filter(a => a.assistant_id !== selectedAssistant.assistant_id));
-      setSelectedAssistant(null);
-    } catch (error) {
-      console.error("Failed to delete assistant:", error);
-      toast.error("Failed to delete assistant");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!deploymentUrl) {
-      toast.error("Deployment URL is required");
-      return;
-    }
-    if (!assistantId) {
-      toast.error("Assistant ID is required");
+  const handleSave = () => {
+    if (!apiKey) {
+      toast.error("API Key is required");
       return;
     }
 
-    if (configError || metadataError) {
-      toast.error("Please fix JSON errors before saving");
+    const parsedMaxTurns = maxTurns ? parseInt(maxTurns, 10) : undefined;
+    if (maxTurns && (isNaN(parsedMaxTurns!) || parsedMaxTurns! < 1)) {
+      toast.error("Max turns must be a positive number");
       return;
-    }
-
-    const parsedRecursionLimit = parseInt(recursionLimit, 10);
-    if (isNaN(parsedRecursionLimit) || parsedRecursionLimit < 1) {
-      toast.error("Recursion limit must be a positive number");
-      return;
-    }
-
-    const parsedRecursionMultiplier = parseInt(recursionMultiplier, 10);
-    if (isNaN(parsedRecursionMultiplier) || parsedRecursionMultiplier < 1) {
-      toast.error("Recursion multiplier must be a positive number");
-      return;
-    }
-
-    // Update assistant on server if details are modified
-    if (selectedAssistant) {
-      try {
-        const urlToUse = deploymentUrl || currentDeploymentUrl;
-        const apiKeyToUse = langsmithApiKey || currentApiKey;
-        const client = new Client({
-          apiUrl: urlToUse || "",
-          defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
-        });
-
-        const newConfig = JSON.parse(assistantConfig);
-        const newMetadata = JSON.parse(assistantMetadata);
-
-        if (
-          JSON.stringify(newConfig) !== JSON.stringify(selectedAssistant.config) ||
-          JSON.stringify(newMetadata) !== JSON.stringify(selectedAssistant.metadata)
-        ) {
-          await client.assistants.update(selectedAssistant.assistant_id, {
-            config: newConfig,
-            metadata: newMetadata,
-          });
-          toast.success("Assistant updated on server");
-        }
-      } catch (error) {
-        console.error("Failed to update assistant on server:", error);
-        toast.error("Failed to update assistant on server");
-        // We continue to save local config anyway
-      }
     }
 
     onSave({
-      deploymentUrl,
-      assistantId,
-      langsmithApiKey: langsmithApiKey || undefined,
-      recursionLimit: parsedRecursionLimit,
-      recursionMultiplier: parsedRecursionMultiplier,
+      apiKey,
+      model: model || undefined,
+      maxTurns: parsedMaxTurns,
       userId: userId || undefined,
     });
     toast.success("Settings saved successfully");
     onOpenChange(false);
   };
 
-  const formattedDate = (dateStr?: string) => {
-    if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleString();
-  };
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Settings2 className="h-5 w-5 text-primary" />
             <DialogTitle>Configuration</DialogTitle>
           </div>
           <DialogDescription>
-            Configure your LangGraph deployment settings and manage your assistants.
+            Configure your API settings for Databus Pilot.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-5 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="deploymentUrl" className="flex items-center gap-1.5">
-              <Globe className="h-3.5 w-3.5" />
-              Deployment URL
-            </Label>
-            <Input
-              id="deploymentUrl"
-              placeholder="https://<deployment-url>"
-              value={deploymentUrl}
-              onChange={(e) => setDeploymentUrl(e.target.value)}
-              className="bg-muted/30"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="assistantId" className="flex items-center gap-1.5">
-                <ListFilter className="h-3.5 w-3.5" />
-                Assistant ID
-              </Label>
-              {assistants.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setUseCustomId(!useCustomId)}
-                  className="text-[11px] font-medium text-primary hover:underline"
-                >
-                  {useCustomId ? "Select from list" : "Enter manually"}
-                </button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                {!useCustomId && assistants.length > 0 ? (
-                  <Select
-                    value={assistantId}
-                    onValueChange={setAssistantId}
-                    disabled={loadingAssistants}
-                  >
-                    <SelectTrigger id="assistantId" className="bg-muted/30">
-                      <SelectValue
-                        placeholder={
-                          loadingAssistants ? "Loading…" : "Select Assistant"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assistants.map((assistant) => (
-                        <SelectItem
-                          key={assistant.assistant_id}
-                          value={assistant.assistant_id}
-                        >
-                          <span className="font-medium">{assistant.name || assistant.graph_id}</span>
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            ({assistant.assistant_id.slice(0, 8)}...)
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="relative">
-                    <Input
-                      id="assistantId"
-                      placeholder="<assistant-id>"
-                      value={assistantId}
-                      onChange={(e) => setAssistantId(e.target.value)}
-                      className="bg-muted/30"
-                    />
-                    {loadingAssistants && (
-                      <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
-                  </div>
-                )}
-              </div>
-              {selectedAssistant && (
-                <>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="text-destructive hover:bg-destructive/10 shrink-0"
-                    onClick={() => setShowDeleteConfirm(true)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  
-                  <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-                    <DialogContent className="sm:max-w-[400px]">
-                      <DialogHeader>
-                        <DialogTitle>Delete Assistant?</DialogTitle>
-                        <DialogDescription>
-                          This will permanently delete the assistant <strong>{selectedAssistant.name || selectedAssistant.graph_id}</strong> and all its associated threads. This action cannot be undone.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm" 
-                          onClick={async () => {
-                            await handleDeleteAssistant();
-                            setShowDeleteConfirm(false);
-                          }} 
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Delete Permanently"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </>
-              )}
-            </div>
-          </div>
-
-          {loadingDetails ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : selectedAssistant && (
-            <div className="grid gap-4 p-4 border rounded-lg bg-muted/10">
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  Created: {formattedDate(selectedAssistant.created_at)}
-                </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  Updated: {formattedDate(selectedAssistant.updated_at)}
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold">Assistant Config (JSON)</Label>
-                  {configError && (
-                    <span className="text-[10px] text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-2.5 w-2.5" />
-                      Invalid JSON
-                    </span>
-                  )}
-                </div>
-                <Textarea
-                  value={assistantConfig}
-                  onChange={(e) => handleConfigChange(e.target.value)}
-                  className={`font-mono text-xs h-24 bg-background ${configError ? 'border-destructive' : ''}`}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold">Assistant Metadata (JSON)</Label>
-                  {metadataError && (
-                    <span className="text-[10px] text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-2.5 w-2.5" />
-                      Invalid JSON
-                    </span>
-                  )}
-                </div>
-                <Textarea
-                  value={assistantMetadata}
-                  onChange={(e) => handleMetadataChange(e.target.value)}
-                  className={`font-mono text-xs h-24 bg-background ${metadataError ? 'border-destructive' : ''}`}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="grid gap-2">
-            <Label htmlFor="langsmithApiKey" className="flex items-center gap-1.5">
+            <Label htmlFor="apiKey" className="flex items-center gap-1.5">
               <Key className="h-3.5 w-3.5" />
-              LangSmith API Key{" "}
-              <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wider ml-1">(Optional)</span>
+              API Key
             </Label>
             <Input
-              id="langsmithApiKey"
+              id="apiKey"
               type="password"
-              placeholder="lsv2_pt_..."
-              value={langsmithApiKey}
-              onChange={(e) => setLangsmithApiKey(e.target.value)}
+              placeholder="sk-..."
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
               className="bg-muted/30"
             />
           </div>
-          <div className="grid grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="recursionLimit" className="flex items-center gap-1.5">
+              <Label htmlFor="model" className="flex items-center gap-1.5">
                 <Hash className="h-3.5 w-3.5" />
-                Recursion Limit
+                Model{" "}
+                <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wider ml-1">
+                  (Optional)
+                </span>
               </Label>
               <Input
-                id="recursionLimit"
+                id="model"
+                placeholder="claude-sonnet-4-20250514"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="bg-muted/30"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="maxTurns" className="flex items-center gap-1.5">
+                <Hash className="h-3.5 w-3.5" />
+                Max Turns{" "}
+                <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wider ml-1">
+                  (Optional)
+                </span>
+              </Label>
+              <Input
+                id="maxTurns"
                 type="number"
                 min="1"
                 placeholder="100"
-                value={recursionLimit}
-                onChange={(e) => setRecursionLimit(e.target.value)}
-                className="bg-muted/30"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="recursionMultiplier" className="flex items-center gap-1.5">
-                <Hash className="h-3.5 w-3.5" />
-                Model Call Multiplier
-              </Label>
-              <Input
-                id="recursionMultiplier"
-                type="number"
-                min="1"
-                placeholder="6"
-                value={recursionMultiplier}
-                onChange={(e) => setRecursionMultiplier(e.target.value)}
-                className="bg-muted/30"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="userId" className="flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" />
-                User ID
-              </Label>
-              <Input
-                id="userId"
-                placeholder="user-identifier"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
+                value={maxTurns}
+                onChange={(e) => setMaxTurns(e.target.value)}
                 className="bg-muted/30"
               />
             </div>
           </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="userId" className="flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" />
+              User ID{" "}
+              <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wider ml-1">
+                (Optional)
+              </span>
+            </Label>
+            <Input
+              id="userId"
+              placeholder="user-identifier"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              className="bg-muted/30"
+            />
+          </div>
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} className="px-8" disabled={!!configError || !!metadataError}>
+          <Button onClick={handleSave} className="px-8">
             Save Settings
           </Button>
         </DialogFooter>

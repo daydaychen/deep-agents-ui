@@ -1,45 +1,18 @@
 "use client";
 
 import { MarkdownContent } from "@/app/components/MarkdownContent";
-import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
-import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
+import type { UISubAgent } from "@/app/types/messages";
 import { extractSubAgentContent } from "@/app/utils/utils";
 import { Terminal } from "lucide-react";
 import React from "react";
 
 interface SubAgentDetailsProps {
-  subAgent: SubAgent;
-  taskActionRequest?: ActionRequest;
-  taskReviewConfig?: ReviewConfig;
-  onResumeInterrupt?: (value: any) => void;
+  subAgent: UISubAgent;
   isLoading?: boolean;
 }
 
 export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
-  ({
-    subAgent,
-    taskActionRequest,
-    taskReviewConfig,
-    onResumeInterrupt,
-    isLoading,
-  }) => {
-    const hasInterrupt =
-      taskActionRequest &&
-      subAgent.status === "interrupted" &&
-      onResumeInterrupt;
-
-    if (hasInterrupt) {
-      return (
-        <div className="mt-2">
-          <ToolApprovalInterrupt
-            actionRequest={taskActionRequest}
-            reviewConfig={taskReviewConfig}
-            onResume={onResumeInterrupt}
-            isLoading={isLoading}
-          />
-        </div>
-      );
-    }
+  ({ subAgent }) => {
 
     return (
       <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/10 p-4 shadow-sm">

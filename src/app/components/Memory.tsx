@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Item } from "@langchain/langgraph-sdk";
+import type { MemoryStoreItem } from "@/app/hooks/useMemory";
 import { Loader2, Plus, Brain, Trash2, AlertCircle, Search, Sparkles, Filter } from "lucide-react";
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -109,7 +109,7 @@ export const Memory = React.memo(() => {
     setIsCreatingNew(false);
   }, []);
 
-  const handleSelectItem = useCallback((item: Item) => {
+  const handleSelectItem = useCallback((item: MemoryStoreItem) => {
     setSelectedItem({
       namespace: item.namespace,
       key: item.key,
@@ -120,7 +120,7 @@ export const Memory = React.memo(() => {
   }, []);
 
   // Performance: Filtered results based on semantic query if provided
-  const [searchResults, setSearchResults] = useState<Item[]>([]);
+  const [searchResults, setSearchResults] = useState<MemoryStoreItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {

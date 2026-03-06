@@ -1,19 +1,19 @@
 "use client";
 
 import { extractStringFromMessageContent } from "@/app/utils/utils";
+import type { UIMessage } from "@/app/types/messages";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Message } from "@langchain/langgraph-sdk";
 import { Check, Edit, X } from "lucide-react";
 import React, { useCallback, useRef, useState } from "react";
 
 interface EditMessageProps {
-  message: Message;
-  onEdit: (message: Message) => void;
+  message: UIMessage;
+  onEdit: (message: UIMessage) => void;
   className?: string;
   showText?: boolean;
 }

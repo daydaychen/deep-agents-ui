@@ -1,14 +1,14 @@
 "use client";
 
 import { MemoryItemCard } from "@/app/components/memory/MemoryItemCard";
-import type { Item } from "@langchain/langgraph-sdk";
+import type { MemoryStoreItem } from "@/app/hooks/useMemory";
 import { Loader2 } from "lucide-react";
 import React from "react";
 
 interface MemoryItemsListProps {
-  items: Item[];
+  items: MemoryStoreItem[];
   isLoading: boolean;
-  onSelectItem: (item: Item) => void;
+  onSelectItem: (item: MemoryStoreItem) => void;
   onDeleteItem: (
     namespace: string[],
     key: string,

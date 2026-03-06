@@ -1,57 +1,38 @@
-import type { SubAgent, ToolCall } from "@/app/types/types";
-import { Message } from "@langchain/langgraph-sdk";
+import type { UIMessage, UIToolCall, UISubAgent } from "@/app/types/messages";
 import { useMemo } from "react";
 
 /**
- * Extract subagent information from tool calls
- * - Filters for "task" tool calls with subagent_type
- * - Transforms tool calls into SubAgent objects
- * - Includes subagent messages from the provided map
+ * Extract subagent information from tool calls.
+ * Filters for "Agent" tool calls with subagent_type arg.
  */
 export function useSubAgents(
-  toolCalls: ToolCall[],
-  subagentMessagesMap?: Map<string, Message[]>
-): SubAgent[] {
+  toolCalls: UIToolCall[],
+  subagentMessagesMap?: Map<string, UIMessage[]>
+): UISubAgent[] {
   return useMemo(() => {
     return toolCalls
-      .filter((toolCall: ToolCall) => {
+      .filter((toolCall) => {
         return (
-          toolCall.name === "task" &&
+          toolCall.name === "Agent" &&
           toolCall.args["subagent_type"] &&
           toolCall.args["subagent_type"] !== "" &&
           toolCall.args["subagent_type"] !== null
         );
       })
-      .map((toolCall: ToolCall) => {
-        const subagentType = (toolCall.args as Record<string, unknown>)[
-          "subagent_type"
-        ] as string;
-        
-        // Get messages for this subagent from the map or toolCall
-        const messages = subagentMessagesMap?.get(toolCall.id) || toolCall.subAgentMessages || [];
-
-        // Try to find agentName from the messages metadata
-        let agentName = subagentType; // Default to subagent_type from args
-        if (messages.length > 0) {
-          // Check the first few messages for the actual agent name from metadata
-          for (const msg of messages) {
-            if (msg.metadata?.lc_agent_name) {
-              agentName = msg.metadata.lc_agent_name;
-              break;
-            }
-          }
-        }
+      .map((toolCall) => {
+        const subagentType = toolCall.args["subagent_type"] as string;
+        const messages = subagentMessagesMap?.get(toolCall.id) || [];
 
         return {
           id: toolCall.id,
           name: toolCall.name,
           subAgentName: subagentType,
-          agentName: agentName,
+          agentName: subagentType,
           input: toolCall.args,
           output: toolCall.result ? { result: toolCall.result } : undefined,
-          status: toolCall.status,
-          messages: messages,
-        } as SubAgent;
+          status: toolCall.status as UISubAgent["status"],
+          messages,
+        };
       });
   }, [toolCalls, subagentMessagesMap]);
 }

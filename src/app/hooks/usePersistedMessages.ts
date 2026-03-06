@@ -1,49 +1,48 @@
 "use client";
 
-import { Message } from "@langchain/langgraph-sdk";
-import type { SubagentStreamInterface } from "@langchain/langgraph-sdk/react";
+import type { UIMessage } from "@/app/types/messages";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DB_NAME, DB_VERSION, STORE_NAME } from "@/app/utils/db";
 
-// 批量写入的间隔时间（毫秒）
+// Batch write interval (milliseconds)
 const BATCH_WRITE_INTERVAL = 1000;
-// UI 更新的节流时间
+// UI update throttle time
 const UI_UPDATE_THROTTLE = 100;
 
 interface PersistedSubagentMessage {
   threadId: string;
   messageId: string;
   toolCallId: string;
-  message: Message;
+  message: UIMessage;
   timestamp: number;
   index: number;
 }
 
 export function usePersistedMessages(
   threadId: string | null,
-  subagents: Map<string, SubagentStreamInterface<any, any, any>>,
+  subagentMessagesMap: Map<string, UIMessage[]>,
   isLoading: boolean
 ) {
   const dbRef = useRef<IDBDatabase | null>(null);
   const dbReadyPromiseRef = useRef<Promise<IDBDatabase | null> | null>(null);
 
   // Use ref for the actual data to avoid rapid re-renders during streaming
-  const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
-  const [subagentMessagesMap, setSubagentMessagesMap] = useState<Map<string, Message[]>>(new Map());
+  const messagesCacheRef = useRef<Map<string, UIMessage[]>>(new Map());
+  const [mergedSubagentMessages, setMergedSubagentMessages] = useState<Map<string, UIMessage[]>>(new Map());
 
   const pendingWriteRef = useRef(false);
   const lastUpdateRef = useRef(0);
 
-  // ============ 合并逻辑 (节流更新 UI) ============
+  // ============ Merge logic (throttle UI updates) ============
   useEffect(() => {
-    if (subagents.size === 0) return;
+    if (subagentMessagesMap.size === 0) return;
 
     let hasChanges = false;
-    subagents.forEach((subagent, toolCallId) => {
-      if (!subagent.messages || subagent.messages.length === 0) return;
+    subagentMessagesMap.forEach((messages, toolCallId) => {
+      if (!messages || messages.length === 0) return;
 
       const cached = messagesCacheRef.current.get(toolCallId) || [];
-      const incoming = subagent.messages;
+      const incoming = messages;
 
       // Simple content/length check to avoid unnecessary updates
       const lastCached = cached[cached.length - 1];
@@ -61,24 +60,24 @@ export function usePersistedMessages(
 
     if (hasChanges) {
       pendingWriteRef.current = true;
-      
+
       // Throttle UI updates to avoid "Maximum update depth exceeded"
       const now = Date.now();
       if (now - lastUpdateRef.current > UI_UPDATE_THROTTLE) {
-        setSubagentMessagesMap(new Map(messagesCacheRef.current));
+        setMergedSubagentMessages(new Map(messagesCacheRef.current));
         lastUpdateRef.current = now;
       }
     }
-  }, [isLoading, subagents]);
+  }, [isLoading, subagentMessagesMap]);
 
   // Ensure UI is updated when loading finishes
   useEffect(() => {
     if (!isLoading && pendingWriteRef.current) {
-      setSubagentMessagesMap(new Map(messagesCacheRef.current));
+      setMergedSubagentMessages(new Map(messagesCacheRef.current));
     }
   }, [isLoading]);
 
-  // ============ IndexedDB (保持原有逻辑) ============
+  // ============ IndexedDB persistence ============
   useEffect(() => {
     if (!threadId) {
       dbReadyPromiseRef.current = null;
@@ -117,7 +116,7 @@ export function usePersistedMessages(
   }, [threadId]);
 
   const batchSaveToIndexedDB = useCallback(
-    async (messagesMap: Map<string, Message[]>) => {
+    async (messagesMap: Map<string, UIMessage[]>) => {
       if (!threadId || !dbRef.current || messagesMap.size === 0) return;
       try {
         const transaction = dbRef.current.transaction([STORE_NAME], "readwrite");
@@ -143,7 +142,7 @@ export function usePersistedMessages(
     [threadId]
   );
 
-  const loadSubagentMessages = useCallback(async (): Promise<Map<string, Message[]>> => {
+  const loadSubagentMessages = useCallback(async (): Promise<Map<string, UIMessage[]>> => {
     if (!threadId || !dbReadyPromiseRef.current) return new Map();
     const db = await dbReadyPromiseRef.current;
     if (!db) return new Map();
@@ -158,7 +157,7 @@ export function usePersistedMessages(
         request.onerror = () => reject(request.error);
       });
 
-      const subagentMap = new Map<string, Message[]>();
+      const subagentMap = new Map<string, UIMessage[]>();
       result.sort((a, b) => (a.timestamp - b.timestamp) || (a.index - b.index));
       result.forEach(pm => {
         if (!subagentMap.has(pm.toolCallId)) subagentMap.set(pm.toolCallId, []);
@@ -173,12 +172,12 @@ export function usePersistedMessages(
   useEffect(() => {
     if (!threadId) {
       messagesCacheRef.current = new Map();
-      setSubagentMessagesMap(new Map());
+      setMergedSubagentMessages(new Map());
       return;
     }
     loadSubagentMessages().then(map => {
       messagesCacheRef.current = map;
-      setSubagentMessagesMap(new Map(map));
+      setMergedSubagentMessages(new Map(map));
     });
   }, [threadId, loadSubagentMessages]);
 
@@ -202,6 +201,6 @@ export function usePersistedMessages(
   }, [isLoading, batchSaveToIndexedDB]);
 
   return useMemo(() => ({
-    subagentMessagesMap,
-  }), [subagentMessagesMap]);
+    subagentMessagesMap: mergedSubagentMessages,
+  }), [mergedSubagentMessages]);
 }

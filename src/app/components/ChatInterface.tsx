@@ -7,7 +7,6 @@ import { TasksSection } from "@/app/components/chat/TasksSection";
 import { SubAgentPanel } from "@/app/components/message/SubAgentPanel";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { useThrottledValue } from "@/app/hooks/useThrottledValue";
-import type { ActionRequest, ReviewConfig } from "@/app/types/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   ResizableHandle,
@@ -16,18 +15,13 @@ import {
 } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
 import { useChatActions, useChatState } from "@/providers/chat-context";
-import { Assistant } from "@langchain/langgraph-sdk";
 import { AlertCircle } from "lucide-react";
 import React, { FormEvent, useCallback, useMemo, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
-interface ChatInterfaceProps {
-  assistant: Assistant | null;
-}
-
 const loadingSkeletons = [1, 2, 3];
 
-export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
+export const ChatInterface = React.memo(() => {
   const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
   const [input, setInput] = useState("");
   const sidebarPanelRef = React.useRef<any>(null);
@@ -37,25 +31,19 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   });
 
   const {
-    stream,
     messages,
     todos,
     files,
-    ui,
     isLoading,
-    isThreadLoading,
-    interrupt,
     error,
     subagentMessagesMap,
     activeSubAgentId,
-    getMessagesMetadata,
     getMessageBranchInfo,
   } = useChatState();
 
   const {
     sendMessage,
     stopStream,
-    resumeInterrupt,
     retryFromMessage,
     setBranch,
     editMessage,
@@ -69,18 +57,16 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   React.useEffect(() => {
     if (sidebarPanelRef.current) {
       if (isPanelOpen) {
-        // Only expand if currently collapsed or size is 0
         if (sidebarPanelRef.current.isCollapsed()) {
           sidebarPanelRef.current.expand();
         }
       } else {
-        // Explicitly collapse on thread switch or when ID is null
         sidebarPanelRef.current.collapse();
       }
     }
-  }, [isPanelOpen, activeSubAgentId]); // Include activeSubAgentId to catch every state change
+  }, [isPanelOpen, activeSubAgentId]);
 
-  const submitDisabled = isLoading || !assistant;
+  const submitDisabled = isLoading;
   const handleSubmit = useCallback(
     (e?: FormEvent) => {
       if (e) {
@@ -94,53 +80,19 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     [input, isLoading, sendMessage, setInput, submitDisabled]
   );
 
-  // Throttle messages updates to 100ms during streaming to prevent UI stutter/crashing
-  // Use messages immediately when NOT loading to ensure responsive history loading
+  // Throttle messages updates to 100ms during streaming
   const throttledMessages = useThrottledValue(messages, isLoading ? 100 : 0);
 
   // Use the extracted hook for processing messages
   const processedMessages = useProcessedMessages(
     throttledMessages,
-    subagentMessagesMap,
-    interrupt
+    subagentMessagesMap
   );
 
   // Extract all subagents from all messages for the panel lookup
   const allSubAgents = useMemo(() => {
     return processedMessages.flatMap((m) => m.subAgents);
   }, [processedMessages]);
-
-  // Parse out any action requests or review configs from the interrupt
-  const actionRequestsMap: Map<string, ActionRequest> | null = useMemo(() => {
-    const actionRequests =
-      interrupt?.value && (interrupt.value as any)["action_requests"];
-    if (!actionRequests) return new Map<string, ActionRequest>();
-    return new Map(actionRequests.map((ar: ActionRequest) => [ar.name, ar]));
-  }, [interrupt]);
-
-  const reviewConfigsMap: Map<string, ReviewConfig> | null = useMemo(() => {
-    const reviewConfigs =
-      interrupt?.value && (interrupt.value as any)["review_configs"];
-    if (!reviewConfigs) return new Map<string, ReviewConfig>();
-    return new Map(
-      reviewConfigs.map((rc: ReviewConfig) => [rc.action_name, rc])
-    );
-  }, [interrupt]);
-
-  // Memoize UI components by message ID for O(1) lookup instead of O(n) filter per message
-  const uiByMessageId = useMemo(() => {
-    if (!ui) return new Map<string, any[]>();
-    const map = new Map<string, any[]>();
-    for (const u of ui) {
-      const messageId = u.metadata?.message_id;
-      if (messageId) {
-        const existing = map.get(messageId) || [];
-        existing.push(u);
-        map.set(messageId, existing);
-      }
-    }
-    return map;
-  }, [ui]);
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
@@ -160,7 +112,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                 )}
                 ref={contentRef}
               >
-                {isThreadLoading && processedMessages.length === 0 ? (
+                {processedMessages.length === 0 && !isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground/40">
+                    <p className="text-sm font-medium italic">Send a message to start...</p>
+                  </div>
+                ) : processedMessages.length === 0 && isLoading ? (
                   <div className="flex flex-col gap-4 p-6">
                     {loadingSkeletons.map((i) => (
                       <div key={i} className="flex flex-col gap-2">
@@ -178,8 +134,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                 ) : (
                   <>
                     {processedMessages.map((data, index) => {
-                      // O(1) lookup from memoized map instead of O(n) filter
-                      const messageUi = data.message.id ? uiByMessageId.get(data.message.id) : undefined;
                       const isLastMessage = index === processedMessages.length - 1;
                       const isStreaming = isLastMessage && isLoading;
 
@@ -199,16 +153,9 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                               subAgents={data.subAgents}
                               isLoading={isLoading}
                               isStreaming={isStreaming}
-                              actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
-                              reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
-                              ui={messageUi}
-                              stream={stream}
-                              onResumeInterrupt={resumeInterrupt}
                               onRetry={retryFromMessage}
                               onEdit={editMessage}
-                              getMessagesMetadata={getMessagesMetadata}
                               setBranch={setBranch}
-                              graphId={assistant?.graph_id}
                               branchOptions={branchOptions}
                               currentBranchIndex={currentBranchIndex}
                               canRetry={!!canRetry}
@@ -222,7 +169,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                     {error && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>错误</AlertTitle>
+                        <AlertTitle>Error</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                       </Alert>
                     )}
@@ -239,7 +186,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                   files={files}
                   setFiles={setFiles}
                   isLoading={isLoading}
-                  interrupt={interrupt}
                   metaOpen={metaOpen}
                   setMetaOpen={setMetaOpen}
                 />

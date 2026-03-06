@@ -114,7 +114,7 @@ export const TasksFilesSidebar = React.memo<{
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
 }>(({ todos, files, setFiles }) => {
-  const { isLoading, interrupt } = useChatState();
+  const { isLoading } = useChatState();
   const [tasksOpen, setTasksOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(true);
 
@@ -275,7 +275,7 @@ export const TasksFilesSidebar = React.memo<{
                 <FilesPopover
                   files={files}
                   setFiles={setFiles}
-                  editDisabled={isLoading === true || interrupt !== undefined}
+                  editDisabled={isLoading === true}
                 />
               </div>
             </ScrollArea>

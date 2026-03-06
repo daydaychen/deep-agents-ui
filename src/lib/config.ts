@@ -1,9 +1,7 @@
 export interface StandaloneConfig {
-  deploymentUrl: string;
-  assistantId: string;
-  langsmithApiKey?: string;
-  recursionLimit?: number;
-  recursionMultiplier?: number;
+  apiKey: string;
+  model?: string;
+  maxTurns?: number;
   userId?: string;
 }
 
@@ -16,7 +14,17 @@ export function getConfig(): StandaloneConfig | null {
   if (!stored) return null;
 
   try {
-    return JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    // Migration: map old LangGraph config fields to new
+    if (parsed.deploymentUrl && !parsed.apiKey) {
+      return {
+        apiKey: parsed.langsmithApiKey ?? "",
+        model: parsed.model,
+        maxTurns: parsed.recursionLimit,
+        userId: parsed.userId,
+      };
+    }
+    return parsed;
   } catch {
     return null;
   }

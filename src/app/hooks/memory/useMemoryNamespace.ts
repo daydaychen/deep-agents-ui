@@ -1,4 +1,4 @@
-import type { Item } from "@langchain/langgraph-sdk";
+import type { MemoryStoreItem } from "@/app/hooks/useMemory";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,12 +9,12 @@ export function useMemoryNamespace(
   searchItems: (
     namespace: string[],
     options?: { limit?: number }
-  ) => Promise<Item[]>
+  ) => Promise<MemoryStoreItem[]>
 ) {
   const [selectedNamespace, setSelectedNamespace] = useState<string[] | null>(
     null
   );
-  const [namespaceItems, setNamespaceItems] = useState<Item[]>([]);
+  const [namespaceItems, setNamespaceItems] = useState<MemoryStoreItem[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
 
   const handleNamespaceClick = useCallback(

@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 import type { useChat } from "@/app/hooks/useChat";
 
-// 拆分 Context 以优化性能：State 频繁变化，Actions 基本稳定
+// Split Context for performance: State changes frequently, Actions are stable
 export type ChatStateContextType = Omit<
   ReturnType<typeof useChat>,
   | "sendMessage"

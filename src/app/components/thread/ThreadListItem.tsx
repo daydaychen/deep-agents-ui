@@ -81,7 +81,7 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
-                      onMarkAsResolved(thread.id, thread.assistantId);
+                      onMarkAsResolved(thread.id);
                     }}
                   >
                     Make as Resolved

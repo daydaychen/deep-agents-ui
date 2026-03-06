@@ -2,16 +2,13 @@
 
 import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
 import { SubAgentDetails } from "@/app/components/message/SubAgentDetails";
-import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
+import type { UISubAgent } from "@/app/types/messages";
 import React, { useState, useCallback } from "react";
 
 interface SubAgentSectionProps {
-  subAgents: SubAgent[];
+  subAgents: UISubAgent[];
   activeSubAgentId?: string | null;
   setActiveSubAgentId?: (id: string | null) => void;
-  actionRequestsMap?: Map<string, ActionRequest>;
-  reviewConfigsMap?: Map<string, ReviewConfig>;
-  onResumeInterrupt?: (value: any) => void;
   isLoading?: boolean;
   messageId?: string; // Optional identifier to trigger resets
 }
@@ -21,15 +18,12 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
     subAgents,
     activeSubAgentId,
     setActiveSubAgentId,
-    actionRequestsMap,
-    reviewConfigsMap,
-    onResumeInterrupt,
     isLoading,
     messageId,
   }) => {
     // Local state for main-flow expansion (Input/Output visibility)
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-    const prevSubAgentsRef = React.useRef<SubAgent[]>([]);
+    const prevSubAgentsRef = React.useRef<UISubAgent[]>([]);
 
     // 1. Thread switch reset
     React.useEffect(() => {
@@ -120,9 +114,6 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
               {isExpanded && (
                 <SubAgentDetails
                   subAgent={subAgent}
-                  taskActionRequest={actionRequestsMap?.get("task")}
-                  taskReviewConfig={reviewConfigsMap?.get("task")}
-                  onResumeInterrupt={onResumeInterrupt}
                   isLoading={isLoading}
                 />
               )}

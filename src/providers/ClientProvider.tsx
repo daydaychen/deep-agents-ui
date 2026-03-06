@@ -1,33 +1,3 @@
-"use client";
-
-import { useMemo, ReactNode } from "react";
-import { Client } from "@langchain/langgraph-sdk";
-import { ClientContext } from "./client-context";
-
-interface ClientProviderProps {
-  children: ReactNode;
-  deploymentUrl: string;
-  apiKey: string;
-}
-
-export function ClientProvider({
-  children,
-  deploymentUrl,
-  apiKey,
-}: ClientProviderProps) {
-  const client = useMemo(() => {
-    return new Client({
-      apiUrl: deploymentUrl,
-      defaultHeaders: {
-        "Content-Type": "application/json",
-        "X-Api-Key": apiKey,
-      },
-    });
-  }, [deploymentUrl, apiKey]);
-
-  const value = useMemo(() => ({ client }), [client]);
-
-  return (
-    <ClientContext.Provider value={value}>{children}</ClientContext.Provider>
-  );
-}
+// ClientProvider has been removed as part of Claude Agent SDK migration.
+// The LangGraph SDK Client is no longer needed — API calls go through same-origin fetch.
+// This file is kept as a stub to prevent import errors during migration cleanup.

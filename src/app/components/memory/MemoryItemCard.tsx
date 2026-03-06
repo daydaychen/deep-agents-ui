@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { Item } from "@langchain/langgraph-sdk";
+import type { MemoryStoreItem } from "@/app/hooks/useMemory";
 import { Database, Trash2 } from "lucide-react";
 import React from "react";
 
@@ -16,8 +16,8 @@ function formatDate(dateString: string): string {
 }
 
 interface MemoryItemCardProps {
-  item: Item;
-  onSelect: (item: Item) => void;
+  item: MemoryStoreItem;
+  onSelect: (item: MemoryStoreItem) => void;
   onDelete: (namespace: string[], key: string, event: React.MouseEvent) => void;
   isDeleting?: boolean;
 }

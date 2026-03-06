@@ -1,6 +1,6 @@
 "use client";
 
-import type { SubAgent } from "@/app/types/types";
+import type { UISubAgent } from "@/app/types/messages";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -14,14 +14,14 @@ import {
 import React, { useMemo } from "react";
 
 interface SubAgentIndicatorProps {
-  subAgent: SubAgent;
+  subAgent: UISubAgent;
   onToggleExpand: () => void;
   onShowLogs: () => void;
   isExpanded?: boolean;
   isActiveInSidebar?: boolean;
 }
 
-const getStatusIcon = (status: SubAgent["status"]) => {
+const getStatusIcon = (status: UISubAgent["status"]) => {
   switch (status) {
     case "completed":
       return (

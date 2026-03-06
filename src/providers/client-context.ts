@@ -1,19 +1,3 @@
-"use client";
-
-import { createContext, useContext } from "react";
-import { Client } from "@langchain/langgraph-sdk";
-
-export interface ClientContextValue {
-  client: Client;
-}
-
-export const ClientContext = createContext<ClientContextValue | null>(null);
-
-export function useClient(): Client {
-  const context = useContext(ClientContext);
-
-  if (!context) {
-    throw new Error("useClient must be used within a ClientProvider");
-  }
-  return context.client;
-}
+// client-context has been removed as part of Claude Agent SDK migration.
+// The LangGraph SDK Client is no longer needed.
+// This file is kept as a stub to prevent import errors during migration cleanup.

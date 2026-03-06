@@ -3,6 +3,7 @@
 import { BranchSwitcher } from "@/app/components/BranchSwitcher";
 import { EditMessage } from "@/app/components/EditMessage";
 import { formatTokenCount } from "@/app/utils/utils";
+import type { UIMessage } from "@/app/types/messages";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -15,7 +16,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { AIMessage } from "@langchain/langgraph-sdk";
 import { Check, Copy, Cpu, RotateCcw, Zap } from "lucide-react";
 import React, { useCallback, useState } from "react";
 
@@ -44,8 +44,8 @@ interface MessageToolbarProps {
 
   // UI customization
   className?: string;
-  // For EditMessage component
-  message?: any;
+  // For EditMessage component and metadata
+  message?: UIMessage;
 }
 
 export const MessageToolbar = React.memo<MessageToolbarProps>(
@@ -90,12 +90,11 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     const hasVisibleEditButton = isUser && showEdit && hasContent && !isLoading && onEdit && message;
     const hasVisibleRetryButton = showRetry && !isLoading && onRetry;
     const hasVisibleBranchSwitcher = showBranchSwitcher && onSelectBranch && branchOptions.length > 0;
-    
-    // Metadata visibility - response_metadata is on BaseMessage, usage_metadata on AIMessage
-    const modelName = (message?.response_metadata?.model_name || message?.response_metadata?.model) as string | undefined;
-    const modelProvider = message?.response_metadata?.model_provider as string | undefined;
-    const stopReason = message?.response_metadata?.stop_reason as string | undefined;
-    const usage = message?.type === "ai" ? (message as AIMessage).usage_metadata : undefined;
+
+    // Metadata from UIMessage.metadata
+    const modelName = message?.metadata?.model;
+    const stopReason = message?.metadata?.stop_reason;
+    const usage = message?.metadata?.usage;
     const hasMetadata = !isUser && (!!modelName || !!usage);
 
     const hasAnyVisibleAction = hasVisibleCopyButton || hasVisibleEditButton || hasVisibleRetryButton || hasVisibleBranchSwitcher || hasMetadata;
@@ -200,10 +199,6 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                     </PopoverTrigger>
                     <PopoverContent side="bottom" className="flex flex-col gap-1 p-2 w-fit">
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="font-semibold text-muted-foreground/70">Provider:</span>
-                        <span className="text-foreground">{modelProvider || "Unknown"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
                         <span className="font-semibold text-muted-foreground/70">Model:</span>
                         <span className="text-foreground">{modelName}</span>
                       </div>
@@ -222,7 +217,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                     <PopoverTrigger asChild>
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40 font-medium cursor-pointer hover:text-muted-foreground/60 transition-colors">
                         <Zap className="h-2.5 w-2.5" />
-                        <span>{formatTokenCount(usage.total_tokens || 0)}</span>
+                        <span>{formatTokenCount((usage.input_tokens || 0) + (usage.output_tokens || 0))}</span>
                       </div>
                     </PopoverTrigger>
                     <PopoverContent side="bottom" className="flex flex-col gap-1 p-2 w-fit">
@@ -236,7 +231,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                       </div>
                       <div className="border-t border-muted-foreground/10 my-1 pt-1 flex items-center gap-4 justify-between text-xs">
                         <span className="font-semibold text-muted-foreground/70">Total:</span>
-                        <span className="text-foreground font-medium">{usage.total_tokens || 0}</span>
+                        <span className="text-foreground font-medium">{(usage.input_tokens || 0) + (usage.output_tokens || 0)}</span>
                       </div>
                     </PopoverContent>
                   </Popover>

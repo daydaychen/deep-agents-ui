@@ -12,7 +12,6 @@ interface TasksSectionProps {
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
   isLoading: boolean;
-  interrupt: any;
   metaOpen: "tasks" | "files" | null;
   setMetaOpen: React.Dispatch<React.SetStateAction<"tasks" | "files" | null>>;
 }
@@ -44,7 +43,7 @@ const getStatusIcon = (status: TodoItem["status"], className?: string) => {
 };
 
 export const TasksSection = React.memo<TasksSectionProps>(
-  ({ todos, files, setFiles, isLoading, interrupt, metaOpen, setMetaOpen }) => {
+  ({ todos, files, setFiles, isLoading, metaOpen, setMetaOpen }) => {
     const tasksContainerRef = useRef<HTMLDivElement | null>(null);
 
     const groupedTodos = {
@@ -183,7 +182,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
                   <FilesPopover
                     files={files}
                     setFiles={setFiles}
-                    editDisabled={isLoading === true || interrupt !== undefined}
+                    editDisabled={isLoading === true}
                   />
                 </div>
               )}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo } from "react";
-import { Message } from "@langchain/langgraph-sdk";
+import type { UIMessage, UISubAgent } from "@/app/types/messages";
 import { MessageContent } from "./MessageContent";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
@@ -10,16 +10,15 @@ import { X, Bot, Loader2, CheckCircle2, AlertCircle, Terminal } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { SubAgent } from "@/app/types/types";
 
 interface SubAgentPanelProps {
   subAgentId: string | null;
-  subAgents: SubAgent[];
-  subagentMessagesMap: Map<string, Message[]>;
+  subAgents: UISubAgent[];
+  subagentMessagesMap: Map<string, UIMessage[]>;
   onClose: () => void;
 }
 
-const EMPTY_MESSAGES: Message[] = [];
+const EMPTY_MESSAGES: UIMessage[] = [];
 
 export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
   subAgentId,
@@ -48,7 +47,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
 
   // Use the hook to process subagent messages and extract tool calls
   const processedMessages = useProcessedMessages(rawMessages, undefined);
-  
+
   const status = subAgent?.status || "pending";
   const name = subAgent?.agentName || subAgent?.subAgentName || "Subagent";
 
@@ -62,8 +61,8 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
   if (!subAgentId) return null;
 
   return (
-    <div 
-      role="complementary" 
+    <div
+      role="complementary"
       aria-label={`${name} details`}
       className="flex flex-col h-full border-l border-border bg-background shadow-2xl min-w-0 w-full overflow-hidden"
     >
@@ -82,15 +81,15 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
               {status === "completed" && <CheckCircle2 size={10} className="text-green-600 shrink-0" />}
               {status === "error" && <AlertCircle size={10} className="text-destructive shrink-0" />}
               <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/70 truncate block">
-                {status === "active" ? "Processing…" : status}
+                {status === "active" ? "Processing..." : status}
               </span>
             </div>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onClose} 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
           className="h-8 w-8 rounded-full shrink-0 ml-2"
           aria-label="Close panel"
         >
@@ -109,7 +108,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
               </div>
             ) : (
               processedMessages.map((data, idx) => {
-                const isUser = data.message.type === "human";
+                const isUser = data.message.role === "user";
                 const messageContent = extractStringFromMessageContent(data.message);
                 const hasContent = messageContent && messageContent.trim() !== "";
                 const hasToolCalls = data.toolCalls.length > 0;
@@ -131,9 +130,9 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
                       {/* Text Content */}
                       {hasContent && (
                         <div className="min-w-0 overflow-hidden">
-                          <MessageContent 
-                            content={messageContent} 
-                            isUser={isUser} 
+                          <MessageContent
+                            content={messageContent}
+                            isUser={isUser}
                           />
                         </div>
                       )}
@@ -159,7 +158,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(({
           </div>
         </ScrollArea>
       </div>
-      
+
       {/* Panel Footer - Fixed Height */}
       <div className="border-t border-border p-3 bg-muted/5 shrink-0">
         <p className="text-[10px] text-center text-muted-foreground/40 font-bold uppercase tracking-[0.2em] truncate">
