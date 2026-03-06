@@ -1,24 +1,32 @@
 import type { Options } from "@anthropic-ai/claude-agent-sdk";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { getSubagentDefinitions } from "./agents";
+
+function loadClaudeMd(): string {
+  return readFileSync(
+    join(process.cwd(), "src/lib/agent/prompts/CLAUDE.md"),
+    "utf-8"
+  );
+}
 
 /**
- * Minimal SDK configuration for Phase 1A validation.
- * Subagents, skills, and system prompts will be added in Phase 1B.
+ * SDK configuration with subagents, system prompts, and skills.
  */
-export function getAgentOptions(
-  overrides?: Partial<Options>
-): Options {
+export function getAgentOptions(overrides?: Partial<Options>): Options {
   return {
     model: process.env.ANTHROPIC_MODEL,
     systemPrompt: {
       type: "preset",
       preset: "claude_code",
-      append: "You are a helpful assistant for the DataBus platform.",
+      append: loadClaudeMd(),
     },
     // Auto-approve these tools without prompting
     allowedTools: [
       "mcp__databus__*",
       "mcp__playwright__*",
       "Agent",
+      "TodoWrite",
       "Read",
       "Glob",
       "Grep",
@@ -33,7 +41,9 @@ export function getAgentOptions(
     includePartialMessages: true,
     maxTurns: overrides?.maxTurns ?? 100,
     mcpServers: buildMcpServers(),
+    agents: getSubagentDefinitions(),
     persistSession: true,
+    cwd: join(process.cwd(), "src/lib/agent"),
     ...overrides,
   };
 }
