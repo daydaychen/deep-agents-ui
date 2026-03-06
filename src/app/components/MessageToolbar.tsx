@@ -5,6 +5,11 @@ import { EditMessage } from "@/app/components/EditMessage";
 import { formatTokenCount } from "@/app/utils/utils";
 import { Button } from "@/components/ui/button";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -186,55 +191,55 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
             {hasMetadata && (
               <div className="flex items-center gap-3 px-2">
                 {modelName && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40 font-medium cursor-help hover:text-muted-foreground/60 transition-colors">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40 font-medium cursor-pointer hover:text-muted-foreground/60 transition-colors">
                         <Cpu className="h-2.5 w-2.5" />
                         <span>{modelName.split("/").pop()}</span>
                       </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="flex flex-col gap-1 p-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-primary-foreground/70">Provider:</span>
-                        <span>{modelProvider || "Unknown"}</span>
+                    </PopoverTrigger>
+                    <PopoverContent side="bottom" className="flex flex-col gap-1 p-2 w-fit">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-semibold text-muted-foreground/70">Provider:</span>
+                        <span className="text-foreground">{modelProvider || "Unknown"}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-primary-foreground/70">Model:</span>
-                        <span>{modelName}</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-semibold text-muted-foreground/70">Model:</span>
+                        <span className="text-foreground">{modelName}</span>
                       </div>
                       {stopReason && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-primary-foreground/70">Stop Reason:</span>
-                          <span>{stopReason}</span>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="font-semibold text-muted-foreground/70">Stop Reason:</span>
+                          <span className="text-foreground">{stopReason}</span>
                         </div>
                       )}
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 )}
 
                 {usage && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40 font-medium cursor-help hover:text-muted-foreground/60 transition-colors">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40 font-medium cursor-pointer hover:text-muted-foreground/60 transition-colors">
                         <Zap className="h-2.5 w-2.5" />
                         <span>{formatTokenCount(usage.total_tokens || 0)}</span>
                       </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="flex flex-col gap-1 p-2">
-                      <div className="flex items-center gap-4 justify-between">
-                        <span className="font-semibold text-primary-foreground/70">Input:</span>
-                        <span>{usage.input_tokens || 0}</span>
+                    </PopoverTrigger>
+                    <PopoverContent side="bottom" className="flex flex-col gap-1 p-2 w-fit">
+                      <div className="flex items-center gap-4 justify-between text-xs">
+                        <span className="font-semibold text-muted-foreground/70">Input:</span>
+                        <span className="text-foreground">{usage.input_tokens || 0}</span>
                       </div>
-                      <div className="flex items-center gap-4 justify-between">
-                        <span className="font-semibold text-primary-foreground/70">Output:</span>
-                        <span>{usage.output_tokens || 0}</span>
+                      <div className="flex items-center gap-4 justify-between text-xs">
+                        <span className="font-semibold text-muted-foreground/70">Output:</span>
+                        <span className="text-foreground">{usage.output_tokens || 0}</span>
                       </div>
-                      <div className="border-t border-primary-foreground/10 my-1 pt-1 flex items-center gap-4 justify-between">
-                        <span className="font-semibold text-primary-foreground/70">Total:</span>
-                        <span>{usage.total_tokens || 0}</span>
+                      <div className="border-t border-muted-foreground/10 my-1 pt-1 flex items-center gap-4 justify-between text-xs">
+                        <span className="font-semibold text-muted-foreground/70">Total:</span>
+                        <span className="text-foreground font-medium">{usage.total_tokens || 0}</span>
                       </div>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
             )}
