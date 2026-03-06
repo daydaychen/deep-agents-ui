@@ -115,12 +115,12 @@ export const ChatInput = React.memo<ChatInputProps>(
       return (
         <div className="grid gap-3 pt-2">
           <div className="grid gap-1.5">
-            <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Model</Label>
+            <Label className="text-2xs uppercase tracking-wider text-muted-foreground">Model</Label>
             <Select
               value={overrides.model || "__default__"}
               onValueChange={(val) => updateOverride(agentKey, 'model', val === "__default__" ? "" : val)}
             >
-              <SelectTrigger className="h-7 text-[11px] bg-muted/20">
+              <SelectTrigger className="h-7 text-xs bg-muted/20">
                 <SelectValue placeholder="Default Model" />
               </SelectTrigger>
               <SelectContent>
@@ -140,8 +140,8 @@ export const ChatInput = React.memo<ChatInputProps>(
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Temp</Label>
-                <span className="text-[9px] font-mono opacity-50">{overrides.temperature ?? "Default"}</span>
+                <Label className="text-2xs uppercase tracking-wider text-muted-foreground">Temp</Label>
+                <span className="text-2xs font-mono opacity-50">{overrides.temperature ?? "Default"}</span>
               </div>
               <Input
                 type="number"
@@ -151,20 +151,20 @@ export const ChatInput = React.memo<ChatInputProps>(
                 placeholder="0.7"
                 value={overrides.temperature ?? ""}
                 onChange={(e) => updateOverride(agentKey, 'temperature', e.target.value === "" ? undefined : parseFloat(e.target.value))}
-                className="h-7 text-[11px] bg-muted/20"
+                className="h-7 text-xs bg-muted/20"
               />
             </div>
             <div className="grid gap-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Tokens</Label>
-                <span className="text-[9px] font-mono opacity-50">{overrides.max_completion_tokens ?? "Default"}</span>
+                <Label className="text-2xs uppercase tracking-wider text-muted-foreground">Tokens</Label>
+                <span className="text-2xs font-mono opacity-50">{overrides.max_completion_tokens ?? "Default"}</span>
               </div>
               <Input
                 type="number"
                 placeholder="4096"
                 value={overrides.max_completion_tokens ?? ""}
                 onChange={(e) => updateOverride(agentKey, 'max_completion_tokens', e.target.value === "" ? undefined : parseInt(e.target.value))}
-                className="h-7 text-[11px] bg-muted/20"
+                className="h-7 text-xs bg-muted/20"
               />
             </div>
           </div>
@@ -172,8 +172,8 @@ export const ChatInput = React.memo<ChatInputProps>(
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Top P</Label>
-                <span className="text-[9px] font-mono opacity-50">{overrides.top_p ?? "Default"}</span>
+                <Label className="text-2xs uppercase tracking-wider text-muted-foreground">Top P</Label>
+                <span className="text-2xs font-mono opacity-50">{overrides.top_p ?? "Default"}</span>
               </div>
               <Input
                 type="number"
@@ -183,13 +183,13 @@ export const ChatInput = React.memo<ChatInputProps>(
                 placeholder="1.0"
                 value={overrides.top_p ?? ""}
                 onChange={(e) => updateOverride(agentKey, 'top_p', e.target.value === "" ? undefined : parseFloat(e.target.value))}
-                className="h-7 text-[11px] bg-muted/20"
+                className="h-7 text-xs bg-muted/20"
               />
             </div>
             <div className="grid gap-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Presence</Label>
-                <span className="text-[9px] font-mono opacity-50">{overrides.presence_penalty ?? "Default"}</span>
+                <Label className="text-2xs uppercase tracking-wider text-muted-foreground">Presence</Label>
+                <span className="text-2xs font-mono opacity-50">{overrides.presence_penalty ?? "Default"}</span>
               </div>
               <Input
                 type="number"
@@ -199,7 +199,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                 placeholder="0.0"
                 value={overrides.presence_penalty ?? ""}
                 onChange={(e) => updateOverride(agentKey, 'presence_penalty', e.target.value === "" ? undefined : parseFloat(e.target.value))}
-                className="h-7 text-[11px] bg-muted/20"
+                className="h-7 text-xs bg-muted/20"
               />
             </div>
           </div>
@@ -233,7 +233,7 @@ export const ChatInput = React.memo<ChatInputProps>(
               onCompositionEnd={() => {
                 isComposingRef.current = false;
               }}
-              placeholder={isLoading ? "AI is processing…" : "Message Deep Agent…"}
+              placeholder={isLoading ? "AI 正在处理..." : "发送消息给 Deep Agent..."}
               className={cn(
                 "font-sans flex-1 resize-none border-0 bg-transparent py-3 text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40 transition-[opacity,color,background-color]",
                 "min-h-[44px] max-h-[300px] overflow-y-auto"
@@ -251,7 +251,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-7 px-2 gap-1.5 text-muted-foreground hover:text-foreground">
                     <SlidersHorizontal className="h-3.5 w-3.5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Run Options</span>
+                    <span className="text-2xs font-bold uppercase tracking-wider">Run Options</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-80 p-0 bg-popover/95 backdrop-blur-sm border-border/50 overflow-hidden shadow-2xl">
@@ -264,7 +264,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                       <TooltipTrigger asChild>
                         <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-[200px] text-[11px]">
+                      <TooltipContent side="right" className="max-w-[200px] text-xs">
                         Override default parameters for the next execution.
                       </TooltipContent>
                     </Tooltip>
@@ -273,11 +273,11 @@ export const ChatInput = React.memo<ChatInputProps>(
                   <div className="p-3">
                     <Tabs defaultValue="model" className="w-full">
                       <TabsList className="grid w-full grid-cols-5 h-8 bg-muted/30 p-1">
-                        <TabsTrigger value="model" className="text-[9px] px-0">Model</TabsTrigger>
-                        <TabsTrigger value="small_model" className="text-[9px] px-0">Small</TabsTrigger>
-                        <TabsTrigger value="analyst" className="text-[9px] px-0">Analyst</TabsTrigger>
-                        <TabsTrigger value="validator" className="text-[9px] px-0">Validator</TabsTrigger>
-                        <TabsTrigger value="specialist" className="text-[9px] px-0">Config</TabsTrigger>
+                        <TabsTrigger value="model" className="text-2xs px-0">Model</TabsTrigger>
+                        <TabsTrigger value="small_model" className="text-2xs px-0">Small</TabsTrigger>
+                        <TabsTrigger value="analyst" className="text-2xs px-0">Analyst</TabsTrigger>
+                        <TabsTrigger value="validator" className="text-2xs px-0">Validator</TabsTrigger>
+                        <TabsTrigger value="specialist" className="text-2xs px-0">Config</TabsTrigger>
                       </TabsList>
                       <TabsContent value="model">{renderLLMConfig('model')}</TabsContent>
                       <TabsContent value="small_model">{renderLLMConfig('small_model')}</TabsContent>
@@ -289,8 +289,8 @@ export const ChatInput = React.memo<ChatInputProps>(
                     <div className="mt-4 pt-3 border-t border-border/50 grid gap-3">
                       <div className="grid gap-2">
                         <div className="flex items-center justify-between">
-                          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Recursion Limit</Label>
-                          <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                          <Label className="text-2xs uppercase tracking-wider text-muted-foreground">Recursion Limit</Label>
+                          <span className="text-2xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                             {overrideConfig.recursionLimit || config.recursionLimit || 100}
                           </span>
                         </div>
@@ -307,7 +307,7 @@ export const ChatInput = React.memo<ChatInputProps>(
 
                       <div className="grid gap-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px]">Interrupt Before Tools</span>
+                          <span className="text-xs">Interrupt Before Tools</span>
                           <Switch
                             checked={overrideConfig.interruptBefore?.includes("tools") || false}
                             onCheckedChange={(checked) => 
@@ -319,7 +319,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                           />
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px]">Interrupt After Tools</span>
+                          <span className="text-xs">Interrupt After Tools</span>
                           <Switch
                             checked={overrideConfig.interruptAfter?.includes("tools") || false}
                             onCheckedChange={(checked) => 
@@ -339,8 +339,8 @@ export const ChatInput = React.memo<ChatInputProps>(
               <div className="h-3 w-[1px] bg-border/40" />
 
               <div className="flex items-center gap-4 text-muted-foreground/30">
-                <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest uppercase">
-                  <div className="flex items-center gap-0.5 rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-[8px]">
+                <div className="flex items-center gap-1.5 text-2xs font-bold tracking-widest uppercase">
+                  <div className="flex items-center gap-0.5 rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-2xs">
                     <Command size={8} />
                     <span>Enter</span>
                   </div>
@@ -356,7 +356,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                   size="sm"
                   variant="ghost"
                   onClick={onStop}
-                  className="h-7 gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-[10px] font-bold text-destructive hover:bg-destructive/10 transition-[background-color,color,opacity,transform]"
+                  className="h-7 gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-2xs font-bold text-destructive hover:bg-destructive/10 transition-[background-color,color,opacity,transform]"
                 >
                   <Square size={10} fill="currentColor" />
                   STOP CORE
@@ -364,12 +364,12 @@ export const ChatInput = React.memo<ChatInputProps>(
               ) : (
                 <Button
                   onClick={() => hasInput && onSubmit()}
-                  size="icon"
+                  size="icon-sm"
                   disabled={submitDisabled || !hasInput}
                   className={cn(
-                    "h-8 w-8 rounded-xl transition-[background-color,border-color,color,transform,opacity] duration-500",
-                    hasInput 
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-110 active:scale-90" 
+                    "rounded-xl transition-[background-color,border-color,color,transform,opacity] duration-500",
+                    hasInput
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-110 active:scale-90"
                       : "bg-muted text-muted-foreground/20 opacity-30"
                   )}
                 >

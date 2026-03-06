@@ -104,7 +104,7 @@ function HomePageInner({
         currentApiKey={config.langsmithApiKey}
       />
       <div className="flex h-screen flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border px-6">
+        <header className="flex h-16 items-center justify-between border-b border-border px-3 sm:px-4 md:px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">Databus Pilot</h1>
             {!sidebar && (
@@ -182,7 +182,7 @@ function HomePageInner({
                   order={1}
                   defaultSize={25}
                   minSize={20}
-                  className="relative min-w-[380px]"
+                  className="relative min-w-0 md:min-w-[300px]"
                 >
                   <ThreadList
                     onThreadSelect={async (id) => {
@@ -204,7 +204,7 @@ function HomePageInner({
                   order={sidebar ? 2 : 1}
                   defaultSize={25}
                   minSize={20}
-                  className="relative min-w-[380px]"
+                  className="relative min-w-0 md:min-w-[300px]"
                 >
                   <div className="absolute inset-0 flex flex-col">
                     <div className="flex items-center justify-between border-b border-border p-4">

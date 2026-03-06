@@ -14,7 +14,7 @@ import { useChatState } from "@/providers/chat-context";
 import { Message } from "@langchain/langgraph-sdk";
 import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import { Bot, Clock, GitFork, User } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 
 const ASSISTANT_NAME = "Databus Pilot";
 
@@ -70,12 +70,30 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     getMessagesMetadata,
   }) => {
     const { config } = useChatState();
+
+    // Memoize computed values to prevent unnecessary re-computations
     const isUser = message.type === "human";
     const userName = config?.userId || "User Protocol";
     const displayName = isUser ? userName : ASSISTANT_NAME;
-    const messageContent = extractStringFromMessageContent(message);
+    const messageContent = useMemo(
+      () => extractStringFromMessageContent(message),
+      [message]
+    );
     const hasContent = messageContent && messageContent.trim() !== "";
     const hasToolCalls = toolCalls.length > 0;
+
+    // Memoize UI lookup map for O(1) access instead of .find() per tool call
+    const uiByToolCallId = useMemo(() => {
+      if (!ui) return new Map<string, any>();
+      const map = new Map<string, any>();
+      for (const u of ui) {
+        const toolCallId = u.metadata?.tool_call_id;
+        if (toolCallId) {
+          map.set(toolCallId, u);
+        }
+      }
+      return map;
+    }, [ui]);
 
     // Find orphaned action requests
     const orphanedApprovals = useOrphanedActionRequests(
@@ -128,11 +146,11 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             )}
           >
             <div className="flex items-center gap-2">
-              <div className="flex items-center px-1 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
+              <div className="flex items-center px-1 text-2xs font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
                 {displayName}
               </div>
               {createdAt && (
-                <div className="flex items-center gap-1 text-[9px] text-muted-foreground/30 font-medium">
+                <div className="flex items-center gap-1 text-2xs text-muted-foreground/30 font-medium">
                   <Clock className="h-2 w-2" />
                   <span>{formatDate(createdAt)}</span>
                 </div>
@@ -141,7 +159,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             
             {hasMultipleBranches && (
               <div className={cn(
-                "flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/30 text-[9px] font-medium text-muted-foreground/60 transition-opacity group-hover:opacity-0",
+                "flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/30 text-2xs font-medium text-muted-foreground/60 transition-opacity group-hover:opacity-0",
                 "ml-2"
               )}>
                 <GitFork className="h-2 w-2 opacity-50" />
@@ -174,15 +192,14 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               {!isUser && (
                 <div className="flex items-center gap-2 px-1 mb-0.5 opacity-40">
                   <div className="h-[1px] flex-1 bg-border" />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.15em]">Core Execution</span>
+                  <span className="text-2xs font-bold uppercase tracking-[0.15em]">Core Execution</span>
                   <div className="h-[1px] flex-1 bg-border" />
                 </div>
               )}
               {toolCalls.map((toolCall: ToolCall) => {
                 if (toolCall.name === "task") return null;
-                const toolCallGenUiComponent = ui?.find(
-                  (u) => u.metadata?.tool_call_id === toolCall.id
-                );
+                // O(1) lookup from memoized map instead of .find()
+                const toolCallGenUiComponent = uiByToolCallId.get(toolCall.id);
                 const actionRequest = actionRequestsMap?.get(toolCall.name);
                 const reviewConfig = reviewConfigsMap?.get(toolCall.name);
                 return (

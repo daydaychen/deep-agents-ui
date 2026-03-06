@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 function ErrorState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
-      <p className="text-sm text-red-600">Failed to load threads</p>
+      <p className="text-sm text-red-600">加载对话失败</p>
       <p className="mt-1 text-xs text-muted-foreground">{message}</p>
     </div>
   );
@@ -47,7 +47,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center opacity-50">
       <MessageSquare className="mb-4 h-10 w-10 text-muted-foreground/30" />
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">No threads found</p>
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">暂无对话记录</p>
     </div>
   );
 }
@@ -213,10 +213,10 @@ export function ThreadList({
                   {isLoadingMore ? (
                     <>
                       <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      Loading...
+                      加载中...
                     </>
                   ) : (
-                    "Load More"
+                    "加载更多"
                   )}
                 </Button>
               </div>

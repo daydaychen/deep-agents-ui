@@ -127,6 +127,21 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     );
   }, [interrupt]);
 
+  // Memoize UI components by message ID for O(1) lookup instead of O(n) filter per message
+  const uiByMessageId = useMemo(() => {
+    if (!ui) return new Map<string, any[]>();
+    const map = new Map<string, any[]>();
+    for (const u of ui) {
+      const messageId = u.metadata?.message_id;
+      if (messageId) {
+        const existing = map.get(messageId) || [];
+        existing.push(u);
+        map.set(messageId, existing);
+      }
+    }
+    return map;
+  }, [ui]);
+
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -163,9 +178,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                 ) : (
                   <>
                     {processedMessages.map((data, index) => {
-                      const messageUi = ui?.filter(
-                        (u: any) => u.metadata?.message_id === data.message.id
-                      );
+                      // O(1) lookup from memoized map instead of O(n) filter
+                      const messageUi = data.message.id ? uiByMessageId.get(data.message.id) : undefined;
                       const isLastMessage = index === processedMessages.length - 1;
                       const isStreaming = isLastMessage && isLoading;
 
@@ -218,7 +232,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             </div>
 
             {/* Input Container */}
-            <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-4">
+            <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-3 sm:px-4">
               <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow,transform] duration-500 focus-within:border-primary/30 focus-within:shadow-primary/10">
                 <TasksSection
                   todos={todos}

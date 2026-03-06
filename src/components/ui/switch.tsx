@@ -12,41 +12,20 @@ function Switch({
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
-      style={{
-        display: "inline-flex",
-        height: "20px",
-        width: "36px",
-        alignItems: "center",
-        borderRadius: "9999px",
-        border: "1px solid #d1d5db",
-        backgroundColor: "var(--color-border)",
-        cursor: "pointer",
-        transition: "background-color 0.2s",
-      }}
-      data-state-styles={{
-        checked: {
-          backgroundColor: "var(--color-primary)",
-        },
-      }}
       className={cn(
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:!bg-[var(--color-primary)]",
+        "inline-flex h-5 w-9 items-center rounded-full border border-gray-300 bg-border cursor-pointer transition-colors duration-200",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
+        "data-[state=checked]:bg-primary",
         className
       )}
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        style={{
-          display: "block",
-          width: "16px",
-          height: "16px",
-          borderRadius: "9999px",
-          backgroundColor: "white",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-          transition: "transform 0.2s",
-          transform: "translateX(1px)",
-        }}
-        className="data-[state=checked]:!translate-x-[17px]"
+        className={cn(
+          "block h-4 w-4 rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-transform duration-200 translate-x-0.5",
+          "data-[state=checked]:translate-x-[17px]"
+        )}
       />
     </SwitchPrimitive.Root>
   );
