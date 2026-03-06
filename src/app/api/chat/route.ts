@@ -47,8 +47,10 @@ async function handler(req: NextRequest) {
   const effectiveThreadId = threadId ?? crypto.randomUUID();
 
   const options = getAgentOptions({
-    sessionId: effectiveThreadId,
-    ...(threadId ? { resume: threadId } : {}),
+    // sessionId and resume are mutually exclusive per SDK docs
+    ...(threadId
+      ? { resume: threadId }
+      : { sessionId: effectiveThreadId }),
     ...(config?.maxTurns ? { maxTurns: config.maxTurns } : {}),
     ...(config?.model ? { model: config.model } : {}),
     abortController,
