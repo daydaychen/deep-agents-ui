@@ -1,5 +1,5 @@
 import { getConfig } from "@/lib/config";
-import useSWRInfinite from "swr/infinite";
+import useSWR from "swr";
 
 export interface ThreadItem {
   id: string;
@@ -10,41 +10,17 @@ export interface ThreadItem {
   messageCount: number;
 }
 
-const DEFAULT_PAGE_SIZE = 20;
-
 export function useThreads(props: {
   status?: string;
   limit?: number;
 }) {
-  const pageSize = props.limit || DEFAULT_PAGE_SIZE;
-
-  return useSWRInfinite(
-    (pageIndex: number, previousPageData: ThreadItem[] | null) => {
+  return useSWR(
+    () => {
       const config = getConfig();
       if (!config) return null;
-
-      // If previous page was empty, we've reached the end
-      if (previousPageData && previousPageData.length === 0) return null;
-
-      return {
-        kind: "threads" as const,
-        pageIndex,
-        pageSize,
-        apiKey: config.apiKey,
-        status: props?.status,
-      };
+      return { kind: "threads" as const, apiKey: config.apiKey, status: props?.status };
     },
-    async ({
-      apiKey,
-      pageIndex,
-      pageSize,
-    }: {
-      kind: "threads";
-      pageIndex: number;
-      pageSize: number;
-      apiKey: string;
-      status?: string;
-    }) => {
+    async ({ apiKey }: { kind: "threads"; apiKey: string; status?: string }) => {
       const response = await fetch("/api/threads", {
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -64,11 +40,7 @@ export function useThreads(props: {
         messageCount: number;
       }> = await response.json();
 
-      // Client-side pagination
-      const start = pageIndex * pageSize;
-      const page = allThreads.slice(start, start + pageSize);
-
-      return page.map(
+      return allThreads.map(
         (thread): ThreadItem => ({
           id: thread.id,
           updatedAt: new Date(thread.updatedAt),
@@ -80,7 +52,6 @@ export function useThreads(props: {
       );
     },
     {
-      revalidateFirstPage: true,
       revalidateOnFocus: true,
     }
   );

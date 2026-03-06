@@ -2,11 +2,24 @@ import type { AgentDefinition } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { join } from "path";
 
+const PROMPT_DIR = join(process.cwd(), "src/lib/agent/prompts/subagent");
+const promptCache = new Map<string, string>();
+
+for (const name of ["analyst", "databus_specialist", "config_validator"]) {
+  const filePath = join(PROMPT_DIR, `${name}.md`);
+  try {
+    promptCache.set(name, readFileSync(filePath, "utf-8"));
+  } catch (err) {
+    console.error(
+      `[agent/agents] Failed to load prompt "${name}.md" at startup:`,
+      err instanceof Error ? err.message : err
+    );
+    promptCache.set(name, "");
+  }
+}
+
 function loadPrompt(name: string): string {
-  return readFileSync(
-    join(process.cwd(), `src/lib/agent/prompts/subagent/${name}.md`),
-    "utf-8"
-  );
+  return promptCache.get(name) ?? "";
 }
 
 export function getSubagentDefinitions(): Record<string, AgentDefinition> {

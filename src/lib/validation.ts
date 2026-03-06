@@ -6,7 +6,7 @@ export const chatRequestSchema = z.object({
   config: z
     .object({
       maxTurns: z.number().int().min(1).max(200).optional(),
-      model: z.string().optional(),
+      model: z.string().regex(/^claude-/, "Model must be a Claude model").optional(),
     })
     .optional(),
 });

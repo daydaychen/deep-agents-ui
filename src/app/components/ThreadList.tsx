@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, MessageSquare, X } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -103,17 +103,13 @@ export function ThreadList({
 
   const threads = useThreads({
     status: statusFilter === "all" ? undefined : statusFilter,
-    limit: 20,
   });
 
   const flattened = useMemo(() => {
-    return threads.data?.flat() ?? [];
+    return threads.data ?? [];
   }, [threads.data]);
 
-  const isLoadingMore =
-    threads.size > 0 && threads.data?.[threads.size - 1] == null;
-  const isEmpty = threads.data?.at(0)?.length === 0;
-  const isReachingEnd = isEmpty || (threads.data?.at(-1)?.length ?? 0) < 20;
+  const isEmpty = flattened.length === 0;
 
   // Group threads by time and status using the custom hook
   const grouped = useThreadGrouping(flattened);
@@ -200,27 +196,6 @@ export function ThreadList({
                 onDeleteThread={handleDeleteThread}
               />
             ))}
-
-            {!isReachingEnd && (
-              <div className="flex justify-center py-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 border-dashed px-6 text-xs"
-                  onClick={() => threads.setSize(threads.size + 1)}
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      加载中...
-                    </>
-                  ) : (
-                    "加载更多"
-                  )}
-                </Button>
-              </div>
-            )}
           </div>
         )}
       </ScrollArea>

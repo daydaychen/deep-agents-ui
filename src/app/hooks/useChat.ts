@@ -15,7 +15,6 @@ import {
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 
 // ---- Public API types ----
 
@@ -183,7 +182,7 @@ export function useChat({
 
       // Optimistically add user message
       const userMessage: UIMessage = {
-        id: uuidv4(),
+        id: crypto.randomUUID(),
         role: "user",
         content,
         parentToolUseId: null,
@@ -272,11 +271,6 @@ export function useChat({
     []
   );
 
-  const getMessagesMetadata = useCallback(
-    (_message: UIMessage, _index?: number) => undefined,
-    []
-  );
-
   // Error toast effect
   useEffect(() => {
     if (error) {
@@ -298,11 +292,9 @@ export function useChat({
       activeSubAgentId,
       setActiveSubAgentId,
       isLoading,
-      isStreaming: isLoading,
       error,
       threadId,
       getMessageBranchInfo,
-      getMessagesMetadata,
       sendMessage,
       stopStream,
       continueStream,
@@ -327,7 +319,6 @@ export function useChat({
       error,
       threadId,
       getMessageBranchInfo,
-      getMessagesMetadata,
       sendMessage,
       stopStream,
       continueStream,

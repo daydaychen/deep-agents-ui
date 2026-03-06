@@ -1,23 +1,3 @@
-export interface ToolCall {
-  id: string;
-  name: string;
-  args: Record<string, unknown>;
-  result?: string;
-  status: "pending" | "completed" | "error" | "interrupted";
-  subAgentMessages?: any[]; // Messages from subagents (for task tool calls)
-}
-
-export interface SubAgent {
-  id: string;
-  name: string;
-  subAgentName: string; // The type/purpose from tool args
-  agentName?: string; // The semantic name from lc_agent_name metadata
-  input: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  status: "pending" | "active" | "completed" | "error" | "interrupted";
-  messages?: any[]; // Messages from the subagent execution
-}
-
 export interface FileItem {
   path: string;
   content: string;

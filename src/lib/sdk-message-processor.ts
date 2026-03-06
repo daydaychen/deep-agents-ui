@@ -29,6 +29,8 @@ export interface ProcessorState {
   todos: TodoItem[];
   /** SubAgent lifecycle tracking */
   subagents: Map<string, UISubAgent>;
+  /** Finalized subagent messages keyed by parentToolUseId */
+  subagentMessages: Map<string, UIMessage[]>;
   /** Session metadata from the result message */
   metadata: UIMessageMetadata;
   /** Tracks the latest session_id seen */
@@ -41,6 +43,7 @@ export function createProcessorState(): ProcessorState {
     pending: new Map(),
     todos: [],
     subagents: new Map(),
+    subagentMessages: new Map(),
     metadata: {},
     sessionId: null,
   };
@@ -93,10 +96,12 @@ export function processSDKMessage(state: ProcessorState, raw: unknown): Processo
 // ---- Per-type processors ----
 
 function processUserMessage(state: ProcessorState, msg: Record<string, unknown>) {
-  // Skip synthetic tool results
-  if (msg.isSynthetic) return;
+  if (msg.isSynthetic) {
+    processSyntheticToolResult(state, msg);
+    return;
+  }
   // Skip replay messages to avoid duplicates
-  if ((msg as any).isReplay) return;
+  if ("isReplay" in msg && msg.isReplay) return;
 
   const parentToolUseId = (msg.parent_tool_use_id as string | null) ?? null;
   // Skip subagent internal user messages (tool results)
@@ -416,12 +421,78 @@ function extractTodos(state: ProcessorState, toolCall: UIToolCall) {
 }
 
 function addSubagentMessage(state: ProcessorState, parentToolUseId: string, message: UIMessage) {
-  // Find subagent by matching tool_use_id
-  // SubAgent messages are tracked separately — they won't appear in main messages array
-  // The UI reads them via subagentMessagesMap
-  // We store them on the state for later extraction
-  if (!message.parentToolUseId) return;
-  // Not adding to main messages — caller will use getSubagentMessagesMap()
+  const existing = state.subagentMessages.get(parentToolUseId);
+  if (existing) {
+    existing.push(message);
+  } else {
+    state.subagentMessages.set(parentToolUseId, [message]);
+  }
+}
+
+function processSyntheticToolResult(state: ProcessorState, msg: Record<string, unknown>) {
+  const messageParam = msg.message as Record<string, unknown> | undefined;
+  if (!messageParam) return;
+
+  const content = messageParam.content;
+  if (!Array.isArray(content)) return;
+
+  for (const block of content) {
+    if (!block || typeof block !== "object") continue;
+    const b = block as Record<string, unknown>;
+    if (b.type !== "tool_result") continue;
+
+    const toolUseId = b.tool_use_id as string | undefined;
+    if (!toolUseId) continue;
+
+    const isError = b.is_error === true;
+    const resultContent = b.content;
+    let resultText: string | undefined;
+    if (typeof resultContent === "string") {
+      resultText = resultContent;
+    } else if (Array.isArray(resultContent)) {
+      resultText = resultContent
+        .map((c: unknown) => {
+          if (typeof c === "string") return c;
+          if (c && typeof c === "object" && (c as Record<string, unknown>).type === "text")
+            return ((c as Record<string, unknown>).text as string) ?? "";
+          return "";
+        })
+        .join("");
+    }
+
+    resolveToolCallById(state, toolUseId, isError ? "error" : "completed", resultText);
+  }
+}
+
+function resolveToolCallById(
+  state: ProcessorState,
+  toolUseId: string,
+  status: "completed" | "error",
+  result?: string,
+) {
+  for (const message of state.messages) {
+    if (!message.toolCalls) continue;
+    for (const tc of message.toolCalls) {
+      if (tc.id === toolUseId) {
+        tc.status = status;
+        if (result !== undefined) tc.result = result;
+        return;
+      }
+    }
+  }
+
+  for (const [, msgs] of state.subagentMessages) {
+    for (const message of msgs) {
+      if (!message.toolCalls) continue;
+      for (const tc of message.toolCalls) {
+        if (tc.id === toolUseId) {
+          tc.status = status;
+          if (result !== undefined) tc.result = result;
+          return;
+        }
+      }
+    }
+  }
 }
 
 function resolveToolCallResults(state: ProcessorState, toolCalls: UIToolCall[], parentToolUseId: string) {
@@ -458,20 +529,30 @@ export function getMainMessages(state: ProcessorState): UIMessage[] {
  * Get subagent messages map (tool_use_id → UIMessage[]).
  */
 export function getSubagentMessagesMap(state: ProcessorState): Map<string, UIMessage[]> {
-  // Build from pending subagent streams
   const map = new Map<string, UIMessage[]>();
 
+  // Start with finalized subagent messages
+  for (const [key, msgs] of state.subagentMessages) {
+    map.set(key, [...msgs]);
+  }
+
+  // Merge in pending streaming messages
   for (const [key, pending] of state.pending) {
     if (key === "main") continue;
-    const messages: UIMessage[] = [{
+    const streamingMsg: UIMessage = {
       id: pending.id,
       role: "assistant",
       content: pending.textParts.join(""),
       toolCalls: pending.toolCalls.size > 0 ? Array.from(pending.toolCalls.values()) : undefined,
       isStreaming: true,
       parentToolUseId: pending.parentToolUseId,
-    }];
-    map.set(key, messages);
+    };
+    const existing = map.get(key);
+    if (existing) {
+      existing.push(streamingMsg);
+    } else {
+      map.set(key, [streamingMsg]);
+    }
   }
 
   return map;

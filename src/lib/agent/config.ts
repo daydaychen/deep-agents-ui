@@ -3,11 +3,17 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { getSubagentDefinitions } from "./agents";
 
-function loadClaudeMd(): string {
-  return readFileSync(
-    join(process.cwd(), "src/lib/agent/prompts/CLAUDE.md"),
-    "utf-8"
+const CLAUDE_MD_PATH = join(process.cwd(), "src/lib/agent/prompts/CLAUDE.md");
+
+let claudeMdContent: string;
+try {
+  claudeMdContent = readFileSync(CLAUDE_MD_PATH, "utf-8");
+} catch (err) {
+  console.error(
+    `[agent/config] Failed to load ${CLAUDE_MD_PATH} at startup:`,
+    err instanceof Error ? err.message : err
   );
+  claudeMdContent = "";
 }
 
 /**
@@ -19,7 +25,7 @@ export function getAgentOptions(overrides?: Partial<Options>): Options {
     systemPrompt: {
       type: "preset",
       preset: "claude_code",
-      append: loadClaudeMd(),
+      append: claudeMdContent,
     },
     // Auto-approve these tools without prompting
     allowedTools: [

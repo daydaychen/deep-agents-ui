@@ -49,23 +49,3 @@ export interface UIMessageMetadata {
   created_at?: string;
 }
 
-// --- Streaming state ---
-
-export interface StreamState {
-  /** Messages accumulated so far */
-  messages: UIMessage[];
-  /** Whether a stream is currently active */
-  isStreaming: boolean;
-  /** Thread/session ID */
-  threadId: string | null;
-  /** Latest error, if any */
-  error?: string;
-  /** Extracted todos from TodoWrite tool calls */
-  todos: import("@/app/types/types").TodoItem[];
-  /** Active subagents tracked from task_started events */
-  subagents: UISubAgent[];
-  /** Messages grouped by subagent ID */
-  subagentMessagesMap: Map<string, UIMessage[]>;
-  /** Currently auto-selected subagent ID */
-  activeSubAgentId: string | null;
-}

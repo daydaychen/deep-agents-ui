@@ -1,9 +1,10 @@
 import { listSessions } from "@anthropic-ai/claude-agent-sdk";
 import { withAuth } from "@/lib/auth";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 async function handler(_req: NextRequest) {
   try {
@@ -20,14 +21,12 @@ async function handler(_req: NextRequest) {
       gitBranch: session.gitBranch,
     }));
 
-    return new Response(JSON.stringify(threads), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json(threads);
   } catch (error) {
     console.error("Failed to list sessions:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to list sessions" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { error: "Failed to list sessions" },
+      { status: 500 }
     );
   }
 }
