@@ -137,19 +137,33 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
             blockquote: ({ children }) => (
               <blockquote className="my-2 border-l-4 border-primary/30 bg-muted/30 px-4 py-2 italic text-muted-foreground">{children}</blockquote>
             ),
-            table: ({ children }) => {
-              const childrenArray = React.Children.toArray(children) as any[];
-              return (
-                <div className="my-2 overflow-x-auto rounded-lg border border-border">
-                  <table className="w-full border-collapse text-sm">
-                    <thead><tr className="bg-muted/50">{childrenArray[0]?.props?.children}</tr></thead>
-                    <tbody className="[&_tr:last-child]:border-0">{childrenArray[1]?.props?.children}</tbody>
-                  </table>
-                </div>
-              );
-            },
-            th: ({ children }) => <th className="border-b border-border p-2 text-left font-semibold">{children}</th>,
-            td: ({ children }) => <td className="border-b border-border p-2">{children}</td>,
+            table: ({ children }) => (
+              <div className="my-4 overflow-x-auto rounded-lg border border-border">
+                <table className="w-full border-collapse text-sm">
+                  {children}
+                </table>
+              </div>
+            ),
+            thead: ({ children }) => (
+              <thead className="bg-muted/50 text-muted-foreground">
+                {children}
+              </thead>
+            ),
+            tr: ({ children }) => (
+              <tr className="border-b border-border transition-colors hover:bg-muted/30 last:border-0">
+                {children}
+              </tr>
+            ),
+            th: ({ children }) => (
+              <th className="p-3 text-left font-semibold align-middle">
+                {children}
+              </th>
+            ),
+            td: ({ children }) => (
+              <td className="p-3 align-middle">
+                {children}
+              </td>
+            ),
           }}
         >
           {content}
