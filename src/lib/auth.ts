@@ -23,9 +23,9 @@ function timingSafeCompare(a: string, b: string): boolean {
  * - In production: API_SECRET_KEY must be set or the request is rejected with 500.
  * - In development: if API_SECRET_KEY is not set, auth is bypassed with a warning.
  */
-export function withAuth(
-  handler: (req: NextRequest, ctx: Record<string, unknown>) => Promise<Response>
-): (req: NextRequest, ctx: Record<string, unknown>) => Promise<Response> {
+export function withAuth<T = Record<string, unknown>>(
+  handler: (req: NextRequest, ctx: T) => Promise<Response>
+): (req: NextRequest, ctx: T) => Promise<Response> {
   return async (req, ctx) => {
     const secret = process.env.API_SECRET_KEY;
     const isProduction = process.env.NODE_ENV === "production";
