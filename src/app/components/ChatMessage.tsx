@@ -111,7 +111,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     return (
       <div
         className={cn(
-          "group flex w-full max-w-full overflow-x-hidden gap-3 py-3 px-4 transition-colors hover:bg-muted/5"
+          "group flex w-full max-w-full overflow-x-hidden gap-3 py-2.5 px-4 transition-colors hover:bg-muted/5"
         )}
       >
         {/* Avatar Container */}
@@ -135,7 +135,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
         {/* Message Content Area */}
         <div
           className={cn(
-            "flex min-w-0 flex-col gap-1",
+            "flex min-w-0 flex-col gap-0.5",
             isUser ? "max-w-[85%] items-start" : "flex-1 max-w-[95%]"
           )}
         >
@@ -156,7 +156,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                 </div>
               )}
             </div>
-            
+
             {hasMultipleBranches && (
               <div className={cn(
                 "flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/30 text-2xs font-medium text-muted-foreground/60 transition-opacity group-hover:opacity-0",
@@ -185,14 +185,14 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           {/* 2. Tool Calls */}
           {hasToolCalls && (
             <div className={cn(
-              "flex w-full min-w-0 flex-col gap-2", 
+              "flex w-full min-w-0 flex-col gap-2",
               hasContent ? "mt-2" : "mt-0.5",
               !isUser && "pl-2 border-l-2 border-muted/30 ml-0.5"
             )}>
               {!isUser && (
-                <div className="flex items-center gap-2 px-1 mb-0.5 opacity-40">
+                <div className="flex items-center gap-2 px-1 mb-0.5 opacity-20">
                   <div className="h-[1px] flex-1 bg-border" />
-                  <span className="text-2xs font-bold uppercase tracking-[0.15em]">Core Execution</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Core Execution</span>
                   <div className="h-[1px] flex-1 bg-border" />
                 </div>
               )}

@@ -211,11 +211,11 @@ export const ChatInput = React.memo<ChatInputProps>(
       <div className="px-2 pb-3">
         <div
           className={cn(
-            "relative flex flex-col gap-1 rounded-2xl bg-transparent px-2 transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
+            "relative flex flex-col gap-0.5 rounded-2xl bg-transparent px-1 transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
             isFocused ? "bg-muted/5 shadow-inner" : ""
           )}
         >
-          <div className="relative flex flex-1 flex-col px-2 pt-1">
+          <div className="relative flex flex-1 flex-col px-2 pt-0.5">
             <label htmlFor="chat-input" className="sr-only">
               Message AI assistant
             </label>
@@ -235,8 +235,8 @@ export const ChatInput = React.memo<ChatInputProps>(
               }}
               placeholder={isLoading ? "AI 正在处理..." : "发送消息给 Deep Agent..."}
               className={cn(
-                "font-sans flex-1 resize-none border-0 bg-transparent py-3 text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40 transition-[opacity,color,background-color]",
-                "min-h-[44px] max-h-[300px] overflow-y-auto"
+                "font-sans flex-1 resize-none border-0 bg-transparent py-2.5 text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40 transition-[opacity,color,background-color]",
+                "min-h-[40px] max-h-[300px] overflow-y-auto"
               )}
               style={{
                 fieldSizing: "content",
@@ -244,14 +244,14 @@ export const ChatInput = React.memo<ChatInputProps>(
               rows={1}
             />
           </div>
-          
+
           <div className="flex items-center justify-between px-2 pb-2">
             <div className="flex items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-7 px-2 gap-1.5 text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="sm" className="h-6.5 px-2 gap-1.5 text-muted-foreground hover:text-foreground">
                     <SlidersHorizontal className="h-3.5 w-3.5" />
-                    <span className="text-2xs font-bold uppercase tracking-wider">Run Options</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Run Options</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-80 p-0 bg-popover/95 backdrop-blur-sm border-border/50 overflow-hidden shadow-2xl">
@@ -269,7 +269,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  
+
                   <div className="p-3">
                     <Tabs defaultValue="model" className="w-full">
                       <TabsList className="grid w-full grid-cols-5 h-8 bg-muted/30 p-1">
@@ -310,7 +310,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                           <span className="text-xs">Interrupt Before Tools</span>
                           <Switch
                             checked={overrideConfig.interruptBefore?.includes("tools") || false}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               setOverrideConfig(prev => ({
                                 ...prev,
                                 interruptBefore: checked ? ["tools"] : []
@@ -322,7 +322,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                           <span className="text-xs">Interrupt After Tools</span>
                           <Switch
                             checked={overrideConfig.interruptAfter?.includes("tools") || false}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               setOverrideConfig(prev => ({
                                 ...prev,
                                 interruptAfter: checked ? ["tools"] : []
@@ -336,11 +336,11 @@ export const ChatInput = React.memo<ChatInputProps>(
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <div className="h-3 w-[1px] bg-border/40" />
+              <div className="h-3 w-[1px] bg-border/20" />
 
-              <div className="flex items-center gap-4 text-muted-foreground/30">
-                <div className="flex items-center gap-1.5 text-2xs font-bold tracking-widest uppercase">
-                  <div className="flex items-center gap-0.5 rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-2xs">
+              <div className="flex items-center gap-4 text-muted-foreground/20">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase">
+                  <div className="flex items-center gap-0.5 rounded border border-border/30 bg-muted/20 px-1 py-0.5 font-mono text-2xs scale-90">
                     <Command size={8} />
                     <span>Enter</span>
                   </div>

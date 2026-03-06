@@ -392,25 +392,27 @@ export default {
         // Global scrollbar styles for all scrollable elements
         "html, body, *": {
           "scrollbar-width": "thin",
-          "scrollbar-color": "var(--scrollbar-thumb) var(--color-background)",
+          "scrollbar-color": "rgba(156, 163, 175, 0.3) transparent",
         },
         "html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar":
           {
             width: "8px",
-            background: "var(--color-background)",
+            background: "transparent",
           },
         "html::-webkit-scrollbar-track, body::-webkit-scrollbar-track, *::-webkit-scrollbar-track":
           {
-            background: "var(--color-background)",
+            background: "transparent",
           },
         "html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-track, *::-webkit-scrollbar-thumb":
           {
-            background: "var(--scrollbar-thumb)",
-            "border-radius": "4px",
+            "background-color": "rgba(156, 163, 175, 0.3)",
+            "border-radius": "20px",
+            border: "2px solid transparent",
+            "background-clip": "content-box",
           },
         "html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover, *::-webkit-scrollbar-thumb:hover":
           {
-            background: "var(--scrollbar-thumb-hover)",
+            "background-color": "rgba(156, 163, 175, 0.5)",
           },
       });
       addUtilities({

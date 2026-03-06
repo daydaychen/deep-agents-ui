@@ -104,7 +104,7 @@ function HomePageInner({
         currentApiKey={config.langsmithApiKey}
       />
       <div className="flex h-screen flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border px-3 sm:px-4 md:px-6">
+        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur-md sm:px-4 md:px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">Databus Pilot</h1>
             {!sidebar && (

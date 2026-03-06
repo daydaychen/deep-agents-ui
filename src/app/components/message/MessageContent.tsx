@@ -18,7 +18,7 @@ export const MessageContent = React.memo<MessageContentProps>(
           className={cn(
             "mt-0.5 overflow-hidden break-words text-sm font-normal leading-relaxed",
             isUser
-              ? "rounded-2xl rounded-tr-none border border-border bg-user-message px-3 py-2 text-foreground shadow-sm"
+              ? "rounded-2xl rounded-tr-none border border-primary/20 bg-user-message px-3 py-2 text-foreground shadow-sm dark:border-primary/30"
               : "rounded-2xl rounded-tl-none bg-accent/30 px-4 py-3 text-primary"
           )}
         >

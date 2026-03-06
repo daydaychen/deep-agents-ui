@@ -63,7 +63,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
     return (
       <div
         className={cn(
-          "flex flex-col overflow-y-auto border-b border-border bg-muted/20 transition-[height,opacity,background-color,border-color] duration-300 ease-in-out",
+          "flex flex-col overflow-y-auto border-b border-border bg-muted/5 transition-[height,opacity,background-color,border-color] duration-300 ease-in-out",
           hasTasks || hasFiles ? "max-h-72" : "max-h-0 border-b-0"
         )}
       >
@@ -87,12 +87,12 @@ export const TasksSection = React.memo<TasksSectionProps>(
                   onClick={() =>
                     setMetaOpen((prev) => (prev === "files" ? null : "files"))
                   }
-                  className="flex flex-shrink-0 cursor-pointer items-center gap-2 px-[18px] py-3 text-left text-sm"
+                  className="flex flex-shrink-0 cursor-pointer items-center gap-2 px-[18px] py-1.5 text-left text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
                   aria-expanded={metaOpen === "files"}
                 >
-                  <FileIcon size={16} />
+                  <FileIcon size={14} className="opacity-70" />
                   Files (State)
-                  <span className="text-primary-foreground h-4 min-w-4 rounded-full bg-primary px-0.5 text-center text-[10px] leading-[16px]">
+                  <span className="text-primary-foreground h-3.5 min-w-3.5 flex items-center justify-center rounded-full bg-primary px-1 text-center text-[9px] font-bold leading-none">
                     {Object.keys(files).length}
                   </span>
                 </button>
