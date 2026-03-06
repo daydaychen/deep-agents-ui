@@ -25,13 +25,17 @@ export function useProcessedMessages(
     /*
      1. Loop through main messages
      2. For each AI message, add the AI message, and any tool calls to the messageMap
-     3. For each tool message, find the corresponding tool call in the messageMap and update the status and output
+     3. Keep a separate toolCallMap for O(1) lookup of tool calls by ID
+     4. For each tool message, find the corresponding tool call in the toolCallMap and update it
     */
 
     const messageMap = new Map<
       string,
       { message: Message; toolCalls: ToolCall[] }
     >();
+
+    // Map to quickly find and update a ToolCall by its ID
+    const toolCallLookup = new Map<string, ToolCall>();
 
     mainMessages.forEach((message: Message) => {
       if (message.type === "ai") {
@@ -81,12 +85,20 @@ export function useProcessedMessages(
               toolCall.args ||
               toolCall.input ||
               {};
-            return {
-              id: toolCall.id || `${message.id}-tool-${tcIndex}`,
+            
+            const id = toolCall.id || `${message.id}-tool-${tcIndex}`;
+            
+            const tc = {
+              id,
               name,
               args,
               status: interrupt ? "interrupted" : ("pending" as const),
             } as ToolCall;
+
+            // Add to lookup map
+            toolCallLookup.set(id, tc);
+            
+            return tc;
           }
         );
 
@@ -100,20 +112,10 @@ export function useProcessedMessages(
           return;
         }
 
-        for (const [, data] of messageMap.entries()) {
-          const toolCallIndex = data.toolCalls.findIndex(
-            (tc: ToolCall) => tc.id === toolCallId
-          );
-          if (toolCallIndex === -1) {
-            continue;
-          }
-
-          data.toolCalls[toolCallIndex] = {
-            ...data.toolCalls[toolCallIndex],
-            status: "completed" as const,
-            result: extractStringFromMessageContent(message),
-          };
-          break;
+        const tc = toolCallLookup.get(toolCallId);
+        if (tc) {
+          tc.status = "completed" as const;
+          tc.result = extractStringFromMessageContent(message);
         }
       } else if (message.type === "human") {
         messageMap.set(message.id!, {

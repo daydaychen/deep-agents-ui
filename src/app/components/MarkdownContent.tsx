@@ -12,6 +12,7 @@ import { useTheme } from "next-themes";
 interface MarkdownContentProps {
   content: string;
   className?: string;
+  isStreaming?: boolean;
 }
 
 const CopyButton = ({ text }: { text: string }) => {
@@ -36,7 +37,7 @@ const CopyButton = ({ text }: { text: string }) => {
 };
 
 export const MarkdownContent = React.memo<MarkdownContentProps>(
-  ({ content, className = "" }) => {
+  ({ content, className = "", isStreaming = false }) => {
     const { resolvedTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
@@ -83,8 +84,8 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
                     <div className={cn("flex items-center justify-between px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 border-b border-border", headerBg)}>
                       <span>{match[1]}</span>
                     </div>
-                    <CopyButton text={codeString} />
-                    {mounted && (
+                    {!isStreaming && <CopyButton text={codeString} />}
+                    {mounted && !isStreaming ? (
                       <SyntaxHighlighter
                         style={isDark ? oneDark : oneLight}
                         language={match[1]}
@@ -109,6 +110,10 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
                       >
                         {codeString}
                       </SyntaxHighlighter>
+                    ) : (
+                      <pre className="p-4 text-xs overflow-auto font-mono whitespace-pre-wrap break-all">
+                        <code>{codeString}</code>
+                      </pre>
                     )}
                   </div>
                 );
@@ -126,7 +131,6 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
             pre({ children }: { children?: React.ReactNode }) {
               return <>{children}</>;
             },
-            // ... rest of Markdown components remain the same
             a: ({ href, children }) => (
               <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary">{children}</a>
             ),

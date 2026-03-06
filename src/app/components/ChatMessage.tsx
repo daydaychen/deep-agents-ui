@@ -24,6 +24,7 @@ interface ChatMessageProps {
   messageIndex: number;
   toolCalls: ToolCall[];
   isLoading?: boolean;
+  isStreaming?: boolean;
   actionRequestsMap?: Map<string, ActionRequest>;
   reviewConfigsMap?: Map<string, ReviewConfig>;
   ui?: any[];
@@ -51,6 +52,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     messageIndex,
     toolCalls,
     isLoading,
+    isStreaming,
     actionRequestsMap,
     reviewConfigsMap,
     ui,
@@ -161,6 +163,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               <MessageContent
                 content={messageContent}
                 isUser={isUser}
+                isStreaming={isStreaming}
               />
             </div>
           )}

@@ -1,10 +1,12 @@
 "use client";
 
 import { ChatMessage } from "@/app/components/ChatMessage";
+import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import { ChatInput } from "@/app/components/chat/ChatInput";
 import { TasksSection } from "@/app/components/chat/TasksSection";
 import { SubAgentPanel } from "@/app/components/message/SubAgentPanel";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
+import { useThrottledValue } from "@/app/hooks/useThrottledValue";
 import { useSubAgents } from "@/app/hooks/message/useSubAgents";
 import type { ActionRequest, ReviewConfig } from "@/app/types/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -93,8 +95,12 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     [input, isLoading, sendMessage, setInput, submitDisabled]
   );
 
+  // Throttle messages updates to 100ms during streaming to prevent UI stutter/crashing
+  // Use messages immediately when NOT loading to ensure responsive history loading
+  const throttledMessages = useThrottledValue(messages, isLoading ? 100 : 0);
+
   // Use the extracted hook for processing messages
-  const processedMessages = useProcessedMessages(messages, interrupt);
+  const processedMessages = useProcessedMessages(throttledMessages, interrupt);
 
   // Extract all subagents from all messages for the panel lookup
   const allToolCalls = useMemo(() => {
@@ -154,45 +160,49 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                   </div>
                 ) : (
                   <>
-                    {processedMessages.map((data, index) => {
-                      const messageUi = ui?.filter(
-                        (u: any) => u.metadata?.message_id === data.message.id
-                      );
-                      const isLastMessage = index === processedMessages.length - 1;
+                    <ErrorBoundary className="mb-4">
+                      {processedMessages.map((data, index) => {
+                        const messageUi = ui?.filter(
+                          (u: any) => u.metadata?.message_id === data.message.id
+                        );
+                        const isLastMessage = index === processedMessages.length - 1;
+                        const isStreaming = isLastMessage && isLoading;
 
-                      // Get branch information for this message
-                      const branchInfo = getMessageBranchInfo?.(data.message, index);
-                      const branchOptions = branchInfo?.branchOptions || [];
-                      const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
-                      const canRetry = branchInfo?.canRetry;
+                        // Get branch information for this message
+                        const branchInfo = getMessageBranchInfo?.(data.message, index);
+                        const branchOptions = branchInfo?.branchOptions || [];
+                        const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
+                        const canRetry = branchInfo?.canRetry;
 
-                      return (
-                        <div key={data.message.id} className="flex flex-col">
-                          <ChatMessage
-                            message={data.message}
-                            messageIndex={index}
-                            toolCalls={data.toolCalls}
-                            isLoading={isLoading}
-                            actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
-                            reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
-                            ui={messageUi}
-                            stream={stream}
-                            onResumeInterrupt={resumeInterrupt}
-                            onRetry={retryFromMessage}
-                            onEdit={editMessage}
-                            getMessagesMetadata={getMessagesMetadata}
-                            setBranch={setBranch}
-                            graphId={assistant?.graph_id}
-                            subagentMessagesMap={subagentMessagesMap}
-                            branchOptions={branchOptions}
-                            currentBranchIndex={currentBranchIndex}
-                            canRetry={!!canRetry}
-                            activeSubAgentId={activeSubAgentId}
-                            setActiveSubAgentId={setActiveSubAgentId}
-                          />
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div key={data.message.id} className="flex flex-col">
+                            <ChatMessage
+                              message={data.message}
+                              messageIndex={index}
+                              toolCalls={data.toolCalls}
+                              isLoading={isLoading}
+                              isStreaming={isStreaming}
+                              actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
+                              reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
+                              ui={messageUi}
+                              stream={stream}
+                              onResumeInterrupt={resumeInterrupt}
+                              onRetry={retryFromMessage}
+                              onEdit={editMessage}
+                              getMessagesMetadata={getMessagesMetadata}
+                              setBranch={setBranch}
+                              graphId={assistant?.graph_id}
+                              subagentMessagesMap={subagentMessagesMap}
+                              branchOptions={branchOptions}
+                              currentBranchIndex={currentBranchIndex}
+                              canRetry={!!canRetry}
+                              activeSubAgentId={activeSubAgentId}
+                              setActiveSubAgentId={setActiveSubAgentId}
+                            />
+                          </div>
+                        );
+                      })}
+                    </ErrorBoundary>
                     {error && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
@@ -207,7 +217,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
             {/* Input Container */}
             <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-4">
-              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow] duration-500 focus-within:border-primary/30 focus-within:shadow-primary/10">
+              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow,transform] duration-500 focus-within:border-primary/30 focus-within:shadow-primary/10">
                 <TasksSection
                   todos={todos}
                   files={files}

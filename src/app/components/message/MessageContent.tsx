@@ -7,10 +7,11 @@ import React from "react";
 interface MessageContentProps {
   content: string;
   isUser: boolean;
+  isStreaming?: boolean;
 }
 
 export const MessageContent = React.memo<MessageContentProps>(
-  ({ content, isUser }) => {
+  ({ content, isUser, isStreaming }) => {
     return (
       <div className={cn("relative flex flex-col gap-2 group")}>
         <div
@@ -33,7 +34,7 @@ export const MessageContent = React.memo<MessageContentProps>(
               </p>
             </div>
           ) : (
-            <MarkdownContent content={content} />
+            <MarkdownContent content={content} isStreaming={isStreaming} />
           )}
         </div>
       </div>
