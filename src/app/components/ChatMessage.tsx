@@ -6,9 +6,8 @@ import { SubAgentSection } from "@/app/components/message/SubAgentSection";
 import { MessageToolbar } from "@/app/components/MessageToolbar";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useOrphanedActionRequests } from "@/app/hooks/message/useOrphanedActionRequests";
-import { useSubAgents } from "@/app/hooks/message/useSubAgents";
 import type { StateType } from "@/app/hooks/useChat";
-import type { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
+import type { ActionRequest, ReviewConfig, SubAgent, ToolCall } from "@/app/types/types";
 import { extractStringFromMessageContent, formatDate } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
 import { useChatState } from "@/providers/chat-context";
@@ -23,6 +22,7 @@ interface ChatMessageProps {
   message: Message;
   messageIndex: number;
   toolCalls: ToolCall[];
+  subAgents?: SubAgent[];
   isLoading?: boolean;
   isStreaming?: boolean;
   actionRequestsMap?: Map<string, ActionRequest>;
@@ -38,7 +38,6 @@ interface ChatMessageProps {
   ) => MessageMetadata<StateType> | undefined;
   setBranch?: (branch: string) => void;
   graphId?: string;
-  subagentMessagesMap?: Map<string, Message[]>;
   branchOptions?: string[];
   currentBranchIndex?: number;
   canRetry?: boolean;
@@ -51,6 +50,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     message,
     messageIndex,
     toolCalls,
+    subAgents = [],
     isLoading,
     isStreaming,
     actionRequestsMap,
@@ -67,7 +67,6 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     canRetry = false,
     activeSubAgentId,
     setActiveSubAgentId,
-    subagentMessagesMap,
     getMessagesMetadata,
   }) => {
     const { config } = useChatState();
@@ -77,9 +76,6 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     const messageContent = extractStringFromMessageContent(message);
     const hasContent = messageContent && messageContent.trim() !== "";
     const hasToolCalls = toolCalls.length > 0;
-
-    // Use custom hook to extract subagents
-    const subAgents = useSubAgents(toolCalls, subagentMessagesMap);
 
     // Find orphaned action requests
     const orphanedApprovals = useOrphanedActionRequests(

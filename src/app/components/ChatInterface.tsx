@@ -7,7 +7,6 @@ import { TasksSection } from "@/app/components/chat/TasksSection";
 import { SubAgentPanel } from "@/app/components/message/SubAgentPanel";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { useThrottledValue } from "@/app/hooks/useThrottledValue";
-import { useSubAgents } from "@/app/hooks/message/useSubAgents";
 import type { ActionRequest, ReviewConfig } from "@/app/types/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -100,13 +99,16 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const throttledMessages = useThrottledValue(messages, isLoading ? 100 : 0);
 
   // Use the extracted hook for processing messages
-  const processedMessages = useProcessedMessages(throttledMessages, interrupt);
+  const processedMessages = useProcessedMessages(
+    throttledMessages,
+    subagentMessagesMap,
+    interrupt
+  );
 
   // Extract all subagents from all messages for the panel lookup
-  const allToolCalls = useMemo(() => {
-    return processedMessages.flatMap((m) => m.toolCalls);
+  const allSubAgents = useMemo(() => {
+    return processedMessages.flatMap((m) => m.subAgents);
   }, [processedMessages]);
-  const allSubAgents = useSubAgents(allToolCalls, subagentMessagesMap);
 
   // Parse out any action requests or review configs from the interrupt
   const actionRequestsMap: Map<string, ActionRequest> | null = useMemo(() => {
@@ -160,26 +162,27 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                   </div>
                 ) : (
                   <>
-                    <ErrorBoundary className="mb-4">
-                      {processedMessages.map((data, index) => {
-                        const messageUi = ui?.filter(
-                          (u: any) => u.metadata?.message_id === data.message.id
-                        );
-                        const isLastMessage = index === processedMessages.length - 1;
-                        const isStreaming = isLastMessage && isLoading;
+                    {processedMessages.map((data, index) => {
+                      const messageUi = ui?.filter(
+                        (u: any) => u.metadata?.message_id === data.message.id
+                      );
+                      const isLastMessage = index === processedMessages.length - 1;
+                      const isStreaming = isLastMessage && isLoading;
 
-                        // Get branch information for this message
-                        const branchInfo = getMessageBranchInfo?.(data.message, index);
-                        const branchOptions = branchInfo?.branchOptions || [];
-                        const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
-                        const canRetry = branchInfo?.canRetry;
+                      // Get branch information for this message
+                      const branchInfo = getMessageBranchInfo?.(data.message, index);
+                      const branchOptions = branchInfo?.branchOptions || [];
+                      const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
+                      const canRetry = branchInfo?.canRetry;
 
-                        return (
-                          <div key={data.message.id} className="flex flex-col">
+                      return (
+                        <div key={data.message.id} className="flex flex-col">
+                          <ErrorBoundary className="mb-4">
                             <ChatMessage
                               message={data.message}
                               messageIndex={index}
                               toolCalls={data.toolCalls}
+                              subAgents={data.subAgents}
                               isLoading={isLoading}
                               isStreaming={isStreaming}
                               actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
@@ -192,17 +195,16 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                               getMessagesMetadata={getMessagesMetadata}
                               setBranch={setBranch}
                               graphId={assistant?.graph_id}
-                              subagentMessagesMap={subagentMessagesMap}
                               branchOptions={branchOptions}
                               currentBranchIndex={currentBranchIndex}
                               canRetry={!!canRetry}
                               activeSubAgentId={activeSubAgentId}
                               setActiveSubAgentId={setActiveSubAgentId}
                             />
-                          </div>
-                        );
-                      })}
-                    </ErrorBoundary>
+                          </ErrorBoundary>
+                        </div>
+                      );
+                    })}
                     {error && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />

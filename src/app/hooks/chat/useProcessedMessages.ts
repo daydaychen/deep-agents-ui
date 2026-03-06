@@ -1,11 +1,12 @@
-import type { ToolCall } from "@/app/types/types";
-import { extractStringFromMessageContent } from "@/app/utils/utils";
+import type { SubAgent, ToolCall } from "@/app/types/types";
+import { extractStringFromMessageContent, extractSubAgents } from "@/app/utils/utils";
 import { Message } from "@langchain/langgraph-sdk";
 import { useMemo } from "react";
 
 interface ProcessedMessage {
   message: Message;
   toolCalls: ToolCall[];
+  subAgents: SubAgent[];
   showAvatar: boolean;
 }
 
@@ -13,12 +14,14 @@ interface ProcessedMessage {
  * Process main messages into a format that's easier to render
  * - Matches tool calls with their results
  * - Determines when to show avatars
+ * - Extracts subagents for single-pass processing
  *
  * Note: This hook expects mainMessages (already filtered, without subagent messages)
  * Subagent messages should be handled separately via subagentMessagesMap
  */
 export function useProcessedMessages(
   mainMessages: Message[],
+  subagentMessagesMap?: Map<string, Message[]>,
   interrupt?: any
 ): ProcessedMessage[] {
   return useMemo(() => {
@@ -129,10 +132,15 @@ export function useProcessedMessages(
 
     return processedArray.map((data, index) => {
       const prevMessage = index > 0 ? processedArray[index - 1].message : null;
+      
+      // Extract subagents for this message using the unified utility
+      const subAgents = extractSubAgents(data.toolCalls, subagentMessagesMap);
+
       return {
         ...data,
+        subAgents,
         showAvatar: data.message.type !== prevMessage?.type,
       };
     });
-  }, [mainMessages, interrupt]);
+  }, [mainMessages, subagentMessagesMap, interrupt]);
 }
