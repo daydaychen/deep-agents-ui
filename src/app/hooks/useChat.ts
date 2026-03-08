@@ -606,6 +606,7 @@ export function useChat({
       overrideConfig,
       setOverrideConfig,
       config,
+      threadId,
     }),
     [
       stream,
@@ -624,6 +625,7 @@ export function useChat({
       editMessage,
       overrideConfig,
       config,
+      threadId,
     ]
   );
 }

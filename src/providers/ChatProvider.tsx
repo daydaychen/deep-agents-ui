@@ -61,6 +61,7 @@ export function ChatProvider({
       getMessageBranchInfo: chat.getMessageBranchInfo,
       overrideConfig: chat.overrideConfig,
       config: chat.config,
+      threadId: chat.threadId,
     }),
     [
       chat.stream,
@@ -82,6 +83,7 @@ export function ChatProvider({
       chat.getMessageBranchInfo,
       chat.overrideConfig,
       chat.config,
+      chat.threadId,
     ]
   );
 

@@ -49,7 +49,7 @@ export const ChatInput = React.memo<ChatInputProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isFocused, setIsFocused] = useState(false);
 
-    const { overrideConfig, config } = useChatState();
+    const { overrideConfig, config, threadId } = useChatState();
     const { setOverrideConfig } = useChatActions();
 
     // Auto-resize textarea based on content
@@ -76,10 +76,10 @@ export const ChatInput = React.memo<ChatInputProps>(
       [onSubmit, submitDisabled]
     );
 
-    // Auto-focus textarea on mount
+    // Auto-focus textarea on mount or when switching threads
     useEffect(() => {
       textareaRef.current?.focus();
-    }, []);
+    }, [threadId]);
 
     const hasInput = input.trim().length > 0;
 
