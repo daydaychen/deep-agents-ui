@@ -49,6 +49,86 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
 
+interface ModelOption {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+}
+
+// Models list - defined outside component to avoid recreating on each render
+const MODEL_OPTIONS: ModelOption[] = [
+  {
+    id: "Qwen/Qwen3.5-397B-A17B",
+    name: "Qwen 3.5 397B",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3.5-122B-A10B",
+    name: "Qwen 3.5 122B",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3.5-35B-A3B",
+    name: "Qwen 3.5 35B",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3.5-27B",
+    name: "Qwen 3.5 27B",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    name: "Qwen 3 Coder",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    name: "Qwen 3 Coder 30B",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    name: "Qwen 3 30B Instruct",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3-30B-A3B-Thinking-2507",
+    name: "Qwen 3 30B Thinking",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    name: "Qwen 3 235B",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "Qwen/Qwen3-235B-A22B-Thinking-2507",
+    name: "Qwen 3 235B Thinking",
+    icon: <Sparkles className="h-3 w-3 text-orange-500" />,
+  },
+  {
+    id: "deepseek-ai/DeepSeek-V3.2",
+    name: "DeepSeek V3.2",
+    icon: <Sparkles className="h-3 w-3 text-blue-500" />,
+  },
+  {
+    id: "MiniMax/MiniMax-M2.5",
+    name: "MiniMax M2.5",
+    icon: <Zap className="h-3 w-3 text-yellow-500" />,
+  },
+  {
+    id: "ZhipuAI/GLM-5",
+    name: "GLM-5",
+    icon: <Brain className="h-3 w-3 text-cyan-500" />,
+  },
+  {
+    id: "moonshotai/Kimi-K2.5",
+    name: "Kimi K2.5",
+    icon: <Zap className="h-3 w-3 text-emerald-500" />,
+  },
+];
+
 interface ChatInputProps {
   input: string;
   setInput: (value: string) => void;
@@ -99,95 +179,31 @@ export const ChatInput = React.memo<ChatInputProps>(
 
     const hasInput = input.trim().length > 0;
 
-    const models = [
-      {
-        id: "Qwen/Qwen3.5-397B-A17B",
-        name: "Qwen 3.5 397B",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3.5-122B-A10B",
-        name: "Qwen 3.5 122B",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3.5-35B-A3B",
-        name: "Qwen 3.5 35B",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3.5-27B",
-        name: "Qwen 3.5 27B",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
-        name: "Qwen 3 Coder",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3-Coder-30B-A3B-Instruct",
-        name: "Qwen 3 Coder 30B",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3-30B-A3B-Instruct-2507",
-        name: "Qwen 3 30B Instruct",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3-30B-A3B-Thinking-2507",
-        name: "Qwen 3 30B Thinking",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3-235B-A22B-Instruct-2507",
-        name: "Qwen 3 235B",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "Qwen/Qwen3-235B-A22B-Thinking-2507",
-        name: "Qwen 3 235B Thinking",
-        icon: <Sparkles className="h-3 w-3 text-orange-500" />,
-      },
-      {
-        id: "deepseek-ai/DeepSeek-V3.2",
-        name: "DeepSeek V3.2",
-        icon: <Sparkles className="h-3 w-3 text-blue-500" />,
-      },
-      {
-        id: "MiniMax/MiniMax-M2.5",
-        name: "MiniMax M2.5",
-        icon: <Zap className="h-3 w-3 text-yellow-500" />,
-      },
-      {
-        id: "ZhipuAI/GLM-5",
-        name: "GLM-5",
-        icon: <Brain className="h-3 w-3 text-cyan-500" />,
-      },
-      {
-        id: "moonshotai/Kimi-K2.5",
-        name: "Kimi K2.5",
-        icon: <Zap className="h-3 w-3 text-emerald-500" />,
-      },
-    ];
+    const handleSubmitClick = useCallback(() => {
+      if (hasInput) {
+        onSubmit();
+      }
+    }, [hasInput, onSubmit]);
 
-    const updateOverride = (
-      agentKey: keyof Omit<
-        OverrideConfig,
-        "recursionLimit" | "interruptBefore" | "interruptAfter"
-      >,
-      field: keyof LLMOverrideConfig,
-      value: any
-    ) => {
-      setOverrideConfig((prev) => ({
-        ...prev,
-        [agentKey]: {
-          ...(prev[agentKey] || {}),
-          [field]: value === "" ? undefined : value,
-        },
-      }));
-    };
+    const updateOverride = useCallback(
+      (
+        agentKey: keyof Omit<
+          OverrideConfig,
+          "recursionLimit" | "interruptBefore" | "interruptAfter"
+        >,
+        field: keyof LLMOverrideConfig,
+        value: any
+      ) => {
+        setOverrideConfig((prev) => ({
+          ...prev,
+          [agentKey]: {
+            ...(prev[agentKey] || {}),
+            [field]: value === "" ? undefined : value,
+          },
+        }));
+      },
+      [setOverrideConfig]
+    );
 
     const renderLLMConfig = (
       agentKey: keyof Omit<
@@ -217,7 +233,7 @@ export const ChatInput = React.memo<ChatInputProps>(
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__default__">{t("default")}</SelectItem>
-                {models.map((m) => (
+                {MODEL_OPTIONS.map((m) => (
                   <SelectItem
                     key={m.id}
                     value={m.id}
@@ -592,7 +608,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                 </Button>
               ) : (
                 <Button
-                  onClick={() => hasInput && onSubmit()}
+                  onClick={handleSubmitClick}
                   size="icon-sm"
                   disabled={submitDisabled || !hasInput}
                   className={cn(

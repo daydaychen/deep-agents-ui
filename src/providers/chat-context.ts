@@ -1,7 +1,43 @@
 "use client";
 
+import type { Assistant, Message } from "@langchain/langgraph-sdk";
+import type { TodoItem } from "@/app/types/types";
 import { createContext, useContext } from "react";
 import type { useChat } from "@/app/hooks/useChat";
+
+export type StateType = {
+  messages: Message[];
+  todos: TodoItem[];
+  files: Record<string, string>;
+  email?: {
+    id?: string;
+    subject?: string;
+    page_content?: string;
+  };
+  ui?: any;
+};
+
+export type LLMOverrideConfig = {
+  model?: string;
+  temperature?: number;
+  max_completion_tokens?: number;
+  top_p?: number;
+  presence_penalty?: number;
+};
+
+export type OverrideConfig = {
+  model?: LLMOverrideConfig;
+  small_model?: LLMOverrideConfig;
+  analyst?: LLMOverrideConfig;
+  config_validator?: LLMOverrideConfig;
+  databus_specialist?: LLMOverrideConfig;
+  recursionLimit?: number;
+  interruptBefore?: string[];
+  interruptAfter?: string[];
+};
+
+// Re-export Assistant type for convenience
+export type { Assistant };
 
 // 拆分 Context 以优化性能：State 频繁变化，Actions 基本稳定
 export type ChatStateContextType = Omit<

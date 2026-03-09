@@ -1,57 +1,36 @@
 "use client";
 
-import type { TodoItem } from "@/app/types/types";
 import type { StandaloneConfig } from "@/lib/config";
+import { DEFAULT_MESSAGE_LIMIT, DEFAULT_RECURSION_LIMIT, ERROR_MESSAGE_TRUNCATION_LENGTH, TOAST_DURATION_MS } from "@/lib/constants";
+import { generateId } from "@/lib/id-utils";
+import { LLMOverrideConfig, OverrideConfig, StateType } from "@/providers/chat-context";
 import { useClient } from "@/providers/client-context";
 import {
   type Assistant,
   type Checkpoint,
   type Message,
 } from "@langchain/langgraph-sdk";
-import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
+import type { UseStreamOptions, UseStreamThread } from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 import { usePersistedMessages } from "./usePersistedMessages";
 
-export type StateType = {
-  messages: Message[];
-  todos: TodoItem[];
-  files: Record<string, string>;
-  email?: {
-    id?: string;
-    subject?: string;
-    page_content?: string;
-  };
-  ui?: any;
-};
+// Extend useStream options with DeepAgent-specific options not yet exported in SDK types
+interface UseStreamOptionsWithDeepAgentExtensions extends UseStreamOptions<StateType> {
+  filterSubagentMessages?: boolean;
+  streamSubgraphs?: boolean;
+}
 
-export type LLMOverrideConfig = {
-  model?: string;
-  temperature?: number;
-  max_completion_tokens?: number;
-  top_p?: number;
-  presence_penalty?: number;
-};
-
-export type OverrideConfig = {
-  model?: LLMOverrideConfig;
-  small_model?: LLMOverrideConfig;
-  analyst?: LLMOverrideConfig;
-  config_validator?: LLMOverrideConfig;
-  databus_specialist?: LLMOverrideConfig;
-  recursionLimit?: number;
-  interruptBefore?: string[];
-  interruptAfter?: string[];
-};
+// Re-export types from chat-context as the single source of truth
+export type { LLMOverrideConfig, OverrideConfig, StateType } from "@/providers/chat-context";
 
 export function useChat({
   activeAssistant,
   onHistoryRevalidate,
   thread,
-  recursionLimit = 100,
+  recursionLimit = DEFAULT_RECURSION_LIMIT,
   recursionMultiplier = 6,
   config,
 }: {
@@ -64,7 +43,7 @@ export function useChat({
 }) {
   const [threadId, setThreadId] = useQueryState("threadId");
   const client = useClient();
-  const [sessionId, setSessionId] = useState<string>(() => uuidv4());
+  const [sessionId, setSessionId] = useState<string>(() => generateId());
   const isSubmittingRef = useRef(false);
   const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>({});
 
@@ -81,16 +60,16 @@ export function useChat({
             setSessionId(existingSessionId);
           } else {
             // Thread exists but no session_id, generate and potentially update
-            setSessionId(uuidv4());
+            setSessionId(generateId());
           }
         } catch {
           // Failed to fetch thread, generate new session_id
           console.warn("Failed to fetch thread metadata:");
-          setSessionId(uuidv4());
+          setSessionId(generateId());
         }
       } else {
         // New thread, generate new session_id
-        setSessionId(uuidv4());
+        setSessionId(generateId());
       }
     };
 
@@ -107,12 +86,11 @@ export function useChat({
     onFinish: onHistoryRevalidate,
     onError: onHistoryRevalidate,
     onCreated: onHistoryRevalidate,
-    fetchStateHistory: { limit: 100 },
+    fetchStateHistory: { limit: DEFAULT_MESSAGE_LIMIT },
     thread: thread,
     filterSubagentMessages: true,
     streamSubgraphs: true,
-  // as any: SDK types don't export DeepAgent-specific options (filterSubagentMessages, streamSubgraphs)
-  } as any);
+  } as UseStreamOptionsWithDeepAgentExtensions);
 
   // Reset submit guard when stream finishes
   useEffect(() => {
@@ -167,7 +145,7 @@ export function useChat({
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
-      const newMessage: Message = { id: uuidv4(), type: "human", content };
+      const newMessage: Message = { id: generateId(), type: "human", content };
       
       const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
       const finalInterruptBefore = overrideConfig.interruptBefore;
@@ -550,7 +528,7 @@ export function useChat({
   useEffect(() => {
     if (latestError) {
       toast.error(latestError, {
-        duration: 5000,
+        duration: TOAST_DURATION_MS,
         id: `chat-error-${latestError.substring(0, 50)}`, // Avoid duplicate toasts for the same message
       });
     }
