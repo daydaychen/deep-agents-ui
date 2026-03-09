@@ -16,7 +16,7 @@ interface BranchSwitcherProps {
 export const BranchSwitcher = React.memo<BranchSwitcherProps>(
   ({ branchOptions, currentIndex, onSelect, className, isLoading = false }) => {
     const options = branchOptions || [];
-    
+
     // If no branches at all, don't show anything
     if (options.length === 0) {
       return null;
@@ -27,20 +27,8 @@ export const BranchSwitcher = React.memo<BranchSwitcherProps>(
     const isLast = effectiveIndex === options.length - 1;
     const hasMultiple = options.length > 1;
 
-    const handlePrev = () => {
-      if (!isFirst && !isLoading) {
-        onSelect(options[effectiveIndex - 1]);
-      }
-    };
-
-    const handleNext = () => {
-      if (!isLast && !isLoading) {
-        onSelect(options[effectiveIndex + 1]);
-      }
-    };
-
     return (
-      <div 
+      <div
         className={cn(
           "flex items-center gap-1 px-1 py-0.5 rounded-full bg-accent/30 border border-accent/50 transition-all duration-200",
           className
@@ -58,7 +46,11 @@ export const BranchSwitcher = React.memo<BranchSwitcherProps>(
             <Button
               variant="ghost"
               size="icon"
-              onClick={handlePrev}
+              onClick={() => {
+                if (!isFirst && !isLoading) {
+                  onSelect(options[effectiveIndex - 1]);
+                }
+              }}
               disabled={isFirst || isLoading}
               className="h-6 w-6 rounded-full hover:bg-accent/60 transition-colors"
               title="Previous branch"
@@ -68,7 +60,11 @@ export const BranchSwitcher = React.memo<BranchSwitcherProps>(
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleNext}
+              onClick={() => {
+                if (!isLast && !isLoading) {
+                  onSelect(options[effectiveIndex + 1]);
+                }
+              }}
               disabled={isLast || isLoading}
               className="h-6 w-6 rounded-full hover:bg-accent/60 transition-colors"
               title="Next branch"
