@@ -327,15 +327,14 @@ export const Memory = React.memo<{
               <AlertCircle className="h-5 w-5" />
               <DialogTitle>{t("confirmDeletion")}</DialogTitle>
             </div>
-            <DialogDescription
-              className="pt-2 break-words"
-              dangerouslySetInnerHTML={{
-                __html: t("deleteConfirm", {
-                  key: itemToDelete?.key ?? "",
-                  code: `<code class="break-all whitespace-pre-wrap">${itemToDelete?.key ?? ""}</code>`
-                }),
-              }}
-            />
+            <DialogDescription className="pt-2 break-words">
+              {t.rich("deleteConfirm", {
+                key: itemToDelete?.key ?? "",
+                code: (chunks: any) => (
+                  <code className="break-all whitespace-pre-wrap">{chunks}</code>
+                ),
+              })}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">
             <Button
