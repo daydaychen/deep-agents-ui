@@ -529,7 +529,7 @@ export function useChat({
     if (latestError) {
       toast.error(latestError, {
         duration: TOAST_DURATION_MS,
-        id: `chat-error-${latestError.substring(0, 50)}`, // Avoid duplicate toasts for the same message
+        id: `chat-error-${latestError.substring(0, ERROR_MESSAGE_TRUNCATION_LENGTH)}`, // Avoid duplicate toasts for the same message
       });
     }
   }, [latestError]);
