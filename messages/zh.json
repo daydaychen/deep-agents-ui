@@ -235,10 +235,16 @@
   "editMessage": {
     "edit": "编辑",
     "editMessage": "编辑消息",
-    "editPlaceholder": "编辑您的消息…",
+    "editPlaceholder": "编辑你的消息…",
     "cancel": "取消",
     "save": "保存",
-    "cancelShortcut": "取消（Esc）",
-    "saveShortcut": "保存（Enter）"
+    "cancelShortcut": "取消 (Esc)",
+    "saveShortcut": "保存 (Enter)"
+  },
+  "connection": {
+    "connected": "已连接",
+    "disconnected": "断开连接",
+    "connecting": "连接中…",
+    "error": "连接错误"
   }
-}
+  }

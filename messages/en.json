@@ -240,5 +240,11 @@
     "save": "Save",
     "cancelShortcut": "Cancel (Esc)",
     "saveShortcut": "Save (Enter)"
+  },
+  "connection": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting…",
+    "error": "Connection error"
   }
 }

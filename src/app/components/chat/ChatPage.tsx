@@ -4,6 +4,7 @@ import { ChatInterface } from "@/app/components/ChatInterface";
 import { ConfigDialog } from "@/app/components/ConfigDialog";
 import { Memory } from "@/app/components/Memory";
 import { ThreadList } from "@/app/components/ThreadList";
+import { ConnectionStatusIndicator } from "@/app/components/ConnectionStatusIndicator";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -174,6 +175,7 @@ function HomePageInner({
               <SquarePen className="mr-2 h-4 w-4" />
               {t("newThread")}
             </Button>
+            <ConnectionStatusIndicator />
             <LanguageSwitcher />
             <ModeToggle />
           </div>
