@@ -25,6 +25,7 @@ import useSWRMutation from "swr/mutation";
 import { useTranslations } from "next-intl";
 import type { StandaloneConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
+import { MarkdownContent } from "./MarkdownContent";
 
 export const MemoryItemDialog = React.memo<{
   item: MemoryItem | null;
@@ -313,11 +314,9 @@ export const MemoryItemDialog = React.memo<{
                       className="h-full min-h-[300px] resize-none font-mono text-sm"
                     />
                   ) : (
-                    <div className="bg-muted/30 min-h-[200px] rounded-md border p-4">
+                    <div className="bg-muted/30 min-h-[200px] rounded-md border p-4 overflow-auto">
                       {content ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap font-sans">
-                          {content}
-                        </div>
+                        <MarkdownContent content={content} />
                       ) : (
                         <div className="flex items-center justify-center p-12">
                           <p className="text-sm text-muted-foreground">
