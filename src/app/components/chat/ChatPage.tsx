@@ -181,7 +181,7 @@ function HomePageInner({
           </div>
         </header>
 
-        <div className="flex-1 overflow-hidden mt-1.5">
+        <div className="flex-1 overflow-hidden mt-5">
           <ResizablePanelGroup
             direction="horizontal"
             autoSaveId="standalone-chat"
