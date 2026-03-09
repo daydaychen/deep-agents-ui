@@ -1,4 +1,8 @@
-# DEEP AGENTS UI KNOWLEDGE BASE
+# Databus Pilot UI KNOWLEDGE BASE
+
+**Generated:** 2026-03-09  
+**Commit:** 137dc64  
+**Branch:** feat
 
 **Generated:** 2026-02-28 17:12:08  
 **Commit:** a17df78  
@@ -87,6 +91,12 @@ docker run -p 3003:3003 deep-agents-ui
 ## NOTES
 
 - **Docker**: Multi-stage build, Node 20 alpine, port 3003
+- **CI**: GitHub Actions with lint/build/spell checks
+- **Missing**: Test automation, deployment workflows, E2E tests
+- **Refactoring candidates**: Split `useChat.ts`, `usePersistedMessages.ts`
+- **Architecture**: React SPA in Next.js wrapper - no API routes/middleware
+- **State complexity**: Chat + threads + memory + sub-agents + configuration
+- **i18n**: next-intl with ./src/i18n/request.ts configuration
 - **CI**: GitHub Actions with lint/build/spell checks
 - **Missing**: Test automation, deployment workflows, E2E tests
 - **Refactoring candidates**: Split `useChat.ts`, `usePersistedMessages.ts`

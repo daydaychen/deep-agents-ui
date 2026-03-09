@@ -1,5 +1,9 @@
 # APP COMPONENTS KNOWLEDGE BASE
 
+**Generated:** 2026-03-09  
+**Part of:** deep-agents-ui/src/app/AGENTS.md hierarchy
+**Commit:** 137dc64
+
 **Generated:** 2026-02-28 17:12:08  
 **Part of:** deep-agents-ui/src/app/AGENTS.md hierarchy
 
@@ -99,6 +103,11 @@ components/
 ## REFACTORING CANDIDATES
 
 1. Split `FileViewDialog.tsx` into view/logic components
+2. Extract `TasksFilesSidebar.tsx` tasks/files panels
+3. Create shared base components for dialogs
+4. Implement proper loading skeletons
+5. Add component-level error boundaries
+6. Add i18n support for all hardcoded strings
 2. Extract `TasksFilesSidebar.tsx` tasks/files panels
 3. Create shared base components for dialogs
 4. Implement proper loading skeletons

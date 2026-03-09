@@ -1,5 +1,9 @@
 # APP LAYER KNOWLEDGE BASE
 
+**Generated:** 2026-03-09  
+**Part of:** deep-agents-ui/AGENTS.md hierarchy
+**Commit:** 137dc64
+
 **Generated:** 2026-02-28 17:12:08  
 **Part of:** deep-agents-ui/AGENTS.md hierarchy
 
@@ -84,6 +88,11 @@ app/
 ## REFACTORING CANDIDATES
 
 1. Split `useChat.ts` into specialized hooks
+2. Extract `usePersistedMessages.ts` IndexedDB operations
+3. Break down `page.tsx` into smaller components
+4. Add error boundaries for robustness
+5. Implement proper loading/error states
+6. Add i18n translations for all user-facing strings
 2. Extract `usePersistedMessages.ts` IndexedDB operations
 3. Break down `page.tsx` into smaller components
 4. Add error boundaries for robustness
