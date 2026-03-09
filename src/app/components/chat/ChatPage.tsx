@@ -150,7 +150,12 @@ function HomePageInner({
           <div className="flex items-center gap-2">
             <div className="text-sm text-muted-foreground">
               <span className="font-medium">{t("assistant")}:</span>{" "}
-              {config.assistantId}
+              {assistant?.name || config.assistantId}
+              {assistant?.name && assistant.name !== assistant.assistant_id && (
+                <span className="ml-1 opacity-60 text-[10px]">
+                  ({assistant.assistant_id.slice(0, 8)}...)
+                </span>
+              )}
             </div>
             <Button
               variant="outline"
@@ -226,7 +231,7 @@ function HomePageInner({
                       </Button>
                     </div>
                     <div className="flex-1 overflow-hidden p-4">
-                      <Memory config={config} />
+                      <Memory config={config} assistantName={assistant?.name} />
                     </div>
                   </div>
                 </ResizablePanel>

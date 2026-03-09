@@ -37,7 +37,8 @@ export const MemoryItemDialog = React.memo<{
   onClose: () => void;
   editDisabled: boolean;
   config: StandaloneConfig;
-}>(({ item, onSaveItem, onClose, editDisabled, config }) => {
+  assistantName?: string;
+}>(({ item, onSaveItem, onClose, editDisabled, config, assistantName }) => {
   const t = useTranslations("memory");
   const [isEditingMode, setIsEditingMode] = useState(item === null);
 
@@ -160,12 +161,12 @@ export const MemoryItemDialog = React.memo<{
     }
     if (config.assistantId) {
       options.push({
-        label: `${t("assistant")} (${config.assistantId})`,
+        label: `${t("assistant")} (${assistantName || config.assistantId})`,
         value: config.assistantId,
       });
     }
     return options;
-  }, [config, t]);
+  }, [config, t, assistantName]);
 
   return (
     <Dialog

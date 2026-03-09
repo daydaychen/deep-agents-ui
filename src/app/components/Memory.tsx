@@ -34,7 +34,10 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import type { StandaloneConfig } from "@/lib/config";
 
-export const Memory = React.memo<{ config: StandaloneConfig }>(({ config }) => {
+export const Memory = React.memo<{
+  config: StandaloneConfig;
+  assistantName?: string;
+}>(({ config, assistantName }) => {
   const t = useTranslations("memory");
   const {
     namespaces,
@@ -310,6 +313,7 @@ export const Memory = React.memo<{ config: StandaloneConfig }>(({ config }) => {
           onClose={handleCloseDialog}
           editDisabled={isPuttingItem || isDeletingItem}
           config={config}
+          assistantName={assistantName}
         />
       )}
 
