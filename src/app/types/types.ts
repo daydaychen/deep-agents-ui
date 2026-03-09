@@ -4,15 +4,18 @@ export interface ToolCall {
   args: Record<string, unknown>;
   result?: string;
   status: "pending" | "completed" | "error" | "interrupted";
+  subAgentMessages?: any[]; // Messages from subagents (for task tool calls)
 }
 
 export interface SubAgent {
   id: string;
   name: string;
-  subAgentName: string;
+  subAgentName: string; // The type/purpose from tool args
+  agentName?: string; // The semantic name from lc_agent_name metadata
   input: Record<string, unknown>;
   output?: Record<string, unknown>;
-  status: "pending" | "active" | "completed" | "error";
+  status: "pending" | "active" | "completed" | "error" | "interrupted";
+  messages?: any[]; // Messages from the subagent execution
 }
 
 export interface FileItem {
@@ -47,11 +50,19 @@ export interface ActionRequest {
 }
 
 export interface ReviewConfig {
-  actionName: string;
-  allowedDecisions?: string[];
+  action_name: string;
+  allowed_decisions?: string[];
 }
 
 export interface ToolApprovalInterruptData {
   action_requests: ActionRequest[];
   review_configs?: ReviewConfig[];
+}
+
+export interface MemoryItem {
+  namespace: string[];
+  key: string;
+  value: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
 }

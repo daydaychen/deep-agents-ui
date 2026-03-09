@@ -1,27 +1,14 @@
-import { Inter } from "next/font/google";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
-import { Toaster } from "sonner";
-import "./globals.css";
+import type { Metadata } from "next";
 
-const inter = Inter({ subsets: ["latin"] });
+export const metadata: Metadata = {
+  title: "Databus Pilot | AI Agent Interface",
+  description: "Advanced multi-agent orchestration and chat interface.",
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-    >
-      <body
-        className={inter.className}
-        suppressHydrationWarning
-      >
-        <NuqsAdapter>{children}</NuqsAdapter>
-        <Toaster />
-      </body>
-    </html>
-  );
+  return children;
 }

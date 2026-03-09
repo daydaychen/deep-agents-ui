@@ -22,12 +22,10 @@ function Tooltip({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
   return (
-    <TooltipProvider>
-      <TooltipPrimitive.Root
-        data-slot="tooltip"
-        {...props}
-      />
-    </TooltipProvider>
+    <TooltipPrimitive.Root
+      data-slot="tooltip"
+      {...props}
+    />
   );
 }
 
@@ -60,7 +58,7 @@ function TooltipContent({
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-primary fill-primary" />
+        <TooltipPrimitive.Arrow className="z-50 size-2.5 fill-primary" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );
