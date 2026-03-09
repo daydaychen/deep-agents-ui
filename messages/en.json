@@ -21,9 +21,9 @@
   },
   "page": {
     "title": "Databus Pilot | AI Agent Interface",
-    "description": "Advanced multi-agent orchestration and chat interface",
+    "description": "The intelligent Pilot for low-code scraping: Powering autonomous site analysis, configuration lifecycle, and incident resolution.",
     "welcome": {
-      "title": "Welcome to Standalone Chat",
+      "title": "Welcome to Databus Pilot",
       "description": "Configure your deployment to get started",
       "button": "Open Configuration"
     }
@@ -46,7 +46,7 @@
     "copyCode": "Copy Code",
     "coreExecution": "Core Execution",
     "inputPlaceholderLoading": "AI is processing…",
-    "inputPlaceholderDefault": "Send message to Deep Agent…",
+    "inputPlaceholderDefault": "Send message to Databus Pilot…",
     "messageLabel": "Message AI assistant",
     "runOptions": "Run Options",
     "runtimeConfiguration": "Runtime Configuration",

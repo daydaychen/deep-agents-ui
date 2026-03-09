@@ -303,15 +303,15 @@ export default function ChatPage() {
         />
         <div className="flex h-screen items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold">Welcome to Standalone Chat</h1>
+            <h1 className="text-2xl font-bold">{t("title")}</h1>
             <p className="mt-2 text-muted-foreground">
-              Configure your deployment to get started
+              {t("description")}
             </p>
             <Button
               onClick={() => setConfigDialogOpen(true)}
               className="mt-4"
             >
-              Open Configuration
+              {t("button")}
             </Button>
           </div>
         </div>

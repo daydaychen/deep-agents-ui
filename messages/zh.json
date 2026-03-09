@@ -21,18 +21,18 @@
   },
   "page": {
     "title": "Databus Pilot | AI Agent 界面",
-    "description": "高级多智能体编排和聊天界面",
+    "description": "赋能低代码抓取的智能 Pilot：实现从站点分析到配置自愈的全链路自动化运营。",
     "welcome": {
-      "title": "欢迎使用 Standalone Chat",
+      "title": "欢迎使用 Databus Pilot",
       "description": "配置您的部署以开始使用",
       "button": "打开配置"
     }
   },
   "header": {
-    "threads": "线程",
+    "threads": "会话",
     "memory": "记忆",
     "assistant": "助手",
-    "newThread": "新线程"
+    "newThread": "新会话"
   },
   "chat": {
     "inputPlaceholder": "输入消息…",
@@ -46,7 +46,7 @@
     "copyCode": "复制代码",
     "coreExecution": "核心执行",
     "inputPlaceholderLoading": "AI 正在处理…",
-    "inputPlaceholderDefault": "发送消息给 Deep Agent…",
+    "inputPlaceholderDefault": "发送消息给 Databus Pilot…",
     "messageLabel": "向 AI 助手发送消息",
     "runOptions": "运行选项",
     "runtimeConfiguration": "运行时配置",
@@ -85,7 +85,7 @@
     "selectFromList": "从列表选择",
     "enterManually": "手动输入",
     "deleteAssistant": "删除助手？",
-    "deleteAssistantDescription": "这将永久删除助手 <strong>{name}</strong> 及其所有关联线程。此操作无法撤销。",
+    "deleteAssistantDescription": "这将永久删除助手 <strong>{name}</strong> 及其所有关联会话。此操作无法撤销。",
     "delete": "删除",
     "deletePermanently": "永久删除",
     "assistantConfig": "助手配置（JSON）",
@@ -166,12 +166,12 @@
     "assistant": "助手"
   },
   "thread": {
-    "title": "线程",
-    "newThread": "新线程",
-    "deleteConfirm": "确定要删除此线程吗？",
-    "deleteSuccess": "线程删除成功",
-    "deleteError": "删除线程失败",
-    "loadError": "加载线程失败",
+    "title": "会话",
+    "newThread": "新会话",
+    "deleteConfirm": "确定要删除此会话吗？",
+    "deleteSuccess": "会话删除成功",
+    "deleteError": "删除会话失败",
+    "loadError": "加载会话失败",
     "status": {
       "idle": "空闲",
       "busy": "忙碌",
@@ -181,7 +181,7 @@
     "allStatuses": "所有状态",
     "active": "活跃",
     "attention": "需要注意",
-    "closeSidebar": "关闭线程侧边栏",
+    "closeSidebar": "关闭会话侧边栏",
     "loading": "加载中…",
     "loadMore": "加载更多",
     "noThreads": "暂无对话记录",
