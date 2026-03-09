@@ -10,6 +10,7 @@ import {
 import type { Message } from "@langchain/langgraph-sdk";
 import { Check, Edit, X } from "lucide-react";
 import React, { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface EditMessageProps {
   message: Message;
@@ -20,6 +21,8 @@ interface EditMessageProps {
 
 export const EditMessage = React.memo<EditMessageProps>(
   ({ message, onEdit, className, showText = true }) => {
+    const t = useTranslations("editMessage");
+    const [editing, setEditing] = useState(false);
     const [editing, setEditing] = useState(false);
     const [content, setContent] = useState(
       extractStringFromMessageContent(message)
@@ -84,7 +87,7 @@ export const EditMessage = React.memo<EditMessageProps>(
         >
           <Edit className="h-3 w-3" />
           {showText && (
-            <span className="transition-[background-color,color,opacity,transform] duration-200">Edit</span>
+            <span>{t("edit")}</span>
           )}
         </Button>
       );
@@ -97,7 +100,7 @@ export const EditMessage = React.memo<EditMessageProps>(
             {button}
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-[10px] px-2 py-1">
-            <span>Edit message</span>
+            <span>{t("editMessage")}</span>
           </TooltipContent>
         </Tooltip>
       );
@@ -124,7 +127,7 @@ export const EditMessage = React.memo<EditMessageProps>(
             style={{
               fieldSizing: "content",
             }}
-            placeholder="Edit your message…"
+            placeholder={t("editPlaceholder")}
             autoFocus
             rows={1}
           />
@@ -135,7 +138,10 @@ export const EditMessage = React.memo<EditMessageProps>(
               size="sm"
               onClick={handleCancel}
               className="h-7 gap-1 px-2 text-xs"
-              title="Cancel (Esc)"
+              title={t("cancelShortcut")}
+            >
+              <X className="h-3 w-3" />
+              <span>{t("cancel")}</span>
             >
               <X className="h-3 w-3" />
               <span>Cancel</span>
@@ -145,7 +151,10 @@ export const EditMessage = React.memo<EditMessageProps>(
               size="sm"
               disabled={!content.trim()}
               className="h-7 gap-1 px-2 text-xs"
-              title="Save (Enter)"
+              title={t("saveShortcut")}
+            >
+              <Check className="h-3 w-3" />
+              <span>{t("save")}</span>
             >
               <Check className="h-3 w-3" />
               <span>Save</span>

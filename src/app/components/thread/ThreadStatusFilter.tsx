@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import React from "react";
-
+import React from "react";
+import { useTranslations } from "next-intl";
 export type StatusFilter = "all" | "idle" | "busy" | "interrupted" | "error";
 
 const STATUS_COLORS: Record<ThreadItem["status"], string> = {
@@ -59,7 +60,10 @@ interface ThreadStatusFilterProps {
 }
 
 export const ThreadStatusFilter = React.memo<ThreadStatusFilterProps>(
+  export const ThreadStatusFilter = React.memo<ThreadStatusFilterProps>(
   ({ value, onChange, interruptedCount = 0 }) => {
+    const t = useTranslations("thread");
+    const tStatus = useTranslations("thread.status");
     return (
       <Select
         value={value}
@@ -69,7 +73,40 @@ export const ThreadStatusFilter = React.memo<ThreadStatusFilterProps>(
           <SelectValue />
         </SelectTrigger>
         <SelectContent align="end">
-          <SelectItem value="all">All statuses</SelectItem>
+          <SelectItem value="all">{t("allStatuses")}</SelectItem>
+          <SelectSeparator />
+          <SelectGroup>
+            <SelectLabel>{t("active")}</SelectLabel>
+            <SelectItem value="idle">
+              <StatusFilterItem
+                status="idle"
+                label={tStatus("idle")}
+              />
+            </SelectItem>
+            <SelectItem value="busy">
+              <StatusFilterItem
+                status="busy"
+                label={tStatus("busy")}
+              />
+            </SelectItem>
+          </SelectGroup>
+          <SelectSeparator />
+          <SelectGroup>
+            <SelectLabel>{t("attention")}</SelectLabel>
+            <SelectItem value="interrupted">
+              <StatusFilterItem
+                status="interrupted"
+                label={tStatus("interrupted")}
+                badge={interruptedCount}
+              />
+            </SelectItem>
+            <SelectItem value="error">
+              <StatusFilterItem
+                status="error"
+                label={tStatus("error")}
+              />
+            </SelectItem>
+          </SelectGroup>
           <SelectSeparator />
           <SelectGroup>
             <SelectLabel>Active</SelectLabel>

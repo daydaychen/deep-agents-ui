@@ -18,12 +18,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Item } from "@langchain/langgraph-sdk";
-import { Loader2, Plus, Brain, Trash2, AlertCircle, Search, Sparkles, Filter } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Brain,
+  Trash2,
+  AlertCircle,
+  Search,
+  Sparkles,
+  Filter,
+} from "lucide-react";
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export const Memory = React.memo(() => {
+  const t = useTranslations("memory");
   const {
     namespaces,
     isLoadingNamespaces,
@@ -55,7 +66,10 @@ export const Memory = React.memo(() => {
 
   const [selectedItem, setSelectedItem] = useState<MemoryItem | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ namespace: string[]; key: string } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{
+    namespace: string[];
+    key: string;
+  } | null>(null);
 
   const handleSaveItem = useCallback(
     async (
@@ -65,32 +79,35 @@ export const Memory = React.memo(() => {
     ) => {
       try {
         await putItem({ namespace, key, value });
-        toast.success("Item saved successfully");
+        toast.success(t("itemSaved"));
         setIsCreatingNew(false);
         setSelectedItem(null);
         mutateNamespaces();
         await refreshItems(namespace);
       } catch (error) {
-        toast.error(`Failed to save: ${error}`);
+        toast.error(t("saveFailed", { error: String(error) }));
         throw error;
       }
     },
-    [putItem, mutateNamespaces, refreshItems]
+    [putItem, mutateNamespaces, refreshItems, t]
   );
 
   const confirmDelete = useCallback(async () => {
     if (!itemToDelete) return;
-    
+
     try {
-      await deleteItem({ namespace: itemToDelete.namespace, key: itemToDelete.key });
-      toast.success("Item deleted successfully");
+      await deleteItem({
+        namespace: itemToDelete.namespace,
+        key: itemToDelete.key,
+      });
+      toast.success(t("itemDeleted"));
       mutateNamespaces();
       await refreshItems(itemToDelete.namespace);
       setItemToDelete(null);
     } catch (error) {
-      toast.error(`Failed to delete: ${error}`);
+      toast.error(t("deleteFailed", { error: String(error) }));
     }
-  }, [deleteItem, mutateNamespaces, refreshItems, itemToDelete]);
+  }, [deleteItem, mutateNamespaces, refreshItems, itemToDelete, t]);
 
   const handleDeleteItem = useCallback(
     (namespace: string[], key: string, event: React.MouseEvent) => {
@@ -132,7 +149,10 @@ export const Memory = React.memo(() => {
       setIsSearching(true);
       try {
         // Search globally across all namespaces (empty prefix)
-        const items = await searchItems([], { query: debouncedQuery, limit: 20 });
+        const items = await searchItems([], {
+          query: debouncedQuery,
+          limit: 20,
+        });
         setSearchResults(items);
       } catch (error) {
         console.error("Semantic search failed:", error);
@@ -154,50 +174,57 @@ export const Memory = React.memo(() => {
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Brain className="h-4 w-4 text-primary" />
-          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Long-term Memory</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+            {t("longTermMemory")}
+          </h2>
         </div>
         <Button
           onClick={handleCreateNew}
           variant="outline"
           size="sm"
-          className="h-7 border-dashed px-2.5 text-[11px] hover:bg-primary/5 hover:text-primary transition-colors"
+          className="hover:bg-primary/5 h-7 border-dashed px-2.5 text-[11px] transition-colors hover:text-primary"
           disabled={isPuttingItem || isDeletingItem}
         >
           <Plus
             size={12}
             className="mr-1"
           />
-          Add Entry
+          {t("addEntry")}
         </Button>
       </div>
 
-      <div className="relative group px-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+      <div className="group relative px-1">
+        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
         <Input
-          placeholder="Semantic search memories..."
+          placeholder={t("searchPlaceholder")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-9 pl-9 text-xs bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/30 transition-all shadow-sm"
+          className="h-9 border-none bg-muted/30 pl-9 text-xs shadow-sm transition-all focus-visible:ring-1 focus-visible:ring-primary/30"
         />
         {isSearching && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
         )}
       </div>
 
-      <ScrollArea className="h-full px-1 -mx-1">
+      <ScrollArea className="-mx-1 h-full px-1">
         {debouncedQuery ? (
           <div className="space-y-4 pb-4">
-            <div className="flex items-center gap-2 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-tighter">
+            <div className="flex items-center gap-2 px-2 text-[10px] font-semibold uppercase tracking-tighter text-muted-foreground">
               <Sparkles className="h-3 w-3 text-orange-400" />
-              Semantic Search Results
+              {t("semanticSearchResults")}
             </div>
             {isSearching ? (
               <div className="flex justify-center p-8">
-                <Loader2 size={20} className="animate-spin text-muted-foreground/30" />
+                <Loader2
+                  size={20}
+                  className="animate-spin text-muted-foreground/30"
+                />
               </div>
             ) : searchResults.length === 0 ? (
-              <div className="text-center p-8 opacity-60">
-                <p className="text-xs text-muted-foreground">No matching memories found</p>
+              <div className="p-8 text-center opacity-60">
+                <p className="text-xs text-muted-foreground">
+                  {t("noMatchingMemories")}
+                </p>
               </div>
             ) : (
               <div className="grid gap-2">
@@ -219,27 +246,35 @@ export const Memory = React.memo(() => {
             />
           </div>
         ) : namespaces.length === 0 ? (
-          <div className="flex flex-col h-full items-center justify-center p-8 text-center opacity-60">
-            <Brain size={32} className="mb-3 text-muted-foreground/30" />
-            <p className="text-xs text-muted-foreground">No memory entries found</p>
+          <div className="flex h-full flex-col items-center justify-center p-8 text-center opacity-60">
+            <Brain
+              size={32}
+              className="mb-3 text-muted-foreground/30"
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("noMemoryEntries")}
+            </p>
           </div>
         ) : (
           <div className="space-y-2 pb-4">
-            <div className="flex items-center gap-2 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-tighter">
+            <div className="flex items-center gap-2 px-2 text-[10px] font-semibold uppercase tracking-tighter text-muted-foreground">
               <Filter className="h-3 w-3" />
-              Hierarchical Namespaces
+              {t("hierarchicalNamespaces")}
             </div>
             <div className="grid gap-1.5">
               {sortedNamespaces.map((ns) => {
                 const namespaceStr = ns.namespace.join(".");
-                const isExpanded = selectedNamespace?.join(".") === namespaceStr;
+                const isExpanded =
+                  selectedNamespace?.join(".") === namespaceStr;
 
                 return (
                   <div
                     key={namespaceStr}
                     className={cn(
-                      "rounded-xl border border-border/40 overflow-hidden transition-all",
-                      isExpanded ? "bg-muted/10 border-primary/20 shadow-sm" : "hover:bg-muted/5"
+                      "overflow-hidden rounded-xl border border-border/40 transition-all",
+                      isExpanded
+                        ? "border-primary/20 bg-muted/10 shadow-sm"
+                        : "hover:bg-muted/5"
                     )}
                   >
                     <MemoryNamespaceItem
@@ -249,7 +284,7 @@ export const Memory = React.memo(() => {
                     />
 
                     {isExpanded && (
-                      <div className="px-3 pb-3 pt-1 border-t border-border/20 bg-background/40">
+                      <div className="border-t border-border/20 bg-background/40 px-3 pb-3 pt-1">
                         <MemoryItemsList
                           items={namespaceItems}
                           isLoading={isLoadingItems}
@@ -276,22 +311,43 @@ export const Memory = React.memo(() => {
         />
       )}
 
-      <Dialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+      <Dialog
+        open={!!itemToDelete}
+        onOpenChange={(open) => !open && setItemToDelete(null)}
+      >
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
-              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogTitle>{t("confirmDeletion")}</DialogTitle>
             </div>
-            <DialogDescription className="pt-2">
-              Are you sure you want to delete the entry <code className="text-xs font-mono bg-muted px-1 rounded">"{itemToDelete?.key}"</code>? This action cannot be undone.
-            </DialogDescription>
+            <DialogDescription
+              className="pt-2"
+              dangerouslySetInnerHTML={{
+                __html: t("deleteConfirm", { key: itemToDelete?.key }),
+              }}
+            />
           </DialogHeader>
           <DialogFooter className="mt-4">
-            <Button variant="ghost" size="sm" onClick={() => setItemToDelete(null)}>Cancel</Button>
-            <Button variant="destructive" size="sm" onClick={confirmDelete} disabled={isDeletingItem}>
-              {isDeletingItem ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Trash2 className="h-3 w-3 mr-2" />}
-              Delete Permanently
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setItemToDelete(null)}
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={confirmDelete}
+              disabled={isDeletingItem}
+            >
+              {isDeletingItem ? (
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-3 w-3" />
+              )}
+              {t("deletePermanently")}
             </Button>
           </DialogFooter>
         </DialogContent>

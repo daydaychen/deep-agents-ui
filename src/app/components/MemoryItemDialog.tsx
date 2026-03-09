@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import type { MemoryItem } from "@/app/types/types";
 import useSWRMutation from "swr/mutation";
-
+import useSWRMutation from "swr/mutation";
+import { useTranslations } from "next-intl";
 export const MemoryItemDialog = React.memo<{
   item: MemoryItem | null;
   onSaveItem: (
@@ -21,6 +22,8 @@ export const MemoryItemDialog = React.memo<{
   onClose: () => void;
   editDisabled: boolean;
 }>(({ item, onSaveItem, onClose, editDisabled }) => {
+  }>(({ item, onSaveItem, onClose, editDisabled }) => {
+  const t = useTranslations("memory");
   const [isEditingMode, setIsEditingMode] = useState(item === null);
   const [namespace, setNamespace] = useState(item?.namespace.join(".") || "");
   const [itemKey, setItemKey] = useState(item?.key || "");
@@ -38,7 +41,7 @@ export const MemoryItemDialog = React.memo<{
     },
     {
       onSuccess: () => setIsEditingMode(false),
-      onError: (error) => toast.error(`保存项目失败: ${error}`),
+      onError: (error) => toast.error(t("saveItemFailed", { error: String(error) })),
     }
   );
 
@@ -52,7 +55,7 @@ export const MemoryItemDialog = React.memo<{
   const handleCopy = useCallback(() => {
     if (itemValue) {
       navigator.clipboard.writeText(itemValue);
-      toast.success("已复制到剪贴板");
+      toast.success(t("copiedToClipboard"));
     }
   }, [itemValue]);
 
@@ -104,7 +107,7 @@ export const MemoryItemDialog = React.memo<{
     >
       <DialogContent className="flex h-[80vh] max-h-[80vh] min-w-[60vw] flex-col p-6">
         <DialogTitle className="sr-only">
-          {item ? `${item.namespace.join(".")}.${item.key}` : "新建项目"}
+          {item ? `${item.namespace.join(".")}.${item.key}` : t("newItemTitle")}
         </DialogTitle>
         <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -114,14 +117,14 @@ export const MemoryItemDialog = React.memo<{
                 <Input
                   value={namespace}
                   onChange={(e) => setNamespace(e.target.value)}
-                  placeholder="命名空间 (例如: user.preferences)"
+                  placeholder={t("namespacePlaceholderShort")}
                   className="flex-1 text-sm"
                   aria-invalid={!namespace.trim()}
                 />
                 <Input
                   value={itemKey}
                   onChange={(e) => setItemKey(e.target.value)}
-                  placeholder="键名"
+                  placeholder={t("keyPlaceholderShort")}
                   className="flex-1 text-sm"
                   aria-invalid={!itemKey.trim()}
                 />
@@ -146,7 +149,7 @@ export const MemoryItemDialog = React.memo<{
                     size={16}
                     className="mr-1"
                   />
-                  编辑
+                  {t("edit")}
                 </Button>
                 <Button
                   onClick={handleCopy}
@@ -158,7 +161,7 @@ export const MemoryItemDialog = React.memo<{
                     size={16}
                     className="mr-1"
                   />
-                  复制
+                  {t("copy")}
                 </Button>
                 <Button
                   onClick={handleDownload}
@@ -170,7 +173,7 @@ export const MemoryItemDialog = React.memo<{
                     size={16}
                     className="mr-1"
                   />
-                  下载
+                  {t("download")}
                 </Button>
               </>
             )}
@@ -181,7 +184,7 @@ export const MemoryItemDialog = React.memo<{
             <Textarea
               value={itemValue}
               onChange={(e) => setItemValue(e.target.value)}
-              placeholder='输入 JSON 值 (例如: {"key": "value"})'
+              placeholder={t("jsonPlaceholder")}
               className="h-full min-h-[400px] resize-none font-mono text-sm"
             />
           ) : (
@@ -193,7 +196,7 @@ export const MemoryItemDialog = React.memo<{
                   </pre>
                 ) : (
                   <div className="flex items-center justify-center p-12">
-                    <p className="text-sm text-muted-foreground">项目为空</p>
+                    <p className="text-sm text-muted-foreground">{t("itemEmpty")}</p>
                   </div>
                 )}
               </div>
@@ -211,7 +214,7 @@ export const MemoryItemDialog = React.memo<{
                 size={16}
                 className="mr-1"
               />
-              取消
+              {t("cancel")}
             </Button>
             <Button
               onClick={() => itemUpdate.trigger()}
@@ -229,7 +232,7 @@ export const MemoryItemDialog = React.memo<{
                   className="mr-1"
                 />
               )}
-              保存
+              {t("save")}
             </Button>
           </div>
         )}

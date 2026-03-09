@@ -21,7 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { TodoItem, FileItem } from "@/app/types/types";
 import { useChatState } from "@/providers/chat-context";
 import { cn } from "@/lib/utils";
-import { FileViewDialog } from "@/app/components/FileViewDialog";
+import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function FilesPopover({
   files,
@@ -31,7 +32,13 @@ export function FilesPopover({
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
   editDisabled: boolean;
+}: {
+  files: Record<string, string>;
+  setFiles: (files: Record<string, string>) => Promise<void>;
+  editDisabled: boolean;
 }) {
+  const t = useTranslations("tasks");
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
 
   const handleSaveFile = useCallback(
@@ -47,7 +54,7 @@ export function FilesPopover({
       {Object.keys(files).length === 0 ? (
         <div className="flex flex-col h-full items-center justify-center p-6 text-center opacity-50">
           <FolderTree size={24} className="mb-2 text-muted-foreground/30" />
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">No files created</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("noFiles")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-1.5 p-1">
@@ -87,7 +94,7 @@ export function FilesPopover({
                     {filePath}
                   </div>
                   <div className="truncate text-[10px] text-muted-foreground">
-                    {fileContent.length} characters
+                    {fileContent.length} {t("characters")}
                   </div>
                 </div>
                 <ExternalLink size={12} className="text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-[color,opacity]" />
@@ -113,7 +120,13 @@ export const TasksFilesSidebar = React.memo<{
   todos: TodoItem[];
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
+export const TasksFilesSidebar = React.memo<{
+  todos: TodoItem[];
+  files: Record<string, string>;
+  setFiles: (files: Record<string, string>) => Promise<void>;
 }>(({ todos, files, setFiles }) => {
+  const t = useTranslations("tasks");
+  const { isLoading, interrupt } = useChatState();
   const { isLoading, interrupt } = useChatState();
   const [tasksOpen, setTasksOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(true);
@@ -174,6 +187,10 @@ export const TasksFilesSidebar = React.memo<{
   }, [todos]);
 
   const groupedLabels = {
+    pending: t("pending"),
+    in_progress: t("inProgress"),
+    completed: t("completed"),
+  };
     pending: "Pending",
     in_progress: "In Progress",
     completed: "Completed",
@@ -191,7 +208,7 @@ export const TasksFilesSidebar = React.memo<{
             <div className="flex items-center gap-2">
               <LayoutList size={16} className={cn("transition-colors", tasksOpen ? "text-primary" : "text-muted-foreground")} />
               <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-foreground/80">
-                Agent Tasks
+                {t("title")}
               </span>
               {todos.length > 0 && (
                 <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-bold">
@@ -210,7 +227,7 @@ export const TasksFilesSidebar = React.memo<{
               {todos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center opacity-50">
                   <LayoutList size={20} className="mb-2 text-muted-foreground/30" />
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">No tasks assigned</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("noTasks")}</p>
                 </div>
               ) : (
                 <div className="space-y-4 pb-4">
@@ -218,7 +235,7 @@ export const TasksFilesSidebar = React.memo<{
                     groupTodos.length > 0 && (
                       <div key={status} className="space-y-1.5">
                         <h3 className="flex items-center gap-2 px-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                          {groupedLabels[status as keyof typeof groupedLabels]}
+                        {groupedLabels[status as keyof typeof groupedLabels]}
                         </h3>
                         {groupTodos.map((todo, index) => (
                           <div
@@ -255,7 +272,7 @@ export const TasksFilesSidebar = React.memo<{
             <div className="flex items-center gap-2">
               <FolderTree size={16} className={cn("transition-colors", filesOpen ? "text-primary" : "text-muted-foreground")} />
               <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-foreground/80">
-                File System
+                {t("fileSystem")}
               </span>
               {Object.keys(files).length > 0 && (
                 <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-bold">
