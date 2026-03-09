@@ -217,7 +217,7 @@ Max Concurrent: 10 (Wave 4)
 
 ---
 
-- [ ] 1. Install next-intl & configure package.json
+- [x] 1. Install next-intl & configure package.json
 
   **What to do**:
   - Install `next-intl` v4: `yarn add next-intl`
@@ -259,7 +259,7 @@ Max Concurrent: 10 (Wave 4)
   - Message: `feat(i18n): install next-intl dependency`
   - Files: `package.json`, `yarn.lock`
 
-- [ ] 2. Create i18n routing configuration
+- [x] 2. Create i18n routing configuration
 
   **What to do**:
   - Create `src/i18n/routing.ts` with routing configuration
@@ -304,7 +304,7 @@ Max Concurrent: 10 (Wave 4)
 
   **Commit**: YES (与 Task 1 一起)
 
-- [ ] 3. Create i18n request configuration
+- [x] 3. Create i18n request configuration
 
   **What to do**:
   - Create `src/i18n/request.ts`
@@ -346,7 +346,7 @@ Max Concurrent: 10 (Wave 4)
 
   **Commit**: YES (与 Task 1 一起)
 
-- [ ] 4. Create i18n navigation helpers
+- [x] 4. Create i18n navigation helpers
 
   **What to do**:
   - Create `src/i18n/navigation.ts`
@@ -386,7 +386,7 @@ Max Concurrent: 10 (Wave 4)
 
   **Commit**: YES (与 Task 1 一起)
 
-- [ ] 5. Create proxy middleware for locale detection
+- [x] 5. Create proxy middleware for locale detection
 
   **What to do**:
   - Create `src/proxy.ts` (middleware)
@@ -428,7 +428,7 @@ Max Concurrent: 10 (Wave 4)
 
   **Commit**: YES (与 Task 1 一起)
 
-- [ ] 6. Create TypeScript types augmentation
+- [x] 6. Create TypeScript types augmentation
 
   **What to do**:
   - Create `src/types/i18n.d.ts`
@@ -598,7 +598,7 @@ yarn dev
 | `src/app/[locale]/layout.tsx`         | 本地化感知布局                          |
 | `src/components/LanguageSwitcher.tsx` | 语言切换器                              |
 
-- [ ] 7. Update next.config.ts for i18n plugin
+- [x] 7. Update next.config.ts for i18n plugin
 
   **What to do**:
   - 修改 `next.config.ts`
@@ -640,7 +640,7 @@ yarn dev
 
   **Commit**: YES (与 Wave 1 一起)
 
-- [ ] 8. Create Chinese translations file (zh.json)
+- [x] 8. Create Chinese translations file (zh.json)
 
   **What to do**:
   - Create `messages/zh.json`
@@ -684,7 +684,7 @@ yarn dev
   **Commit**: YES
   - Message: `feat(i18n): add Chinese translations`
 
-- [ ] 9. Create English translations file (en.json)
+- [x] 9. Create English translations file (en.json)
 
   **What to do**:
   - Create `messages/en.json`
@@ -725,7 +725,7 @@ yarn dev
 
   **Commit**: YES (与 Task 8 一起)
 
-- [ ] 10. Move layout.tsx to [locale] dynamic segment
+- [x] 10. Move layout.tsx to [locale] dynamic segment
 
   **What to do**:
   - 创建 `src/app/[locale]/layout.tsx`
@@ -768,7 +768,7 @@ yarn dev
   **Commit**: YES
   - Message: `feat(i18n): add locale-aware layout`
 
-- [ ] 11. Create LanguageSwitcher component
+- [x] 11. Create LanguageSwitcher component
 
   **What to do**:
   - Create `src/components/LanguageSwitcher.tsx`
@@ -820,7 +820,7 @@ yarn dev
 
 ### Wave 3: 页面迁移与核心组件 (After Wave 2)
 
-- [ ] 12. Move page.tsx to [locale] dynamic segment
+- [x] 12. Move page.tsx to [locale] dynamic segment
 
   **What to do**:
   - 移动 `src/app/page.tsx` → `src/app/[locale]/page.tsx`
@@ -863,7 +863,7 @@ yarn dev
   **Commit**: YES
   - Message: `feat(i18n): move page to locale route`
 
-- [ ] 13. Add LanguageSwitcher to header
+- [x] 13. Add LanguageSwitcher to header
 
   **What to do**:
   - 修改 `src/app/[locale]/page.tsx`
