@@ -108,7 +108,7 @@ function HomePageInner({
         currentDeploymentUrl={config.deploymentUrl}
       />
       <div className="flex h-screen flex-col">
-        <header className="sticky top-4 left-4 right-4 z-sticky mx-4 flex h-16 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 backdrop-blur-md shadow-lg sm:px-4 md:px-6">
+        <header className="sticky top-4 left-4 right-4 z-40 mx-4 flex h-16 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 backdrop-blur-md shadow-lg sm:px-4 md:px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">{tCommon("appName")}</h1>
             {!sidebar && (
@@ -149,7 +149,7 @@ function HomePageInner({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <div className="text-sm text-muted-foreground">
+            <div className="hidden max-w-[160px] truncate text-sm text-muted-foreground sm:block md:max-w-[240px]">
               <span className="font-medium">{t("assistant")}:</span>{" "}
               {assistant?.name || config.assistantId}
               {assistant?.name && assistant.name !== assistant.assistant_id && (
