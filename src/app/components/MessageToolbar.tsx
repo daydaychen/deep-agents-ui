@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { COPY_SUCCESS_DURATION_MS } from "@/lib/constants";
 import { AIMessage } from "@langchain/langgraph-sdk";
 import { Check, Copy, Cpu, RotateCcw, Zap } from "lucide-react";
 import React, { useCallback, useState } from "react";
@@ -77,7 +78,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
           .then(() => {
             setCopySuccess(true);
             // Reset success state after 2 seconds
-            setTimeout(() => setCopySuccess(false), 2000);
+            setTimeout(() => setCopySuccess(false), COPY_SUCCESS_DURATION_MS);
           })
           .catch((err) => {
             console.error("Failed to copy message:", err);

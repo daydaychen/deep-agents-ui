@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getConfig, saveConfig, StandaloneConfig } from "@/lib/config";
+import { DEFAULT_MESSAGE_LIMIT } from "@/lib/constants";
 import { ChatProvider } from "@/providers/ChatProvider";
 import { ClientProvider } from "@/providers/ClientProvider";
 import { useClient } from "@/providers/client-context";
@@ -46,7 +47,7 @@ const fetchAssistant = async ([, id]: [string, string], client: ReturnType<typeo
     } else {
       const assistants = await client.assistants.search({
         graphId: id,
-        limit: 100,
+        limit: DEFAULT_MESSAGE_LIMIT,
       });
       const defaultAssistant = assistants.find(
         (a) => a.metadata?.["created_by"] === "system"

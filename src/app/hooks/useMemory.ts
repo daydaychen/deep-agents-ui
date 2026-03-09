@@ -1,6 +1,7 @@
 "use client";
 
 import { useClient } from "@/providers/client-context";
+import { DEFAULT_MEMORY_LIMIT } from "@/lib/constants";
 import { useCallback } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
@@ -22,7 +23,7 @@ export function useMemory() {
     { kind: "memory-namespaces" },
     async () => {
       const result = await client.store.listNamespaces({
-        limit: 100,
+        limit: DEFAULT_MEMORY_LIMIT,
         offset: 0,
       });
       // result.namespaces is string[][]

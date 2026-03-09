@@ -1,4 +1,5 @@
 import { getConfig } from "@/lib/config";
+import { THREAD_TITLE_MAX_LENGTH, DEFAULT_THREAD_LIMIT } from "@/lib/constants";
 import type { Thread } from "@langchain/langgraph-sdk";
 import { Client } from "@langchain/langgraph-sdk";
 import useSWRInfinite from "swr/infinite";
@@ -100,7 +101,7 @@ export function useThreads(props: {
                 typeof firstHumanMessage.content === "string"
                   ? firstHumanMessage.content
                   : firstHumanMessage.content[0]?.text || "";
-              title = content.slice(0, 50) + (content.length > 50 ? "…" : "");
+              title = content.slice(0, THREAD_TITLE_MAX_LENGTH) + (content.length > THREAD_TITLE_MAX_LENGTH ? "…" : "");
             }
             const firstAiMessage = values.messages.find(
               (m: any) => m.type === "ai"
@@ -110,7 +111,7 @@ export function useThreads(props: {
                 typeof firstAiMessage.content === "string"
                   ? firstAiMessage.content
                   : firstAiMessage.content[0]?.text || "";
-              description = content.slice(0, 100);
+              description = content.slice(0, DEFAULT_THREAD_LIMIT);
             }
           }
         } catch {

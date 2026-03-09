@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { cn } from "@/lib/utils";
+import { COPY_SUCCESS_DURATION_MS } from "@/lib/constants";
 import { Check, Copy } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -21,7 +22,7 @@ const CopyButton = ({ text }: { text: string }) => {
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), COPY_SUCCESS_DURATION_MS);
     });
   }, [text]);
 

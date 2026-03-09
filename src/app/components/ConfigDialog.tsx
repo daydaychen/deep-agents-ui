@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StandaloneConfig } from "@/lib/config";
+import { DEFAULT_MESSAGE_LIMIT } from "@/lib/constants";
 import { Client } from "@langchain/langgraph-sdk";
 import type { Assistant } from "@langchain/langgraph-sdk";
 import { toast } from "sonner";
@@ -109,7 +110,7 @@ export function ConfigDialog({
         });
 
         const assistantsList = await client.assistants.search({
-          limit: 100,
+          limit: DEFAULT_MESSAGE_LIMIT,
         });
 
         setAssistants(assistantsList);
