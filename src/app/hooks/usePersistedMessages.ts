@@ -119,8 +119,10 @@ export function usePersistedMessages(
   const batchSaveToIndexedDB = useCallback(
     async (messagesMap: Map<string, Message[]>) => {
       if (!threadId || !dbRef.current || messagesMap.size === 0) return;
+
+      let transaction: IDBTransaction | null = null;
       try {
-        const transaction = dbRef.current.transaction([STORE_NAME], "readwrite");
+        transaction = dbRef.current.transaction([STORE_NAME], "readwrite");
         const store = transaction.objectStore(STORE_NAME);
         const now = Date.now();
         messagesMap.forEach((msgs, toolCallId) => {
@@ -136,8 +138,16 @@ export function usePersistedMessages(
             });
           });
         });
+        // Wait for transaction to complete
+        await new Promise<void>((resolve, reject) => {
+          transaction!.oncomplete = () => resolve();
+          transaction!.onerror = () => reject(transaction!.error);
+        });
       } catch (error) {
         console.error("Failed to batch save subagent messages:", error);
+      } finally {
+        // Transaction will auto-close, but ensure null check for TypeScript
+        transaction = null;
       }
     },
     [threadId]
@@ -148,8 +158,9 @@ export function usePersistedMessages(
     const db = await dbReadyPromiseRef.current;
     if (!db) return new Map();
 
+    let transaction: IDBTransaction | null = null;
     try {
-      const transaction = db.transaction([STORE_NAME], "readonly");
+      transaction = db.transaction([STORE_NAME], "readonly");
       const store = transaction.objectStore(STORE_NAME);
       const index = store.index("threadId");
       const result = await new Promise<PersistedSubagentMessage[]>((resolve, reject) => {
@@ -167,6 +178,9 @@ export function usePersistedMessages(
       return subagentMap;
     } catch {
       return new Map();
+    } finally {
+      // Ensure transaction is closed
+      transaction = null;
     }
   }, [threadId]);
 
