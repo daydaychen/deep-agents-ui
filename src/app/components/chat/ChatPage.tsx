@@ -106,7 +106,7 @@ function HomePageInner({
         currentDeploymentUrl={config.deploymentUrl}
       />
       <div className="flex h-screen flex-col">
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur-md sm:px-4 md:px-6">
+        <header className="sticky top-4 left-4 right-4 z-sticky mx-4 flex h-16 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 backdrop-blur-md shadow-lg sm:px-4 md:px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">{tCommon("appName")}</h1>
             {!sidebar && (

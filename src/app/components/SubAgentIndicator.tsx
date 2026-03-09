@@ -109,7 +109,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             type="button"
             onClick={onToggleExpand}
             className={cn(
-              "flex flex-1 items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-200 min-w-0",
+              "flex flex-1 items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-200 min-w-0 cursor-pointer",
               "hover:bg-muted/30 active:bg-muted/50"
             )}
           >
@@ -159,9 +159,9 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                 onShowLogs();
               }}
               className={cn(
-                "h-9 w-9 rounded-xl transition-[background-color,border-color,color,transform,opacity] duration-300",
-                isActiveInSidebar 
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 scale-105" 
+                "h-9 w-9 rounded-xl cursor-pointer transition-[background-color,border-color,color,opacity] duration-200",
+                isActiveInSidebar
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-xl"
                   : "text-muted-foreground hover:bg-muted hover:text-primary"
               )}
               title="View Internal Core Trace"

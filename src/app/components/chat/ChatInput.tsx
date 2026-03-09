@@ -581,7 +581,8 @@ export const ChatInput = React.memo<ChatInputProps>(
                   size="sm"
                   variant="ghost"
                   onClick={onStop}
-                  className="h-7 gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-2xs font-bold text-destructive transition-[background-color,color,opacity,transform] hover:bg-destructive/10"
+                  disabled={!isLoading}
+                  className="h-7 gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-2xs font-bold text-destructive transition-[background-color,color,opacity,transform] hover:bg-destructive/10 cursor-pointer"
                 >
                   <Square
                     size={10}
@@ -595,9 +596,9 @@ export const ChatInput = React.memo<ChatInputProps>(
                   size="icon-sm"
                   disabled={submitDisabled || !hasInput}
                   className={cn(
-                    "rounded-xl transition-[background-color,border-color,color,transform,opacity] duration-500",
+                    "rounded-xl will-change-[box-shadow,filter] cursor-pointer transition-[background-color,border-color,color,box-shadow,filter,opacity] duration-200",
                     hasInput
-                      ? "text-primary-foreground bg-primary shadow-lg shadow-primary/20 hover:scale-110 active:scale-90"
+                      ? "text-primary-foreground bg-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:brightness-110 active:brightness-90"
                       : "bg-muted text-muted-foreground/20 opacity-30"
                   )}
                 >

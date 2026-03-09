@@ -126,6 +126,7 @@ export const EditMessage = React.memo<EditMessageProps>(
               fieldSizing: "content",
             }}
             placeholder={t("editPlaceholder")}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
             rows={1}
           />

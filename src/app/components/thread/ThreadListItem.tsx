@@ -54,6 +54,14 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
             : "border border-transparent bg-transparent"
         )}
         onClick={() => onSelect(thread.id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(thread.id);
+          }
+        }}
+        role="button"
+        tabIndex={0}
         aria-current={isActive}
       >
         <div className="min-w-0 flex-1">

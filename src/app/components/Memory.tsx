@@ -330,9 +330,9 @@ export const Memory = React.memo<{
             <DialogDescription
               className="pt-2 break-words"
               dangerouslySetInnerHTML={{
-                __html: t("deleteConfirm", { 
-                  key: itemToDelete?.key,
-                  code: (chunks: any) => `<code class="break-all whitespace-pre-wrap">${chunks}</code>`
+                __html: t("deleteConfirm", {
+                  key: itemToDelete?.key ?? "",
+                  code: `<code class="break-all whitespace-pre-wrap">${itemToDelete?.key ?? ""}</code>`
                 }),
               }}
             />

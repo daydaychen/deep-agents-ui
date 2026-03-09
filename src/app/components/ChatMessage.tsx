@@ -119,7 +119,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
         <div className="flex flex-shrink-0 flex-col items-center pt-0.5">
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-xl border shadow-sm transition-[background-color,border-color,color,box-shadow,transform] duration-300",
+              "flex h-8 w-8 items-center justify-center rounded-xl border shadow-sm cursor-pointer transition-[background-color,border-color,color,box-shadow] duration-200",
               isUser
                 ? "bg-zinc-900 border-zinc-800 text-white dark:bg-zinc-100 dark:border-zinc-200 dark:text-zinc-900"
                 : "bg-primary/10 border-primary/20 text-primary shadow-primary/5"

@@ -28,6 +28,14 @@ export const MemoryItemCard = React.memo<MemoryItemCardProps>(
       <div
         className="group relative cursor-pointer space-y-2 rounded-md border border-border px-3 py-3 shadow-sm transition-colors hover:bg-accent"
         onClick={() => onSelect(item)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(item);
+          }
+        }}
+        role="button"
+        tabIndex={0}
       >
         <div className="flex items-center justify-between">
           <Database

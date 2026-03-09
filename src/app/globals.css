@@ -29,11 +29,11 @@
     --color-background: #f9f9f9;
     --color-subagent-hover: #bbc4c4;
     --color-surface: #f9fafb;
-    --color-border: #e5e7eb;
+    --color-border: #d1d5db;
     --color-border-light: #f3f4f6;
     --color-text-primary: #111827;
-    --color-text-secondary: #6b7280;
-    --color-text-tertiary: #9ca3af;
+    --color-text-secondary: #4b5563;
+    --color-text-tertiary: #6b7280;
     --color-file-button: #ffffff;
     --color-file-button-hover: #e5e7eb;
 
@@ -406,4 +406,51 @@ button {
   font-weight: 600;
   text-decoration: line-through;
   text-decoration-color: #f85149;
+}
+
+/* ========================================
+   Accessibility: Focus Visible & Reduced Motion
+   ======================================== */
+
+/* Focus visible pattern for keyboard navigation */
+button:focus,
+a:focus,
+[role="button"]:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Remove ring for mouse clicks in modern browsers */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Keyboard-specific focus ring with Windows High Contrast Mode compatibility */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Disable brightness filters on touch devices for performance */
+@media (hover: none) {
+  .hover\:brightness-110 {
+    filter: none !important;
+  }
 }

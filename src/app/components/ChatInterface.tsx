@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import { ChatInput } from "@/app/components/chat/ChatInput";
 import { TasksSection } from "@/app/components/chat/TasksSection";
 import { SubAgentPanel } from "@/app/components/message/SubAgentPanel";
+import { MessageSkeleton } from "@/app/components/ui/message-skeleton";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { useThrottledValue } from "@/app/hooks/useThrottledValue";
 import type { ActionRequest, ReviewConfig } from "@/app/types/types";
@@ -159,23 +160,14 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             >
               <div
                 className={cn(
-                  "mx-auto w-full transition-[padding,max-width,opacity,transform] duration-300 ease-in-out px-3 pb-4 pt-2 md:px-4 max-w-[900px]"
+                  "mx-auto w-full transition-[padding,max-width,opacity] duration-200 ease-in-out px-3 pb-4 pt-2 md:px-4 max-w-[900px]"
                 )}
                 ref={contentRef}
               >
                 {isThreadLoading && processedMessages.length === 0 ? (
                   <div className="flex flex-col gap-4 p-6">
                     {loadingSkeletons.map((i) => (
-                      <div key={i} className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className="h-7 w-7 rounded-lg bg-muted animate-pulse" />
-                          <div className="h-3.5 w-20 bg-muted animate-pulse rounded" />
-                        </div>
-                        <div className="space-y-1.5 ml-10">
-                          <div className="h-3.5 w-full bg-muted animate-pulse rounded" />
-                          <div className="h-3.5 w-[80%] bg-muted animate-pulse rounded" />
-                        </div>
-                      </div>
+                      <MessageSkeleton key={i} />
                     ))}
                   </div>
                 ) : (
@@ -236,7 +228,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
             {/* Input Container */}
             <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-3 sm:px-4">
-              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow,transform] duration-500 focus-within:border-primary/30 focus-within:shadow-primary/10">
+              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow] duration-200 focus-within:border-primary/30 focus-within:shadow-primary/10">
                 <TasksSection
                   todos={todos}
                   files={files}
