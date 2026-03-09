@@ -19,9 +19,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, MessageSquare, X } from "lucide-react";
 import { useQueryState } from "nuqs";
+import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function ErrorState({ message }: { message: string }) {
+  const t = useTranslations("thread");
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      <p className="text-sm text-red-600">{t("loadThreadsFailed")}</p>
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
       <p className="text-sm text-red-600">加载对话失败</p>
@@ -44,6 +50,11 @@ function LoadingState() {
 }
 
 function EmptyState() {
+  const t = useTranslations("thread");
+  return (
+    <div className="flex flex-col items-center justify-center p-12 text-center opacity-50">
+      <MessageSquare className="mb-4 h-10 w-10 text-muted-foreground/30" />
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{t("noThreads")}</p>
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center opacity-50">
       <MessageSquare className="mb-4 h-10 w-10 text-muted-foreground/30" />
@@ -60,6 +71,12 @@ interface ThreadListProps {
 }
 
 export function ThreadList({
+  onThreadSelect,
+  onMutateReady,
+  onClose,
+  onInterruptCountChange,
+}: ThreadListProps) {
+  const t = useTranslations("thread");
   onThreadSelect,
   onMutateReady,
   onClose,
@@ -156,7 +173,7 @@ export function ThreadList({
       <div className="flex flex-shrink-0 items-center justify-between border-b border-border/50 px-5 py-4">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">Threads</h2>
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">{t("title")}</h2>
         </div>
         <div className="flex items-center gap-3">
           <ThreadStatusFilter
@@ -170,7 +187,7 @@ export function ThreadList({
               size="icon"
               onClick={onClose}
               className="h-7 w-7 rounded-full hover:bg-muted"
-              aria-label="Close threads sidebar"
+              aria-label={t("closeSidebar")}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -213,10 +230,10 @@ export function ThreadList({
                   {isLoadingMore ? (
                     <>
                       <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      加载中...
+                      {t("loading")}
                     </>
                   ) : (
-                    "加载更多"
+                    {t("loadMore")}
                   )}
                 </Button>
               </div>

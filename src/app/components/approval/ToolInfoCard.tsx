@@ -4,6 +4,7 @@ import { ArgumentEditor } from "@/app/components/approval/ArgumentEditor";
 import type { ActionRequest } from "@/app/types/types";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface ToolInfoCardProps {
   actionRequest: ActionRequest;
@@ -14,13 +15,18 @@ interface ToolInfoCardProps {
 }
 
 export const ToolInfoCard = React.memo<ToolInfoCardProps>(
+  export const ToolInfoCard = React.memo<ToolInfoCardProps>(
   ({ actionRequest, isEditing, editedArgs, onUpdateArg, isLoading }) => {
+    const t = useTranslations("approval");
+    const [isExpanded, setIsExpanded] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
       <div className="mb-4 rounded-sm border border-border bg-background p-3">
         <div className="mb-2">
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {t("tool")}
+          </span>
             Tool
           </span>
           <p className="mt-1 font-mono text-sm font-medium text-foreground">
@@ -46,7 +52,7 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
               ) : (
                 <ChevronRight size={14} />
               )}
-              Arguments
+              {t("arguments")}
             </button>
             {isExpanded && (
               <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded-sm border border-border bg-muted/40 p-2 font-mono text-xs text-foreground">

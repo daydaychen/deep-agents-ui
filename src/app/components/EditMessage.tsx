@@ -23,7 +23,6 @@ export const EditMessage = React.memo<EditMessageProps>(
   ({ message, onEdit, className, showText = true }) => {
     const t = useTranslations("editMessage");
     const [editing, setEditing] = useState(false);
-    const [editing, setEditing] = useState(false);
     const [content, setContent] = useState(
       extractStringFromMessageContent(message)
     );
@@ -80,15 +79,13 @@ export const EditMessage = React.memo<EditMessageProps>(
           size={showText ? "sm" : "icon"}
           onClick={() => setEditing(true)}
           className={
-            showText 
+            showText
               ? "group h-7 gap-1 px-2 text-xs text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground"
               : "h-6 w-6 rounded-full text-muted-foreground transition-all duration-200 hover:bg-accent/60 hover:text-foreground"
           }
         >
           <Edit className="h-3 w-3" />
-          {showText && (
-            <span>{t("edit")}</span>
-          )}
+          {showText && <span>{t("edit")}</span>}
         </Button>
       );
 
@@ -96,10 +93,11 @@ export const EditMessage = React.memo<EditMessageProps>(
 
       return (
         <Tooltip>
-          <TooltipTrigger asChild>
-            {button}
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-[10px] px-2 py-1">
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipContent
+            side="bottom"
+            className="px-2 py-1 text-[10px]"
+          >
             <span>{t("editMessage")}</span>
           </TooltipContent>
         </Tooltip>
@@ -142,9 +140,6 @@ export const EditMessage = React.memo<EditMessageProps>(
             >
               <X className="h-3 w-3" />
               <span>{t("cancel")}</span>
-            >
-              <X className="h-3 w-3" />
-              <span>Cancel</span>
             </Button>
             <Button
               type="submit"
@@ -155,9 +150,6 @@ export const EditMessage = React.memo<EditMessageProps>(
             >
               <Check className="h-3 w-3" />
               <span>{t("save")}</span>
-            >
-              <Check className="h-3 w-3" />
-              <span>Save</span>
             </Button>
           </div>
         </form>

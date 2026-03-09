@@ -2,7 +2,8 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import React from "react";
-
+import React from "react";
+import { useTranslations } from "next-intl";
 interface ArgumentEditorProps {
   args: Record<string, unknown>;
   editedArgs: Record<string, unknown>;
@@ -11,10 +12,15 @@ interface ArgumentEditorProps {
 }
 
 export const ArgumentEditor = React.memo<ArgumentEditorProps>(
+  export const ArgumentEditor = React.memo<ArgumentEditorProps>(
   ({ args, editedArgs, onUpdate, isLoading }) => {
+    const t = useTranslations("approval");
+    return (
     return (
       <div>
         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {t("editArguments")}
+        </span>
           Edit Arguments
         </span>
         <div className="mt-2 space-y-3">

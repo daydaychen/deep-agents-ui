@@ -10,8 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import type { MemoryItem } from "@/app/types/types";
 import useSWRMutation from "swr/mutation";
-import useSWRMutation from "swr/mutation";
 import { useTranslations } from "next-intl";
+
 export const MemoryItemDialog = React.memo<{
   item: MemoryItem | null;
   onSaveItem: (
@@ -22,7 +22,6 @@ export const MemoryItemDialog = React.memo<{
   onClose: () => void;
   editDisabled: boolean;
 }>(({ item, onSaveItem, onClose, editDisabled }) => {
-  }>(({ item, onSaveItem, onClose, editDisabled }) => {
   const t = useTranslations("memory");
   const [isEditingMode, setIsEditingMode] = useState(item === null);
   const [namespace, setNamespace] = useState(item?.namespace.join(".") || "");
@@ -41,7 +40,8 @@ export const MemoryItemDialog = React.memo<{
     },
     {
       onSuccess: () => setIsEditingMode(false),
-      onError: (error) => toast.error(t("saveItemFailed", { error: String(error) })),
+      onError: (error) =>
+        toast.error(t("saveItemFailed", { error: String(error) })),
     }
   );
 
@@ -57,7 +57,7 @@ export const MemoryItemDialog = React.memo<{
       navigator.clipboard.writeText(itemValue);
       toast.success(t("copiedToClipboard"));
     }
-  }, [itemValue]);
+  }, [itemValue, t]);
 
   const handleDownload = useCallback(() => {
     if (itemValue && itemKey) {
@@ -196,7 +196,9 @@ export const MemoryItemDialog = React.memo<{
                   </pre>
                 ) : (
                   <div className="flex items-center justify-center p-12">
-                    <p className="text-sm text-muted-foreground">{t("itemEmpty")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("itemEmpty")}
+                    </p>
                   </div>
                 )}
               </div>

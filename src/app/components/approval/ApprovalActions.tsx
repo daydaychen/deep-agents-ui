@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, Pencil, X } from "lucide-react";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 interface ApprovalActionsProps {
   isEditing: boolean;
@@ -33,6 +34,20 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
     onCancelRejection,
     isLoading,
   }) => {
+    const t = useTranslations("approval");
+  ({
+    isEditing,
+    showRejectionInput,
+    allowedDecisions,
+    onApprove,
+    onReject,
+    onRejectConfirm,
+    onEdit,
+    onStartEdit,
+    onCancelEdit,
+    onCancelRejection,
+    isLoading,
+  }) => {
     if (isEditing) {
       return (
         <div className="flex flex-wrap gap-2">
@@ -42,7 +57,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             onClick={onCancelEdit}
             disabled={isLoading}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             size="sm"
@@ -51,7 +66,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             className="bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
           >
             <Check size={14} />
-            {isLoading ? "Saving…" : "Save & Approve"}
+            {isLoading ? t("saving") : t("saveAndApprove")}
           </Button>
         </div>
       );
@@ -66,7 +81,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             onClick={onCancelRejection}
             disabled={isLoading}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -74,7 +89,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             onClick={onRejectConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "Rejecting…" : "Confirm Reject"}
+            {isLoading ? t("rejecting") : t("confirmReject")}
           </Button>
         </div>
       );
@@ -91,7 +106,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             className="text-destructive hover:bg-destructive/10"
           >
             <X size={14} />
-            Reject
+            {t("reject")}
           </Button>
         )}
         {allowedDecisions.includes("edit") && (
@@ -102,7 +117,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             disabled={isLoading}
           >
             <Pencil size={14} />
-            Edit
+            {t("edit")}
           </Button>
         )}
         {allowedDecisions.includes("approve") && (
@@ -116,7 +131,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             )}
           >
             <Check size={14} />
-            {isLoading ? "Approving…" : "Approve"}
+            {isLoading ? t("approving") : t("approve")}
           </Button>
         )}
       </div>
