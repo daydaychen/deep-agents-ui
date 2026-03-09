@@ -324,11 +324,11 @@ export const Memory = React.memo<{ config: StandaloneConfig }>(({ config }) => {
               <DialogTitle>{t("confirmDeletion")}</DialogTitle>
             </div>
             <DialogDescription
-              className="pt-2"
+              className="pt-2 break-words"
               dangerouslySetInnerHTML={{
                 __html: t("deleteConfirm", { 
                   key: itemToDelete?.key,
-                  code: (chunks: any) => `<code>${chunks}</code>`
+                  code: (chunks: any) => `<code class="break-all whitespace-pre-wrap">${chunks}</code>`
                 }),
               }}
             />
