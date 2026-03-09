@@ -74,36 +74,7 @@ export function ThreadList({
   const { trigger: deleteThread } = useDeleteThread();
   const { trigger: markThreadAsResolved } = useMarkThreadAsResolved();
 
-  const handleDeleteThread = async (threadId: string) => {
-    try {
-      if (currentThreadId === threadId) {
-        setCurrentThreadId(null);
-      }
-
-      await deleteThread({ threadId });
-      // Trigger revalidation to update the list
-      if (mutateFn) {
-        mutateFn();
-      }
-    } catch (error) {
-      console.error("Failed to delete thread:", error);
-    }
-  };
-
-  const handleMarkAsResolved = async (
-    threadId: string,
-    assistantId?: string
-  ) => {
-    try {
-      await markThreadAsResolved({ threadId, assistantId });
-      // Trigger revalidation to update the list
-      if (mutateFn) {
-        mutateFn();
-      }
-    } catch (error) {
-      console.error("Failed to mark thread as resolved:", error);
-    }
-  };
+  // State hooks first
   const [currentThreadId, setCurrentThreadId] = useQueryState("threadId");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
@@ -155,6 +126,41 @@ export function ThreadList({
   useEffect(() => {
     onInterruptCountChange?.(interruptedCount);
   }, [interruptedCount, onInterruptCountChange]);
+
+  // Callbacks - placed after all other hooks
+  const handleDeleteThread = useCallback(
+    async (threadId: string) => {
+      try {
+        if (currentThreadId === threadId) {
+          setCurrentThreadId(null);
+        }
+
+        await deleteThread({ threadId });
+        // Trigger revalidation to update the list
+        if (mutateFn) {
+          mutateFn();
+        }
+      } catch (error) {
+        console.error("Failed to delete thread:", error);
+      }
+    },
+    [currentThreadId, deleteThread, mutateFn, setCurrentThreadId]
+  );
+
+  const handleMarkAsResolved = useCallback(
+    async (threadId: string, assistantId?: string) => {
+      try {
+        await markThreadAsResolved({ threadId, assistantId });
+        // Trigger revalidation to update the list
+        if (mutateFn) {
+          mutateFn();
+        }
+      } catch (error) {
+        console.error("Failed to mark thread as resolved:", error);
+      }
+    },
+    [markThreadAsResolved, mutateFn]
+  );
 
   return (
     <div className="absolute inset-0 flex flex-col bg-background">
