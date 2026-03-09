@@ -347,12 +347,24 @@ export function useChat({
     stream.stop();
   }, [stream]);
 
+  // O(1) message lookup index by ID - rebuilds when messages change
+  const messageIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    stream.messages.forEach((msg, idx) => {
+      if (msg.id) {
+        map.set(msg.id, idx);
+      }
+    });
+    return map;
+  }, [stream.messages]);
+
   const resolveMessageIndex = useCallback(
     (message: Message, fallbackIndex: number) => {
-      const actual = stream.messages.findIndex((msg) => msg.id === message.id);
-      return actual !== -1 ? actual : fallbackIndex;
+      // O(1) lookup using Map instead of O(n) findIndex
+      const actual = message.id ? messageIndexMap.get(message.id) : -1;
+      return actual !== undefined ? actual : fallbackIndex;
     },
-    [stream.messages]
+    [messageIndexMap]
   );
 
   const retryFromMessage = useCallback(
