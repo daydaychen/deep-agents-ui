@@ -44,7 +44,6 @@ interface ConfigDialogProps {
   onSave: (config: StandaloneConfig) => void;
   initialConfig?: StandaloneConfig;
   currentDeploymentUrl?: string;
-  currentApiKey?: string;
 }
 
 export function ConfigDialog({
@@ -53,7 +52,6 @@ export function ConfigDialog({
   onSave,
   initialConfig,
   currentDeploymentUrl,
-  currentApiKey,
 }: ConfigDialogProps) {
   const t = useTranslations("config");
   const [deploymentUrl, setDeploymentUrl] = useState(
@@ -61,9 +59,6 @@ export function ConfigDialog({
   );
   const [assistantId, setAssistantId] = useState(
     initialConfig?.assistantId || ""
-  );
-  const [langsmithApiKey, setLangsmithApiKey] = useState(
-    initialConfig?.langsmithApiKey || ""
   );
   const [recursionLimit, setRecursionLimit] = useState(
     initialConfig?.recursionLimit?.toString() || "100"
@@ -91,7 +86,6 @@ export function ConfigDialog({
     if (open && initialConfig) {
       setDeploymentUrl(initialConfig.deploymentUrl);
       setAssistantId(initialConfig.assistantId);
-      setLangsmithApiKey(initialConfig.langsmithApiKey || "");
       setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
       setRecursionMultiplier(
         initialConfig.recursionMultiplier?.toString() || "6"
@@ -104,7 +98,6 @@ export function ConfigDialog({
   useEffect(() => {
     const fetchAssistants = async () => {
       const urlToUse = deploymentUrl || currentDeploymentUrl;
-      const apiKeyToUse = langsmithApiKey || currentApiKey;
 
       if (!urlToUse || !open) {
         return;
@@ -114,7 +107,6 @@ export function ConfigDialog({
       try {
         const client = new Client({
           apiUrl: urlToUse,
-          defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
         });
 
         const assistantsList = await client.assistants.search({
@@ -134,8 +126,6 @@ export function ConfigDialog({
   }, [
     deploymentUrl,
     currentDeploymentUrl,
-    langsmithApiKey,
-    currentApiKey,
     open,
   ]);
 
@@ -143,7 +133,6 @@ export function ConfigDialog({
   useEffect(() => {
     const fetchDetails = async () => {
       const urlToUse = deploymentUrl || currentDeploymentUrl;
-      const apiKeyToUse = langsmithApiKey || currentApiKey;
 
       if (!urlToUse || !assistantId || !open) {
         setSelectedAssistant(null);
@@ -154,7 +143,6 @@ export function ConfigDialog({
       try {
         const client = new Client({
           apiUrl: urlToUse,
-          defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
         });
 
         const assistant = await client.assistants.get(assistantId);
@@ -176,8 +164,6 @@ export function ConfigDialog({
     assistantId,
     deploymentUrl,
     currentDeploymentUrl,
-    langsmithApiKey,
-    currentApiKey,
     open,
   ]);
 
@@ -205,7 +191,6 @@ export function ConfigDialog({
     if (!selectedAssistant) return;
 
     const urlToUse = deploymentUrl || currentDeploymentUrl;
-    const apiKeyToUse = langsmithApiKey || currentApiKey;
 
     if (!urlToUse) return;
 
@@ -213,7 +198,6 @@ export function ConfigDialog({
     try {
       const client = new Client({
         apiUrl: urlToUse,
-        defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
       });
 
       await client.assistants.delete(selectedAssistant.assistant_id);
@@ -262,10 +246,8 @@ export function ConfigDialog({
     if (selectedAssistant) {
       try {
         const urlToUse = deploymentUrl || currentDeploymentUrl;
-        const apiKeyToUse = langsmithApiKey || currentApiKey;
         const client = new Client({
           apiUrl: urlToUse || "",
-          defaultHeaders: apiKeyToUse ? { "X-Api-Key": apiKeyToUse } : {},
         });
 
         const newConfig = JSON.parse(assistantConfig);
@@ -293,7 +275,6 @@ export function ConfigDialog({
     onSave({
       deploymentUrl,
       assistantId,
-      langsmithApiKey: langsmithApiKey || undefined,
       recursionLimit: parsedRecursionLimit,
       recursionMultiplier: parsedRecursionMultiplier,
       userId: userId || undefined,
@@ -535,26 +516,6 @@ export function ConfigDialog({
             )
           )}
 
-          <div className="grid gap-2">
-            <Label
-              htmlFor="langsmithApiKey"
-              className="flex items-center gap-1.5"
-            >
-              <Key className="h-3.5 w-3.5" />
-              {t("langsmithApiKey")}{" "}
-              <span className="ml-1 text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
-                ({t("optional")})
-              </span>
-            </Label>
-            <Input
-              id="langsmithApiKey"
-              type="password"
-              placeholder={t("langsmithApiKeyPlaceholder")}
-              value={langsmithApiKey}
-              onChange={(e) => setLangsmithApiKey(e.target.value)}
-              className="bg-muted/30"
-            />
-          </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
               <Label

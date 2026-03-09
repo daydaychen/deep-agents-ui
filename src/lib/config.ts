@@ -1,7 +1,6 @@
 export interface StandaloneConfig {
   deploymentUrl: string;
   assistantId: string;
-  langsmithApiKey?: string;
   recursionLimit?: number;
   recursionMultiplier?: number;
   userId?: string;

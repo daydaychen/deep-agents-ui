@@ -53,7 +53,7 @@ deep-agents-ui/
 - **Client components**: All components are `"use client"` except root layout
 - **Performance**: `React.memo()` used on 29/ components
 - **State**: URL state with `nuqs`, data fetching with `SWR`
-- **Styling**: `shadcn/ui` + `Tailwind` with custom LangSmith color palette
+- **Styling**: `shadcn/ui` + `Tailwind` with Radix UI colors
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -66,7 +66,7 @@ deep-agents-ui/
 ## UNIQUE STYLES
 
 - **Component composition**: `TooltipIconButton` pattern (Tooltip + IconButton wrapper)
-- **Color system**: Custom LangSmith palette extends Radix UI colors
+- **Color system**: Radix UI colors and Tailwind default palette
 - **Layout**: Resizable panels with `react-resizable-panels`
 - **AI integration**: LangGraph SDK for agent orchestration
 - **Memory management**: Sidebar with thread persistence

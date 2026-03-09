@@ -104,7 +104,6 @@ function HomePageInner({
         onSave={handleSaveConfig}
         initialConfig={config}
         currentDeploymentUrl={config.deploymentUrl}
-        currentApiKey={config.langsmithApiKey}
       />
       <div className="flex h-screen flex-col">
         <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur-md sm:px-4 md:px-6">
@@ -295,9 +294,6 @@ export default function ChatPage() {
     setConfig(newConfig);
   }, []);
 
-  const langsmithApiKey =
-    config?.langsmithApiKey || process.env.NEXT_PUBLIC_LANGSMITH_API_KEY || "";
-
   if (!config) {
     return (
       <>
@@ -327,7 +323,6 @@ export default function ChatPage() {
   return (
     <ClientProvider
       deploymentUrl={config.deploymentUrl}
-      apiKey={langsmithApiKey}
     >
       <HomePageInner
         config={config}

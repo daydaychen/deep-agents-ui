@@ -25,7 +25,6 @@ As the agent runs, you can see its files in LangGraph state.
 
 - **Deployment URL**: The URL for the LangGraph deployment you are connecting to
 - **Assistant ID**: The ID of the assistant or agent you want to use
-- [Optional] **LangSmith API Key**: Your LangSmith API key (format: `lsv2_pt_...`). This may be required for accessing deployed LangGraph applications. You can also provide this via the `NEXT_PUBLIC_LANGSMITH_API_KEY` environment variable.
 
 **Usage**
 
@@ -40,16 +39,6 @@ As the agent runs, you can see its files in LangGraph state.
 You can click on any file to view it.
 
 <img width="2039" height="1495" alt="Screenshot 2025-11-17 at 1 11 40 PM" src="https://github.com/user-attachments/assets/9883677f-e365-428d-b941-992bdbfa79dd" />
-
-### Optional: Environment Variables
-
-You can optionally set environment variables instead of using the settings dialog:
-
-```env
-NEXT_PUBLIC_LANGSMITH_API_KEY="lsv2_xxxx"
-```
-
-**Note:** Settings configured in the UI take precedence over environment variables.
 
 ### Usage
 

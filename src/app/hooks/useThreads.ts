@@ -25,10 +25,6 @@ export function useThreads(props: {
   return useSWRInfinite(
     (pageIndex: number, previousPageData: ThreadItem[] | null) => {
       const config = getConfig();
-      const apiKey =
-        config?.langsmithApiKey ||
-        process.env.NEXT_PUBLIC_LANGSMITH_API_KEY ||
-        "";
 
       if (!config) {
         return null;
@@ -45,14 +41,12 @@ export function useThreads(props: {
         pageSize,
         deploymentUrl: config.deploymentUrl,
         assistantId: config.assistantId,
-        apiKey,
         status: props?.status,
       };
     },
     async ({
       deploymentUrl,
       assistantId,
-      apiKey,
       status,
       pageIndex,
       pageSize,
@@ -62,12 +56,10 @@ export function useThreads(props: {
       pageSize: number;
       deploymentUrl: string;
       assistantId: string;
-      apiKey: string;
       status?: Thread["status"];
     }) => {
       const client = new Client({
         apiUrl: deploymentUrl,
-        defaultHeaders: apiKey ? { "X-Api-Key": apiKey } : {},
       });
 
       // Check if assistantId is a UUID (deployed) or graph name (local)
@@ -146,20 +138,15 @@ export function useThreads(props: {
 
 export function useDeleteThread() {
   const config = getConfig();
-  const apiKey =
-    config?.langsmithApiKey || process.env.NEXT_PUBLIC_LANGSMITH_API_KEY || "";
 
-  if (!config || !apiKey) {
-    throw new Error("Configuration or API key not found");
+  if (!config) {
+    throw new Error("Configuration not found");
   }
 
   return {
     trigger: async ({ threadId }: { threadId: string }) => {
       const client = new Client({
         apiUrl: config.deploymentUrl,
-        defaultHeaders: {
-          "X-Api-Key": apiKey,
-        },
       });
 
       await client.threads.delete(threadId);
@@ -179,11 +166,9 @@ export function useDeleteThread() {
 
 export function useMarkThreadAsResolved() {
   const config = getConfig();
-  const apiKey =
-    config?.langsmithApiKey || process.env.NEXT_PUBLIC_LANGSMITH_API_KEY || "";
 
-  if (!config || !apiKey) {
-    throw new Error("Configuration or API key not found");
+  if (!config) {
+    throw new Error("Configuration not found");
   }
 
   return {
@@ -196,9 +181,6 @@ export function useMarkThreadAsResolved() {
     }) => {
       const client = new Client({
         apiUrl: config.deploymentUrl,
-        defaultHeaders: {
-          "X-Api-Key": apiKey,
-        },
       });
 
       // Get the assistant ID from config if not provided
