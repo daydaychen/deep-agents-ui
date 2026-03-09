@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React from "react";
 
 const STATUS_COLORS: Record<ThreadItem["status"], string> = {
@@ -44,6 +45,8 @@ interface ThreadListItemProps {
 
 export const ThreadListItem = React.memo<ThreadListItemProps>(
   ({ thread, isActive, onSelect, onMarkAsResolved, onDelete }) => {
+    const t = useTranslations("thread");
+    
     return (
       <div
         className={cn(
@@ -92,7 +95,7 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
                       onMarkAsResolved(thread.id, thread.assistantId);
                     }}
                   >
-                    Make as Resolved
+                    {t("markAsResolved")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={(e) => {
@@ -101,7 +104,7 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
                     }}
                     className="text-destructive focus:text-destructive"
                   >
-                    Delete Thread
+                    {t("deleteThread")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -115,7 +118,7 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
             <div className="ml-2 flex items-center gap-2">
               <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
                 {thread.messageCount}{" "}
-                {thread.messageCount === 1 ? "message" : "messages"}
+                {thread.messageCount === 1 ? t("message") : t("messages")}
               </span>
               <div
                 className={cn(

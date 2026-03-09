@@ -12,6 +12,7 @@ import {
   StopCircle,
   Terminal,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React, { useMemo, useState } from "react";
 
 interface ToolCallBoxProps {
@@ -38,6 +39,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     isLoading,
     messageId,
   }) => {
+    const t = useTranslations("toolCall");
     const [isExpanded, setIsExpanded] = useState(
       () => !!uiComponent || !!actionRequest
     );
@@ -153,7 +155,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           {/* Arguments Preview */}
           <div className="min-w-0 flex-1 overflow-hidden px-2 flex items-center">
             <div className="truncate font-mono text-[10px] leading-none text-muted-foreground/60 bg-muted/20 rounded px-1.5 py-1 border border-border/10 inline-block max-w-full">
-              {argsPreview || "no-args"}
+              {argsPreview || t("noArgs")}
             </div>
           </div>
 
@@ -181,7 +183,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                   stream={stream}
                   message={uiComponent}
                   namespace={graphId}
-                  meta={{ status, args: finalArgs, result: toolCall.result ?? "No Result Yet" }}
+                  meta={{ status, args: finalArgs, result: toolCall.result ?? t("noResult") }}
                 />
               </div>
             ) : actionRequest && onResume ? (
@@ -199,7 +201,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 px-1">
                       <Terminal size={10} className="text-muted-foreground/40" />
-                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Input Parameters</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">{t("inputParameters")}</h4>
                     </div>
                     <div className="grid gap-1.5">
                       {Object.entries(finalArgs).map(([key, value]) => (
@@ -227,7 +229,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                   <div className="space-y-2 pt-2">
                     <div className="flex items-center gap-2 px-1">
                       <CircleCheckBigIcon size={10} className="text-emerald-500/50" />
-                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Execution Result</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">{t("executionResult")}</h4>
                     </div>
                     <div className="rounded-lg border border-emerald-500/10 bg-muted/30 dark:bg-zinc-950 p-4 shadow-inner overflow-x-auto">
                       <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/80 dark:text-emerald-400/90 selection:bg-emerald-500/20">

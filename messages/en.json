@@ -181,7 +181,11 @@
     "loading": "Loading…",
     "loadMore": "Load more",
     "noThreads": "No conversation history",
-    "loadThreadsFailed": "Failed to load conversations"
+    "loadThreadsFailed": "Failed to load conversations",
+    "markAsResolved": "Mark as Resolved",
+    "deleteThread": "Delete Thread",
+    "message": "message",
+    "messages": "messages"
   },
   "error": {
     "generic": "An error occurred",
@@ -246,5 +250,11 @@
     "disconnected": "Disconnected",
     "connecting": "Connecting…",
     "error": "Connection error"
+  },
+  "toolCall": {
+    "inputParameters": "Input Parameters",
+    "executionResult": "Execution Result",
+    "noArgs": "no-args",
+    "noResult": "No Result Yet"
   }
 }
