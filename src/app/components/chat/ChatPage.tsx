@@ -181,7 +181,7 @@ function HomePageInner({
           </div>
         </header>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden mt-1.5">
           <ResizablePanelGroup
             direction="horizontal"
             autoSaveId="standalone-chat"
@@ -217,11 +217,14 @@ function HomePageInner({
                   minSize={20}
                   className="relative min-w-0 md:min-w-[300px]"
                 >
-                  <div className="absolute inset-0 flex flex-col">
-                    <div className="flex items-center justify-between border-b border-border p-4">
-                      <h2 className="text-lg font-semibold tracking-tight">
-                        {t("memory")}
-                      </h2>
+                  <div className="absolute inset-0 flex flex-col bg-background">
+                    <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <Database className="h-4 w-4 text-primary" />
+                        <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
+                          {t("memory")}
+                        </h2>
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
