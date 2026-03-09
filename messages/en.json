@@ -1,0 +1,108 @@
+{
+  "common": {
+    "appName": "Databus Pilot",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "copy": "Copy",
+    "download": "Download",
+    "close": "Close",
+    "submit": "Submit",
+    "create": "Create",
+    "search": "Search",
+    "settings": "Settings",
+    "new": "New",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "page": {
+    "title": "Databus Pilot | AI Agent Interface",
+    "description": "Advanced multi-agent orchestration and chat interface",
+    "welcome": {
+      "title": "Welcome to Standalone Chat",
+      "description": "Configure your deployment to get started",
+      "button": "Open Configuration"
+    }
+  },
+  "header": {
+    "threads": "Threads",
+    "memory": "Memory",
+    "assistant": "Assistant",
+    "newThread": "New Thread"
+  },
+  "chat": {
+    "inputPlaceholder": "Type a message...",
+    "send": "Send",
+    "uploadFile": "Upload File",
+    "selectModel": "Select Model",
+    "reasoning": "Reasoning",
+    "webSearch": "Web Search",
+    "stop": "Stop Generating",
+    "regenerate": "Regenerate",
+    "copyCode": "Copy Code"
+  },
+  "config": {
+    "title": "Configuration",
+    "deploymentUrl": "Deployment URL",
+    "deploymentUrlPlaceholder": "https://api.example.com",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Enter your API key",
+    "assistantId": "Assistant ID",
+    "assistantIdPlaceholder": "Select Assistant",
+    "loadingAssistants": "Loading...",
+    "recursionLimit": "Recursion Limit",
+    "recursionMultiplier": "Recursion Multiplier",
+    "saveSuccess": "Configuration saved successfully",
+    "saveError": "Failed to save configuration"
+  },
+  "memory": {
+    "title": "Memory",
+    "namespace": "Namespace",
+    "namespacePlaceholder": "Namespace (e.g., user.preferences)",
+    "key": "Key",
+    "keyPlaceholder": "Key (e.g., theme)",
+    "value": "Value",
+    "newItem": "New Item",
+    "empty": "No items",
+    "loadError": "Failed to load memory",
+    "saveSuccess": "Memory saved successfully",
+    "saveError": "Failed to save memory",
+    "deleteSuccess": "Memory deleted successfully",
+    "deleteError": "Failed to delete memory",
+    "copySuccess": "Copied to clipboard",
+    "copyError": "Failed to copy"
+  },
+  "thread": {
+    "title": "Threads",
+    "newThread": "New Thread",
+    "deleteConfirm": "Are you sure you want to delete this thread?",
+    "deleteSuccess": "Thread deleted successfully",
+    "deleteError": "Failed to delete thread",
+    "loadError": "Failed to load threads",
+    "status": {
+      "idle": "Idle",
+      "busy": "Busy",
+      "interrupted": "Interrupted",
+      "error": "Error"
+    }
+  },
+  "error": {
+    "generic": "An error occurred",
+    "network": "Network error",
+    "timeout": "Request timeout",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "serverError": "Server error"
+  },
+  "toast": {
+    "copied": "Copied to clipboard",
+    "saved": "Saved successfully",
+    "deleted": "Deleted successfully",
+    "error": "Operation failed: {{message}}"
+  }
+}
