@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle, Circle, Clock, FileIcon } from "lucide-react";
-import React, { Fragment, useRef } from "react";
+import React, { Fragment, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { TodoItem } from "@/app/types/types";
 import { cn } from "@/lib/utils";
@@ -49,11 +49,14 @@ export const TasksSection = React.memo<TasksSectionProps>(
     const t = useTranslations("tasks");
     const tasksContainerRef = useRef<HTMLDivElement | null>(null);
 
-    const groupedTodos = {
-      in_progress: todos.filter((t) => t.status === "in_progress"),
-      pending: todos.filter((t) => t.status === "pending"),
-      completed: todos.filter((t) => t.status === "completed"),
-    };
+    const groupedTodos = useMemo(
+      () => ({
+        in_progress: todos.filter((t) => t.status === "in_progress"),
+        pending: todos.filter((t) => t.status === "pending"),
+        completed: todos.filter((t) => t.status === "completed"),
+      }),
+      [todos]
+    );
 
     const hasTasks = todos.length > 0;
     const hasFiles = Object.keys(files).length > 0;
