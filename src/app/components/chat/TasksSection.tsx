@@ -45,10 +45,8 @@ const getStatusIcon = (status: TodoItem["status"], className?: string) => {
 };
 
 export const TasksSection = React.memo<TasksSectionProps>(
-  export const TasksSection = React.memo<TasksSectionProps>(
   ({ todos, files, setFiles, isLoading, interrupt, metaOpen, setMetaOpen }) => {
     const t = useTranslations("tasks");
-    const tasksContainerRef = useRef<HTMLDivElement | null>(null);
     const tasksContainerRef = useRef<HTMLDivElement | null>(null);
 
     const groupedTodos = {
@@ -91,13 +89,15 @@ export const TasksSection = React.memo<TasksSectionProps>(
                   onClick={() =>
                     setMetaOpen((prev) => (prev === "files" ? null : "files"))
                   }
-                  className="flex flex-shrink-0 cursor-pointer items-center gap-2 px-[18px] py-1.5 text-left text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
+                  className="flex flex-shrink-0 cursor-pointer items-center gap-2 px-[18px] py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted/10 hover:text-foreground"
                   aria-expanded={metaOpen === "files"}
                 >
-                  <FileIcon size={14} className="opacity-70" />
-                  <FileIcon size={14} className="opacity-70" />
+                  <FileIcon
+                    size={14}
+                    className="opacity-70"
+                  />
                   {t("filesState")}
-                  <span className="text-primary-foreground h-3.5 min-w-3.5 flex items-center justify-center rounded-full bg-primary px-1 text-center text-[9px] font-bold leading-none">
+                  <span className="text-primary-foreground flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-center text-[9px] font-bold leading-none">
                     {Object.keys(files).length}
                   </span>
                 </button>
@@ -125,27 +125,10 @@ export const TasksSection = React.memo<TasksSectionProps>(
                   }
                   aria-expanded={metaOpen === "tasks"}
                 >
-                <button
-                  type="button"
-                  className="py-3 pr-4 first:pl-[18px] aria-expanded:font-semibold"
-                  onClick={() =>
-                    setMetaOpen((prev) => (prev === "tasks" ? null : "tasks"))
-                  }
-                  aria-expanded={metaOpen === "tasks"}
-                >
                   {t("tasks")}
-                </button>
                 </button>
               )}
               {hasFiles && (
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 py-3 pr-4 first:pl-[18px] aria-expanded:font-semibold"
-                  onClick={() =>
-                    setMetaOpen((prev) => (prev === "files" ? null : "files"))
-                  }
-                  aria-expanded={metaOpen === "files"}
-                >
                 <button
                   type="button"
                   className="inline-flex items-center gap-2 py-3 pr-4 first:pl-[18px] aria-expanded:font-semibold"
@@ -184,14 +167,6 @@ export const TasksSection = React.memo<TasksSectionProps>(
                             pending: t("pending"),
                             in_progress: t("inProgress"),
                             completed: t("completed"),
-                          }[status]
-                        }
-                      </h3>
-                        {
-                          {
-                            pending: "Pending",
-                            in_progress: "In Progress",
-                            completed: "Completed",
                           }[status]
                         }
                       </h3>

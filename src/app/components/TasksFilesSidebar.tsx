@@ -21,8 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { TodoItem, FileItem } from "@/app/types/types";
 import { useChatState } from "@/providers/chat-context";
 import { cn } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { FileViewDialog } from "@/app/components/FileViewDialog";
 
 export function FilesPopover({
   files,
@@ -32,13 +32,8 @@ export function FilesPopover({
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
   editDisabled: boolean;
-}: {
-  files: Record<string, string>;
-  setFiles: (files: Record<string, string>) => Promise<void>;
-  editDisabled: boolean;
 }) {
   const t = useTranslations("tasks");
-  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
 
   const handleSaveFile = useCallback(
@@ -52,9 +47,14 @@ export function FilesPopover({
   return (
     <>
       {Object.keys(files).length === 0 ? (
-        <div className="flex flex-col h-full items-center justify-center p-6 text-center opacity-50">
-          <FolderTree size={24} className="mb-2 text-muted-foreground/30" />
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("noFiles")}</p>
+        <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-50">
+          <FolderTree
+            size={24}
+            className="mb-2 text-muted-foreground/30"
+          />
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            {t("noFiles")}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-1.5 p-1">
@@ -86,18 +86,21 @@ export function FilesPopover({
                 }
                 className="group flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left transition-[background-color,border-color,color,transform] hover:border-border hover:bg-muted/50 active:scale-[0.98]"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                <div className="group-hover:bg-primary/10 flex h-8 w-8 items-center justify-center rounded-md bg-muted/80 text-muted-foreground transition-colors group-hover:text-primary">
                   <FileText size={16} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-xs font-medium text-foreground group-hover:text-primary transition-colors">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-medium text-foreground transition-colors group-hover:text-primary">
                     {filePath}
                   </div>
                   <div className="truncate text-[10px] text-muted-foreground">
                     {fileContent.length} {t("characters")}
                   </div>
                 </div>
-                <ExternalLink size={12} className="text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-[color,opacity]" />
+                <ExternalLink
+                  size={12}
+                  className="text-muted-foreground/0 transition-[color,opacity] group-hover:text-muted-foreground/40"
+                />
               </button>
             );
           })}
@@ -120,13 +123,8 @@ export const TasksFilesSidebar = React.memo<{
   todos: TodoItem[];
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
-export const TasksFilesSidebar = React.memo<{
-  todos: TodoItem[];
-  files: Record<string, string>;
-  setFiles: (files: Record<string, string>) => Promise<void>;
 }>(({ todos, files, setFiles }) => {
   const t = useTranslations("tasks");
-  const { isLoading, interrupt } = useChatState();
   const { isLoading, interrupt } = useChatState();
   const [tasksOpen, setTasksOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(true);
@@ -158,21 +156,21 @@ export const TasksFilesSidebar = React.memo<{
         return (
           <CheckCircle2
             size={14}
-            className="text-emerald-500 mt-0.5 shrink-0"
+            className="mt-0.5 shrink-0 text-emerald-500"
           />
         );
       case "in_progress":
         return (
           <Clock
             size={14}
-            className="text-amber-500 mt-0.5 shrink-0 animate-pulse"
+            className="mt-0.5 shrink-0 animate-pulse text-amber-500"
           />
         );
       default:
         return (
           <Circle
             size={14}
-            className="text-muted-foreground/40 mt-0.5 shrink-0"
+            className="mt-0.5 shrink-0 text-muted-foreground/40"
           />
         );
     }
@@ -191,22 +189,24 @@ export const TasksFilesSidebar = React.memo<{
     in_progress: t("inProgress"),
     completed: t("completed"),
   };
-    pending: "Pending",
-    in_progress: "In Progress",
-    completed: "Completed",
-  };
 
   return (
-    <div className="flex h-full w-full flex-col min-h-0">
-      <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         {/* Tasks Section */}
-        <div className="flex flex-col min-h-0 max-h-[60%] border-b border-border/40">
+        <div className="flex max-h-[60%] min-h-0 flex-col border-b border-border/40">
           <button
             onClick={() => setTasksOpen((v) => !v)}
-            className="group flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/30"
           >
             <div className="flex items-center gap-2">
-              <LayoutList size={16} className={cn("transition-colors", tasksOpen ? "text-primary" : "text-muted-foreground")} />
+              <LayoutList
+                size={16}
+                className={cn(
+                  "transition-colors",
+                  tasksOpen ? "text-primary" : "text-muted-foreground"
+                )}
+              />
               <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-foreground/80">
                 {t("title")}
               </span>
@@ -216,47 +216,66 @@ export const TasksFilesSidebar = React.memo<{
                 </span>
               )}
             </div>
-            <ChevronDown 
-              size={14} 
-              className={cn("text-muted-foreground transition-transform duration-300", tasksOpen ? "rotate-0" : "-rotate-90 opacity-40")} 
+            <ChevronDown
+              size={14}
+              className={cn(
+                "text-muted-foreground transition-transform duration-300",
+                tasksOpen ? "rotate-0" : "-rotate-90 opacity-40"
+              )}
             />
           </button>
-          
+
           {tasksOpen && (
             <ScrollArea className="flex-1 px-3">
               {todos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center opacity-50">
-                  <LayoutList size={20} className="mb-2 text-muted-foreground/30" />
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("noTasks")}</p>
+                  <LayoutList
+                    size={20}
+                    className="mb-2 text-muted-foreground/30"
+                  />
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {t("noTasks")}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4 pb-4">
-                  {Object.entries(groupedTodos).map(([status, groupTodos]) => (
-                    groupTodos.length > 0 && (
-                      <div key={status} className="space-y-1.5">
-                        <h3 className="flex items-center gap-2 px-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                        {groupedLabels[status as keyof typeof groupedLabels]}
-                        </h3>
-                        {groupTodos.map((todo, index) => (
-                          <div
-                            key={`${status}_${todo.id}_${index}`}
-                            className={cn(
-                              "group flex items-start gap-2.5 rounded-lg p-2 text-xs transition-colors hover:bg-muted/40",
-                              todo.status === "completed" && "opacity-60"
-                            )}
-                          >
-                            {getStatusIcon(todo.status)}
-                            <span className={cn(
-                              "flex-1 leading-relaxed break-words",
-                              todo.status === "completed" && "line-through decoration-muted-foreground/30"
-                            )}>
-                              {todo.content}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  ))}
+                  {Object.entries(groupedTodos).map(
+                    ([status, groupTodos]) =>
+                      groupTodos.length > 0 && (
+                        <div
+                          key={status}
+                          className="space-y-1.5"
+                        >
+                          <h3 className="flex items-center gap-2 px-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                            {
+                              groupedLabels[
+                                status as keyof typeof groupedLabels
+                              ]
+                            }
+                          </h3>
+                          {groupTodos.map((todo, index) => (
+                            <div
+                              key={`${status}_${todo.id}_${index}`}
+                              className={cn(
+                                "group flex items-start gap-2.5 rounded-lg p-2 text-xs transition-colors hover:bg-muted/40",
+                                todo.status === "completed" && "opacity-60"
+                              )}
+                            >
+                              {getStatusIcon(todo.status)}
+                              <span
+                                className={cn(
+                                  "flex-1 break-words leading-relaxed",
+                                  todo.status === "completed" &&
+                                    "line-through decoration-muted-foreground/30"
+                                )}
+                              >
+                                {todo.content}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                  )}
                 </div>
               )}
             </ScrollArea>
@@ -264,13 +283,19 @@ export const TasksFilesSidebar = React.memo<{
         </div>
 
         {/* Files Section */}
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex min-h-0 flex-1 flex-col">
           <button
             onClick={() => setFilesOpen((v) => !v)}
-            className="group flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/30"
           >
             <div className="flex items-center gap-2">
-              <FolderTree size={16} className={cn("transition-colors", filesOpen ? "text-primary" : "text-muted-foreground")} />
+              <FolderTree
+                size={16}
+                className={cn(
+                  "transition-colors",
+                  filesOpen ? "text-primary" : "text-muted-foreground"
+                )}
+              />
               <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-foreground/80">
                 {t("fileSystem")}
               </span>
@@ -280,12 +305,15 @@ export const TasksFilesSidebar = React.memo<{
                 </span>
               )}
             </div>
-            <ChevronDown 
-              size={14} 
-              className={cn("text-muted-foreground transition-transform duration-300", filesOpen ? "rotate-0" : "-rotate-90 opacity-40")} 
+            <ChevronDown
+              size={14}
+              className={cn(
+                "text-muted-foreground transition-transform duration-300",
+                filesOpen ? "rotate-0" : "-rotate-90 opacity-40"
+              )}
             />
           </button>
-          
+
           {filesOpen && (
             <ScrollArea className="flex-1 px-3">
               <div className="pb-4">

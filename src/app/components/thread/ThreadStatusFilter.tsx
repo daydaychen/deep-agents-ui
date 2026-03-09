@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import React from "react";
-import React from "react";
 import { useTranslations } from "next-intl";
+
 export type StatusFilter = "all" | "idle" | "busy" | "interrupted" | "error";
 
 const STATUS_COLORS: Record<ThreadItem["status"], string> = {
@@ -60,7 +60,6 @@ interface ThreadStatusFilterProps {
 }
 
 export const ThreadStatusFilter = React.memo<ThreadStatusFilterProps>(
-  export const ThreadStatusFilter = React.memo<ThreadStatusFilterProps>(
   ({ value, onChange, interruptedCount = 0 }) => {
     const t = useTranslations("thread");
     const tStatus = useTranslations("thread.status");
@@ -104,39 +103,6 @@ export const ThreadStatusFilter = React.memo<ThreadStatusFilterProps>(
               <StatusFilterItem
                 status="error"
                 label={tStatus("error")}
-              />
-            </SelectItem>
-          </SelectGroup>
-          <SelectSeparator />
-          <SelectGroup>
-            <SelectLabel>Active</SelectLabel>
-            <SelectItem value="idle">
-              <StatusFilterItem
-                status="idle"
-                label="Idle"
-              />
-            </SelectItem>
-            <SelectItem value="busy">
-              <StatusFilterItem
-                status="busy"
-                label="Busy"
-              />
-            </SelectItem>
-          </SelectGroup>
-          <SelectSeparator />
-          <SelectGroup>
-            <SelectLabel>Attention</SelectLabel>
-            <SelectItem value="interrupted">
-              <StatusFilterItem
-                status="interrupted"
-                label="Interrupted"
-                badge={interruptedCount}
-              />
-            </SelectItem>
-            <SelectItem value="error">
-              <StatusFilterItem
-                status="error"
-                label="Error"
               />
             </SelectItem>
           </SelectGroup>

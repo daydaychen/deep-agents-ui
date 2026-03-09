@@ -15,10 +15,8 @@ interface ToolInfoCardProps {
 }
 
 export const ToolInfoCard = React.memo<ToolInfoCardProps>(
-  export const ToolInfoCard = React.memo<ToolInfoCardProps>(
   ({ actionRequest, isEditing, editedArgs, onUpdateArg, isLoading }) => {
     const t = useTranslations("approval");
-    const [isExpanded, setIsExpanded] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
@@ -26,8 +24,6 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
         <div className="mb-2">
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {t("tool")}
-          </span>
-            Tool
           </span>
           <p className="mt-1 font-mono text-sm font-medium text-foreground">
             {actionRequest.name}

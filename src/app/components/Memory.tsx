@@ -324,7 +324,10 @@ export const Memory = React.memo(() => {
             <DialogDescription
               className="pt-2"
               dangerouslySetInnerHTML={{
-                __html: t("deleteConfirm", { key: itemToDelete?.key }),
+                __html: t("deleteConfirm", { 
+                  key: itemToDelete?.key,
+                  code: (chunks: any) => `<code>${chunks}</code>`
+                }),
               }}
             />
           </DialogHeader>

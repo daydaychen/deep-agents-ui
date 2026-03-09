@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useChatActions, useChatState } from "@/providers/chat-context";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React, { FormEvent, useCallback, useMemo, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
@@ -142,6 +143,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     return map;
   }, [ui]);
 
+  const tCommon = useTranslations("common");
+
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -222,7 +225,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                     {error && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>错误</AlertTitle>
+                        <AlertTitle>{tCommon("error")}</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                       </Alert>
                     )}

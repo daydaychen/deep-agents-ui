@@ -427,10 +427,15 @@ export function ConfigDialog({
                       <DialogHeader>
                         <DialogTitle>{t("deleteAssistant")}</DialogTitle>
                         <DialogDescription>
-                          {t("deleteAssistantDescription", {
+                          {t.rich("deleteAssistantDescription", {
                             name:
                               selectedAssistant.name ||
                               selectedAssistant.graph_id,
+                            strong: (chunks: any) => (
+                              <strong className="font-semibold text-foreground">
+                                {chunks}
+                              </strong>
+                            ),
                           })}
                         </DialogDescription>
                       </DialogHeader>

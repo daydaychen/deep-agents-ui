@@ -14,9 +14,8 @@ import { useChatState } from "@/providers/chat-context";
 import { Message } from "@langchain/langgraph-sdk";
 import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
 import { Bot, Clock, GitFork, User } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React, { useMemo } from "react";
-
-const ASSISTANT_NAME = "Databus Pilot";
 
 interface ChatMessageProps {
   message: Message;
@@ -70,11 +69,13 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     getMessagesMetadata,
   }) => {
     const { config } = useChatState();
+    const tChat = useTranslations("chat");
+    const tCommon = useTranslations("common");
 
     // Memoize computed values to prevent unnecessary re-computations
     const isUser = message.type === "human";
-    const userName = config?.userId || "User Protocol";
-    const displayName = isUser ? userName : ASSISTANT_NAME;
+    const userName = config?.userId || tCommon("appName");
+    const displayName = isUser ? userName : tCommon("appName");
     const messageContent = useMemo(
       () => extractStringFromMessageContent(message),
       [message]
@@ -192,7 +193,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               {!isUser && (
                 <div className="flex items-center gap-2 px-1 mb-0.5 opacity-20">
                   <div className="h-[1px] flex-1 bg-border" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Core Execution</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{tChat("coreExecution")}</span>
                   <div className="h-[1px] flex-1 bg-border" />
                 </div>
               )}

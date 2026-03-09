@@ -35,19 +35,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
     isLoading,
   }) => {
     const t = useTranslations("approval");
-  ({
-    isEditing,
-    showRejectionInput,
-    allowedDecisions,
-    onApprove,
-    onReject,
-    onRejectConfirm,
-    onEdit,
-    onStartEdit,
-    onCancelEdit,
-    onCancelRejection,
-    isLoading,
-  }) => {
+
     if (isEditing) {
       return (
         <div className="flex flex-wrap gap-2">

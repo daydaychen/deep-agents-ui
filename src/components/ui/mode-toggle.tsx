@@ -7,12 +7,9 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 
-import { Button } from "@/components/ui/button";
-
 export function ModeToggle() {
   const { theme, setTheme } = useTheme();
   const t = useTranslations("theme");
-  const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
     if (theme === "light") {
@@ -41,14 +38,6 @@ export function ModeToggle() {
       return t("switchToSystem");
     } else {
       return t("switchToLight");
-    }
-  };
-    if (theme === "light") {
-      return "Switch to dark mode";
-    } else if (theme === "dark") {
-      return "Switch to system mode";
-    } else {
-      return "Switch to light mode";
     }
   };
 

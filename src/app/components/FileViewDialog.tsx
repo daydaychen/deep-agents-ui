@@ -13,8 +13,8 @@ import { toast } from "sonner";
 import { MarkdownContent } from "@/app/components/MarkdownContent";
 import type { FileItem } from "@/app/types/types";
 import useSWRMutation from "swr/mutation";
-import useSWRMutation from "swr/mutation";
 import { useTranslations } from "next-intl";
+
 const LANGUAGE_MAP: Record<string, string> = {
   js: "javascript",
   jsx: "javascript",
@@ -57,7 +57,6 @@ export const FileViewDialog = React.memo<{
   onClose: () => void;
   editDisabled: boolean;
 }>(({ file, onSaveFile, onClose, editDisabled }) => {
-  }>(({ file, onSaveFile, onClose, editDisabled }) => {
   const t = useTranslations("common");
   const [isEditingMode, setIsEditingMode] = useState(file === null);
   const [fileName, setFileName] = useState(String(file?.path || ""));
@@ -142,9 +141,7 @@ export const FileViewDialog = React.memo<{
       onOpenChange={onClose}
     >
       <DialogContent className="flex h-[80vh] max-h-[80vh] min-w-[60vw] flex-col p-6">
-        <DialogTitle className="sr-only">
-          {file?.path || t("new")}
-        </DialogTitle>
+        <DialogTitle className="sr-only">{file?.path || t("new")}</DialogTitle>
         <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
           <div className="flex min-w-0 items-center gap-2">
             <FileText className="text-primary/50 h-5 w-5 shrink-0" />
@@ -245,7 +242,7 @@ export const FileViewDialog = React.memo<{
                 ) : (
                   <div className="flex items-center justify-center p-12">
                     <p className="text-sm text-muted-foreground">
-                    <p className="text-sm text-muted-foreground">{t("empty")}</p>
+                      {t("empty")}
                     </p>
                   </div>
                 )}

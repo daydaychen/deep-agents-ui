@@ -21,16 +21,12 @@ import { Loader2, MessageSquare, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function ErrorState({ message }: { message: string }) {
   const t = useTranslations("thread");
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
       <p className="text-sm text-red-600">{t("loadThreadsFailed")}</p>
-  return (
-    <div className="flex flex-col items-center justify-center p-8 text-center">
-      <p className="text-sm text-red-600">加载对话失败</p>
       <p className="mt-1 text-xs text-muted-foreground">{message}</p>
     </div>
   );
@@ -54,11 +50,9 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center opacity-50">
       <MessageSquare className="mb-4 h-10 w-10 text-muted-foreground/30" />
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{t("noThreads")}</p>
-  return (
-    <div className="flex flex-col items-center justify-center p-12 text-center opacity-50">
-      <MessageSquare className="mb-4 h-10 w-10 text-muted-foreground/30" />
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">暂无对话记录</p>
+      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        {t("noThreads")}
+      </p>
     </div>
   );
 }
@@ -77,11 +71,6 @@ export function ThreadList({
   onInterruptCountChange,
 }: ThreadListProps) {
   const t = useTranslations("thread");
-  onThreadSelect,
-  onMutateReady,
-  onClose,
-  onInterruptCountChange,
-}: ThreadListProps) {
   const { trigger: deleteThread } = useDeleteThread();
   const { trigger: markThreadAsResolved } = useMarkThreadAsResolved();
 
@@ -173,7 +162,9 @@ export function ThreadList({
       <div className="flex flex-shrink-0 items-center justify-between border-b border-border/50 px-5 py-4">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">{t("title")}</h2>
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
+            {t("title")}
+          </h2>
         </div>
         <div className="flex items-center gap-3">
           <ThreadStatusFilter
@@ -233,7 +224,7 @@ export function ThreadList({
                       {t("loading")}
                     </>
                   ) : (
-                    {t("loadMore")}
+                    t("loadMore")
                   )}
                 </Button>
               </div>

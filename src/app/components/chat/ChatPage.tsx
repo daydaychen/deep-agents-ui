@@ -6,12 +6,12 @@ import { Memory } from "@/app/components/Memory";
 import { ThreadList } from "@/app/components/ThreadList";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -24,8 +24,9 @@ import { ClientProvider } from "@/providers/ClientProvider";
 import { useClient } from "@/providers/client-context";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { Database, MessagesSquare, Settings, SquarePen, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useSWR from "swr";
 
 interface HomePageInnerProps {
@@ -76,6 +77,8 @@ function HomePageInner({
   handleSaveConfig,
 }: HomePageInnerProps) {
   const client = useClient();
+  const t = useTranslations("header");
+  const tCommon = useTranslations("common");
   const [threadId, setThreadId] = useQueryState("threadId");
   const [sidebar, setSidebar] = useQueryState("sidebar");
   const [memorySidebar, setMemorySidebar] = useQueryState("memorySidebar");
@@ -106,7 +109,7 @@ function HomePageInner({
       <div className="flex h-screen flex-col">
         <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur-md sm:px-4 md:px-6">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold">Databus Pilot</h1>
+            <h1 className="text-xl font-semibold">{tCommon("appName")}</h1>
             {!sidebar && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -122,10 +125,10 @@ function HomePageInner({
                         {interruptCount}
                       </span>
                     )}
-                    <span className="sr-only">Threads</span>
+                    <span className="sr-only">{t("threads")}</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Threads</TooltipContent>
+                <TooltipContent>{t("threads")}</TooltipContent>
               </Tooltip>
             )}
             {!memorySidebar && (
@@ -137,16 +140,16 @@ function HomePageInner({
                     onClick={() => setMemorySidebar("1")}
                   >
                     <Database className="h-4 w-4" />
-                    <span className="sr-only">Memory</span>
+                    <span className="sr-only">{t("memory")}</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Memory</TooltipContent>
+                <TooltipContent>{t("memory")}</TooltipContent>
               </Tooltip>
             )}
           </div>
           <div className="flex items-center gap-2">
             <div className="text-sm text-muted-foreground">
-              <span className="font-medium">Assistant:</span>{" "}
+              <span className="font-medium">{t("assistant")}:</span>{" "}
               {config.assistantId}
             </div>
             <Button
@@ -155,7 +158,7 @@ function HomePageInner({
               onClick={() => setConfigDialogOpen(true)}
             >
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              {tCommon("settings")}
             </Button>
             <Button
               variant="default"
@@ -164,8 +167,9 @@ function HomePageInner({
               disabled={!threadId}
             >
               <SquarePen className="mr-2 h-4 w-4" />
-              New Thread
+              {t("newThread")}
             </Button>
+            <LanguageSwitcher />
             <ModeToggle />
           </div>
         </header>
@@ -209,14 +213,14 @@ function HomePageInner({
                   <div className="absolute inset-0 flex flex-col">
                     <div className="flex items-center justify-between border-b border-border p-4">
                       <h2 className="text-lg font-semibold tracking-tight">
-                        Memory
+                        {t("memory")}
                       </h2>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setMemorySidebar(null)}
                         className="h-8 w-8"
-                        aria-label="关闭Memory侧边栏"
+                        aria-label={tCommon("close")}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -254,7 +258,8 @@ function HomePageInner({
   );
 }
 
-function HomePageContent() {
+export default function ChatPage() {
+  const t = useTranslations("page.welcome");
   const [config, setConfig] = useState<StandaloneConfig | null>(null);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [assistantId, setAssistantId] = useQueryState("assistantId");
@@ -326,26 +331,5 @@ function HomePageContent() {
         handleSaveConfig={handleSaveConfig}
       />
     </ClientProvider>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen items-center justify-center p-4">
-          <div className="flex w-full max-w-md flex-col items-center gap-4">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <div className="mt-4 flex w-full justify-center gap-2">
-              <Skeleton className="h-10 w-24" />
-              <Skeleton className="h-10 w-24" />
-            </div>
-          </div>
-        </div>
-      }
-    >
-      <HomePageContent />
-    </Suspense>
   );
 }
