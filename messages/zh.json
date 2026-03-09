@@ -153,7 +153,17 @@
     "jsonPlaceholder": "输入 JSON 值（例如：'{\"key\": \"value\"}'）",
     "itemEmpty": "项目为空",
     "saveItemFailed": "保存项目失败：{error}",
-    "copiedToClipboard": "已复制到剪贴板"
+    "copiedToClipboard": "已复制到剪贴板",
+    "namespaceType": "命名空间类型",
+    "namespaceId": "命名空间 ID",
+    "reports": "报告 (reports)",
+    "memories": "记忆 (memories)",
+    "content": "内容",
+    "contentPlaceholder": "在此输入内容，Markdown 格式，每一行将被保存为数组的一个元素...",
+    "invalidKey": "键名必须以 / 开头",
+    "selectId": "选择 ID",
+    "user": "用户",
+    "assistant": "助手"
   },
   "thread": {
     "title": "线程",

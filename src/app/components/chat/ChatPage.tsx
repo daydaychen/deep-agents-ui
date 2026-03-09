@@ -226,7 +226,7 @@ function HomePageInner({
                       </Button>
                     </div>
                     <div className="flex-1 overflow-hidden p-4">
-                      <Memory />
+                      <Memory config={config} />
                     </div>
                   </div>
                 </ResizablePanel>

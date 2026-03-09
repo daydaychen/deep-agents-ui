@@ -32,8 +32,9 @@ import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import type { StandaloneConfig } from "@/lib/config";
 
-export const Memory = React.memo(() => {
+export const Memory = React.memo<{ config: StandaloneConfig }>(({ config }) => {
   const t = useTranslations("memory");
   const {
     namespaces,
@@ -308,6 +309,7 @@ export const Memory = React.memo(() => {
           onSaveItem={handleSaveItem}
           onClose={handleCloseDialog}
           editDisabled={isPuttingItem || isDeletingItem}
+          config={config}
         />
       )}
 

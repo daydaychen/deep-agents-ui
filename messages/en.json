@@ -153,7 +153,17 @@
     "jsonPlaceholder": "Enter JSON value (e.g., '{\"key\": \"value\"}')",
     "itemEmpty": "Item is empty",
     "saveItemFailed": "Failed to save item: {error}",
-    "copiedToClipboard": "Copied to clipboard"
+    "copiedToClipboard": "Copied to clipboard",
+    "namespaceType": "Namespace Type",
+    "namespaceId": "Namespace ID",
+    "reports": "Reports (reports)",
+    "memories": "Memories (memories)",
+    "content": "Content",
+    "contentPlaceholder": "Enter content here, Markdown format, each line will be saved as an element in the array...",
+    "invalidKey": "Key must start with /",
+    "selectId": "Select ID",
+    "user": "User",
+    "assistant": "Assistant"
   },
   "thread": {
     "title": "Threads",
