@@ -163,7 +163,7 @@ export function ThreadList({
   );
 
   return (
-    <div className="absolute inset-0 flex flex-col bg-background">
+    <div className="flex h-full flex-col">
       {/* Header with title, filter, and close button */}
       <div className="flex flex-shrink-0 items-center justify-between border-b border-border/50 px-5 py-4">
         <div className="flex items-center gap-2">
