@@ -911,7 +911,7 @@ yarn dev
 
 ### Wave 4: 组件国际化 (After Wave 3)
 
-- [ ] 14. i18n: ConfigDialog.tsx translations
+- [x] 14. i18n: ConfigDialog.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/ConfigDialog.tsx` 使用翻译
@@ -946,7 +946,7 @@ yarn dev
 
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 15. i18n: ChatInput.tsx translations
+- [x] 15. i18n: ChatInput.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/chat/ChatInput.tsx`
@@ -964,7 +964,7 @@ yarn dev
 
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 16. i18n: Memory.tsx translations
+- [x] 16. i18n: Memory.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/Memory.tsx`
@@ -974,7 +974,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 17. i18n: MemoryItemDialog.tsx translations
+- [x] 17. i18n: MemoryItemDialog.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/MemoryItemDialog.tsx`
@@ -985,7 +985,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 18. i18n: EditMessage.tsx translations
+- [x] 18. i18n: EditMessage.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/EditMessage.tsx`
@@ -995,7 +995,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 19. i18n: RejectionMessageInput.tsx translations
+- [x] 19. i18n: RejectionMessageInput.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/approval/RejectionMessageInput.tsx`
@@ -1005,7 +1005,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 20. i18n: ThreadStatusFilter.tsx translations
+- [x] 20. i18n: ThreadStatusFilter.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/thread/ThreadStatusFilter.tsx`
@@ -1015,7 +1015,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 21. i18n: TasksSection.tsx translations
+- [x] 21. i18n: TasksSection.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/chat/TasksSection.tsx`
@@ -1025,7 +1025,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 22. i18n: TasksFilesSidebar.tsx translations
+- [x] 22. i18n: TasksFilesSidebar.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/TasksFilesSidebar.tsx`
@@ -1035,7 +1035,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 23. i18n: FileViewDialog.tsx translations
+- [x] 23. i18n: FileViewDialog.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/FileViewDialog.tsx`
@@ -1045,7 +1045,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 24. i18n: ModeToggle.tsx translations
+- [x] 24. i18n: ModeToggle.tsx translations
 
   **What to do**:
   - 更新 `src/components/ui/mode-toggle.tsx`
@@ -1055,7 +1055,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 25. i18n: ThreadList.tsx translations
+- [x] 25. i18n: ThreadList.tsx translations
 
   **What to do**:
   - 更新 `src/app/components/ThreadList.tsx`
@@ -1065,7 +1065,7 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-- [ ] 26. i18n: Approval components translations
+- [x] 26. i18n: Approval components translations
 
   **What to do**:
   - 更新 approval 目录下的组件
