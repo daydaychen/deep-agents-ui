@@ -1,16 +1,28 @@
 "use client";
 
 import type { StandaloneConfig } from "@/lib/config";
-import { DEFAULT_MESSAGE_LIMIT, DEFAULT_RECURSION_LIMIT, ERROR_MESSAGE_TRUNCATION_LENGTH, TOAST_DURATION_MS } from "@/lib/constants";
+import {
+  DEFAULT_MESSAGE_LIMIT,
+  DEFAULT_RECURSION_LIMIT,
+  ERROR_MESSAGE_TRUNCATION_LENGTH,
+  TOAST_DURATION_MS,
+} from "@/lib/constants";
 import { generateId } from "@/lib/id-utils";
-import { LLMOverrideConfig, OverrideConfig, StateType } from "@/providers/chat-context";
+import {
+  LLMOverrideConfig,
+  OverrideConfig,
+  StateType,
+} from "@/providers/chat-context";
 import { useClient } from "@/providers/client-context";
 import {
   type Assistant,
   type Checkpoint,
   type Message,
 } from "@langchain/langgraph-sdk";
-import type { UseStreamOptions, UseStreamThread } from "@langchain/langgraph-sdk/react";
+import type {
+  UseStreamOptions,
+  UseStreamThread,
+} from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -18,13 +30,18 @@ import { toast } from "sonner";
 import { usePersistedMessages } from "./usePersistedMessages";
 
 // Extend useStream options with DeepAgent-specific options not yet exported in SDK types
-interface UseStreamOptionsWithDeepAgentExtensions extends UseStreamOptions<StateType> {
+interface UseStreamOptionsWithDeepAgentExtensions
+  extends UseStreamOptions<StateType> {
   filterSubagentMessages?: boolean;
   streamSubgraphs?: boolean;
 }
 
 // Re-export types from chat-context as the single source of truth
-export type { LLMOverrideConfig, OverrideConfig, StateType } from "@/providers/chat-context";
+export type {
+  LLMOverrideConfig,
+  OverrideConfig,
+  StateType,
+} from "@/providers/chat-context";
 
 export function useChat({
   activeAssistant,
@@ -46,6 +63,15 @@ export function useChat({
   const [sessionId, setSessionId] = useState<string>(() => generateId());
   const isSubmittingRef = useRef(false);
   const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>({});
+
+  const metadata = useMemo(
+    () => ({
+      langfuse_session_id: sessionId,
+      langfuse_user_id: config.userId || "user",
+      user_id: config.userId || "user",
+    }),
+    [sessionId, config.userId]
+  );
 
   // Manage session_id: reuse from thread metadata or generate new one
   useEffect(() => {
@@ -101,8 +127,10 @@ export function useChat({
 
   // Helper to map overrides to configurable with prefixes
   const getFinalConfigurable = useCallback((): Record<string, any> => {
-    const finalConfigurable = { ...(activeAssistant?.config?.configurable ?? {}) };
-    
+    const finalConfigurable = {
+      ...(activeAssistant?.config?.configurable ?? {}),
+    };
+
     const prefixes = {
       model: "llm_",
       small_model: "small_llm_",
@@ -146,15 +174,11 @@ export function useChat({
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
       const newMessage: Message = { id: generateId(), type: "human", content };
-      
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+
+      const finalRecursionLimit =
+        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
       const finalInterruptBefore = overrideConfig.interruptBefore;
       const finalInterruptAfter = overrideConfig.interruptAfter;
-      
-      const assistantConfig = { 
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
-      };
 
       stream.submit(
         { messages: [newMessage] },
@@ -162,23 +186,38 @@ export function useChat({
           optimisticValues: (prev) => ({
             messages: [...(prev.messages ?? []), newMessage],
           }),
-          metadata: {
-            langfuse_session_id: sessionId,
-            langfuse_user_id: config.userId || "user",
-          },
+          metadata,
           config: {
-            ...assistantConfig,
+            ...(activeAssistant?.config ?? {}),
             recursion_limit: finalRecursionLimit,
+            configurable: {
+              ...getFinalConfigurable(),
+              user_id: metadata.user_id,
+            },
           },
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
-          ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
+          ...(finalInterruptBefore
+            ? { interruptBefore: finalInterruptBefore }
+            : {}),
+          ...(finalInterruptAfter
+            ? { interruptAfter: finalInterruptAfter }
+            : {}),
         }
       );
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
+    [
+      stream,
+      overrideConfig.recursionLimit,
+      overrideConfig.interruptBefore,
+      overrideConfig.interruptAfter,
+      recursionLimit,
+      recursionMultiplier,
+      activeAssistant?.config,
+      getFinalConfigurable,
+      metadata,
+    ]
   );
 
   const runSingleStep = useCallback(
@@ -192,13 +231,18 @@ export function useChat({
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
 
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const finalInterruptBefore = overrideConfig.interruptBefore || (isRerunningSubagent ? undefined : ["tools"]);
-      const finalInterruptAfter = overrideConfig.interruptAfter || (isRerunningSubagent ? ["tools"] : undefined);
+      const finalRecursionLimit =
+        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+      const finalInterruptBefore =
+        overrideConfig.interruptBefore ||
+        (isRerunningSubagent ? undefined : ["tools"]);
+      const finalInterruptAfter =
+        overrideConfig.interruptAfter ||
+        (isRerunningSubagent ? ["tools"] : undefined);
 
-      const assistantConfig = { 
+      const assistantConfig = {
         ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
+        configurable: getFinalConfigurable(),
       };
 
       if (checkpoint) {
@@ -206,10 +250,7 @@ export function useChat({
           ...(optimisticMessages
             ? { optimisticValues: { messages: optimisticMessages } }
             : {}),
-          metadata: {
-            langfuse_session_id: sessionId,
-            langfuse_user_id: config.userId || "user",
-          },
+          metadata,
           config: {
             ...assistantConfig,
             recursion_limit: finalRecursionLimit,
@@ -218,17 +259,18 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
-          ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
+          ...(finalInterruptBefore
+            ? { interruptBefore: finalInterruptBefore }
+            : {}),
+          ...(finalInterruptAfter
+            ? { interruptAfter: finalInterruptAfter }
+            : {}),
         });
       } else {
         stream.submit(
           { messages },
           {
-            metadata: {
-              langfuse_session_id: sessionId,
-              langfuse_user_id: config.userId || "user",
-            },
+            metadata,
             config: {
               ...assistantConfig,
               recursion_limit: finalRecursionLimit,
@@ -236,13 +278,27 @@ export function useChat({
             streamMode: ["messages", "updates"],
             streamSubgraphs: true,
             streamResumable: true,
-            ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : { interruptBefore: ["tools"] }),
-            ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
+            ...(finalInterruptBefore
+              ? { interruptBefore: finalInterruptBefore }
+              : { interruptBefore: ["tools"] }),
+            ...(finalInterruptAfter
+              ? { interruptAfter: finalInterruptAfter }
+              : {}),
           }
         );
       }
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
+    [
+      stream,
+      overrideConfig.recursionLimit,
+      overrideConfig.interruptBefore,
+      overrideConfig.interruptAfter,
+      recursionLimit,
+      recursionMultiplier,
+      activeAssistant?.config,
+      getFinalConfigurable,
+      metadata,
+    ]
   );
 
   const setFiles = useCallback(
@@ -257,23 +313,25 @@ export function useChat({
     (hasTaskToolCall?: boolean) => {
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
-      // We don't reset activeSubAgentId here because continue often means 
+      // We don't reset activeSubAgentId here because continue often means
       // resuming a subagent or the next step in the same chain
 
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const finalInterruptBefore = overrideConfig.interruptBefore || (hasTaskToolCall ? undefined : ["tools"]);
-      const finalInterruptAfter = overrideConfig.interruptAfter || (hasTaskToolCall ? ["tools"] : undefined);
+      const finalRecursionLimit =
+        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+      const finalInterruptBefore =
+        overrideConfig.interruptBefore ||
+        (hasTaskToolCall ? undefined : ["tools"]);
+      const finalInterruptAfter =
+        overrideConfig.interruptAfter ||
+        (hasTaskToolCall ? ["tools"] : undefined);
 
-      const assistantConfig = { 
+      const assistantConfig = {
         ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
+        configurable: getFinalConfigurable(),
       };
 
       stream.submit(undefined, {
-        metadata: {
-          langfuse_session_id: sessionId,
-          langfuse_user_id: config.userId || "user",
-        },
+        metadata,
         config: {
           ...assistantConfig,
           recursion_limit: finalRecursionLimit,
@@ -281,11 +339,23 @@ export function useChat({
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
-        ...(finalInterruptBefore ? { interruptBefore: finalInterruptBefore } : {}),
+        ...(finalInterruptBefore
+          ? { interruptBefore: finalInterruptBefore }
+          : {}),
         ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
       });
     },
-    [stream, sessionId, config.userId, activeAssistant?.config, recursionLimit, recursionMultiplier, overrideConfig, getFinalConfigurable]
+    [
+      stream,
+      overrideConfig.recursionLimit,
+      overrideConfig.interruptBefore,
+      overrideConfig.interruptAfter,
+      recursionLimit,
+      recursionMultiplier,
+      activeAssistant?.config,
+      getFinalConfigurable,
+      metadata,
+    ]
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
@@ -294,13 +364,10 @@ export function useChat({
     setActiveSubAgentId(null);
     stream.submit(null, {
       command: { goto: "__end__", update: null },
-      metadata: {
-        langfuse_session_id: sessionId,
-        langfuse_user_id: config.userId || "user",
-      },
+      metadata,
       streamResumable: true,
     });
-  }, [stream, sessionId, config.userId]);
+  }, [stream, metadata]);
 
   const resumeInterrupt = useCallback(
     (value: any) => {
@@ -309,16 +376,13 @@ export function useChat({
       // Keep activeSubAgentId if any
       stream.submit(null, {
         command: { resume: value },
-        metadata: {
-          langfuse_session_id: sessionId,
-          langfuse_user_id: config.userId || "user",
-        },
+        metadata,
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
       });
     },
-    [stream, sessionId, config.userId]
+    [stream, metadata]
   );
 
   const stopStream = useCallback(() => {
@@ -363,10 +427,11 @@ export function useChat({
         return;
       }
 
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const assistantConfig = { 
+      const finalRecursionLimit =
+        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+      const assistantConfig = {
         ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
+        configurable: getFinalConfigurable(),
       };
 
       stream.submit(undefined, {
@@ -375,18 +440,27 @@ export function useChat({
           ...assistantConfig,
           recursion_limit: finalRecursionLimit,
         },
-        metadata: {
-          langfuse_session_id: sessionId,
-          langfuse_user_id: config.userId || "user",
-        },
+        metadata,
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
-        ...(overrideConfig.interruptBefore ? { interruptBefore: overrideConfig.interruptBefore } : {}),
-        ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
+        ...(overrideConfig.interruptBefore
+          ? { interruptBefore: overrideConfig.interruptBefore }
+          : {}),
+        ...(overrideConfig.interruptAfter
+          ? { interruptAfter: overrideConfig.interruptAfter }
+          : {}),
       });
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, recursionMultiplier, resolveMessageIndex, overrideConfig, getFinalConfigurable]
+    [
+      stream,
+      activeAssistant?.config,
+      recursionLimit,
+      recursionMultiplier,
+      resolveMessageIndex,
+      overrideConfig,
+      getFinalConfigurable,
+    ]
   );
 
   const editMessage = useCallback(
@@ -413,10 +487,11 @@ export function useChat({
         content: message.content,
       };
 
-      const finalRecursionLimit = (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const assistantConfig = { 
+      const finalRecursionLimit =
+        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+      const assistantConfig = {
         ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable()
+        configurable: getFinalConfigurable(),
       };
 
       stream.submit(
@@ -427,19 +502,28 @@ export function useChat({
             ...assistantConfig,
             recursion_limit: finalRecursionLimit,
           },
-          metadata: {
-            langfuse_session_id: sessionId,
-            langfuse_user_id: config.userId || "user",
-          },
+          metadata,
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(overrideConfig.interruptBefore ? { interruptBefore: overrideConfig.interruptBefore } : {}),
-          ...(overrideConfig.interruptAfter ? { interruptAfter: overrideConfig.interruptAfter } : {}),
+          ...(overrideConfig.interruptBefore
+            ? { interruptBefore: overrideConfig.interruptBefore }
+            : {}),
+          ...(overrideConfig.interruptAfter
+            ? { interruptAfter: overrideConfig.interruptAfter }
+            : {}),
         }
       );
     },
-    [stream, activeAssistant?.config, sessionId, config.userId, recursionLimit, recursionMultiplier, resolveMessageIndex, overrideConfig, getFinalConfigurable]
+    [
+      stream,
+      activeAssistant?.config,
+      recursionLimit,
+      recursionMultiplier,
+      resolveMessageIndex,
+      overrideConfig,
+      getFinalConfigurable,
+    ]
   );
 
   // Helper function to get branch information for a specific message
@@ -529,7 +613,10 @@ export function useChat({
     if (latestError) {
       toast.error(latestError, {
         duration: TOAST_DURATION_MS,
-        id: `chat-error-${latestError.substring(0, ERROR_MESSAGE_TRUNCATION_LENGTH)}`, // Avoid duplicate toasts for the same message
+        id: `chat-error-${latestError.substring(
+          0,
+          ERROR_MESSAGE_TRUNCATION_LENGTH
+        )}`, // Avoid duplicate toasts for the same message
       });
     }
   }, [latestError]);
@@ -559,7 +646,6 @@ export function useChat({
       lastAutoActivatedIdRef.current = null;
     }
   }, [stream.activeSubagents, stream.isLoading]);
-
 
   // Stable return object to prevent downstream infinite loops in providers/consumers
   return useMemo(
