@@ -366,14 +366,7 @@ export const ChatInput = React.memo<ChatInputProps>(
 
     return (
       <div className="px-2 pb-3">
-        <div
-          className={cn(
-            "relative flex flex-col gap-0.5 rounded-2xl px-1 transition-[border-color,box-shadow,background-color] duration-200",
-            isFocused
-              ? "border border-border bg-background shadow-sm"
-              : "bg-muted/40"
-          )}
-        >
+        <div className="relative flex flex-col gap-0.5 px-1">
           <div className="relative flex flex-1 flex-col px-2 pt-0.5">
             <label
               htmlFor="chat-input"
