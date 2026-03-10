@@ -235,7 +235,7 @@ function HomePageInner({
         </div>
 
         {/* Main chat area — full width */}
-        <div className="flex-1 overflow-hidden mt-5">
+        <div className="flex flex-1 flex-col overflow-hidden mt-5">
           <ChatProvider
             activeAssistant={assistant ?? null}
             onHistoryRevalidate={() => mutateThreads?.()}
