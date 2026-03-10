@@ -10,11 +10,6 @@ import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { useThrottledValue } from "@/app/hooks/useThrottledValue";
 import type { ActionRequest, ReviewConfig } from "@/app/types/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
 import { useChatActions, useChatState } from "@/providers/chat-context";
 import { Assistant } from "@langchain/langgraph-sdk";
@@ -32,7 +27,6 @@ const loadingSkeletons = [1, 2, 3];
 export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
   const [input, setInput] = useState("");
-  const sidebarPanelRef = React.useRef<any>(null);
   const { scrollRef, contentRef } = useStickToBottom({
     initial: "instant",
     resize: "instant",
@@ -66,21 +60,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   } = useChatActions();
 
   const isPanelOpen = !!activeSubAgentId;
-
-  // Handle manual panel control for smooth transitions and forced collapses
-  React.useEffect(() => {
-    if (sidebarPanelRef.current) {
-      if (isPanelOpen) {
-        // Only expand if currently collapsed or size is 0
-        if (sidebarPanelRef.current.isCollapsed()) {
-          sidebarPanelRef.current.expand();
-        }
-      } else {
-        // Explicitly collapse on thread switch or when ID is null
-        sidebarPanelRef.current.collapse();
-      }
-    }
-  }, [isPanelOpen, activeSubAgentId]); // Include activeSubAgentId to catch every state change
 
   const submitDisabled = isLoading || !assistant;
   const handleSubmit = useCallback(
@@ -148,133 +127,122 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel
-          defaultSize={100}
-          minSize={30}
-        >
-          <div className="relative flex h-full flex-col overflow-hidden">
-            <div
-              className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-pretty"
-              ref={scrollRef}
-            >
-              <div
-                className={cn(
-                  "mx-auto w-full transition-[padding,max-width,opacity] duration-200 ease-in-out px-3 pb-4 pt-2 md:px-4 max-w-[900px]"
-                )}
-                ref={contentRef}
-              >
-                {isThreadLoading && processedMessages.length === 0 ? (
-                  <div className="flex flex-col gap-4 p-6">
-                    {loadingSkeletons.map((i) => (
-                      <MessageSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    {processedMessages.map((data, index) => {
-                      // O(1) lookup from memoized map instead of O(n) filter
-                      const messageUi = data.message.id ? uiByMessageId.get(data.message.id) : undefined;
-                      const isLastMessage = index === processedMessages.length - 1;
-                      const isStreaming = isLastMessage && isLoading;
-
-                      // Get branch information for this message
-                      const branchInfo = getMessageBranchInfo?.(data.message, index);
-                      const branchOptions = branchInfo?.branchOptions || [];
-                      const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
-                      const canRetry = branchInfo?.canRetry;
-
-                      return (
-                        <div key={data.message.id} className="flex flex-col">
-                          <ErrorBoundary className="mb-4">
-                            <ChatMessage
-                              message={data.message}
-                              messageIndex={index}
-                              toolCalls={data.toolCalls}
-                              subAgents={data.subAgents}
-                              isLoading={isLoading}
-                              isStreaming={isStreaming}
-                              actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
-                              reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
-                              ui={messageUi}
-                              stream={stream}
-                              onResumeInterrupt={resumeInterrupt}
-                              onRetry={retryFromMessage}
-                              onEdit={editMessage}
-                              getMessagesMetadata={getMessagesMetadata}
-                              setBranch={setBranch}
-                              graphId={assistant?.graph_id}
-                              branchOptions={branchOptions}
-                              currentBranchIndex={currentBranchIndex}
-                              canRetry={!!canRetry}
-                              activeSubAgentId={activeSubAgentId}
-                              setActiveSubAgentId={setActiveSubAgentId}
-                            />
-                          </ErrorBoundary>
-                        </div>
-                      );
-                    })}
-                    {error && (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>{tCommon("error")}</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Input Container */}
-            <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-3 sm:px-4">
-              <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow] duration-200 focus-within:border-primary/30 focus-within:shadow-primary/10">
-                <TasksSection
-                  todos={todos}
-                  files={files}
-                  setFiles={setFiles}
-                  isLoading={isLoading}
-                  interrupt={interrupt}
-                  metaOpen={metaOpen}
-                  setMetaOpen={setMetaOpen}
-                />
-                <ChatInput
-                  input={input}
-                  setInput={setInput}
-                  isLoading={isLoading}
-                  submitDisabled={submitDisabled}
-                  onSubmit={handleSubmit}
-                  onStop={stopStream}
-                />
-              </div>
-            </div>
-          </div>
-        </ResizablePanel>
-
-        <ResizableHandle
-          withHandle
-          className={cn(
-            "bg-border/50 transition-opacity duration-300",
-            !isPanelOpen && "opacity-0 w-0 pointer-events-none"
-          )}
+      {/* SubAgent Trace Overlay Panel */}
+      <div
+        className={cn(
+          "fixed right-4 bottom-4 z-[300] w-full max-w-[400px] flex flex-col overflow-hidden",
+          "rounded-2xl border border-border/60 bg-background shadow-2xl",
+          "transition-all duration-300 ease-out",
+          "top-[5.5rem]",
+          activeSubAgentId
+            ? "translate-x-0 opacity-100"
+            : "translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
+        )}
+      >
+        <SubAgentPanel
+          subAgentId={activeSubAgentId}
+          subAgents={allSubAgents}
+          subagentMessagesMap={subagentMessagesMap}
+          onClose={() => setActiveSubAgentId(null)}
         />
+      </div>
 
-        <ResizablePanel
-          ref={sidebarPanelRef}
-          defaultSize={40}
-          minSize={25}
-          collapsible
-          onCollapse={() => setActiveSubAgentId(null)}
-          className="bg-background"
+      <div className="relative flex h-full flex-col overflow-hidden">
+        <div
+          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-pretty"
+          ref={scrollRef}
         >
-          <SubAgentPanel
-            subAgentId={activeSubAgentId}
-            subAgents={allSubAgents}
-            subagentMessagesMap={subagentMessagesMap}
-            onClose={() => setActiveSubAgentId(null)}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          <div
+            className={cn(
+              "mx-auto w-full transition-[padding,max-width,opacity] duration-200 ease-in-out px-3 pb-4 pt-2 md:px-4 max-w-[900px]"
+            )}
+            ref={contentRef}
+          >
+            {isThreadLoading && processedMessages.length === 0 ? (
+              <div className="flex flex-col gap-4 p-6">
+                {loadingSkeletons.map((i) => (
+                  <MessageSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              <>
+                {processedMessages.map((data, index) => {
+                  // O(1) lookup from memoized map instead of O(n) filter
+                  const messageUi = data.message.id ? uiByMessageId.get(data.message.id) : undefined;
+                  const isLastMessage = index === processedMessages.length - 1;
+                  const isStreaming = isLastMessage && isLoading;
+
+                  // Get branch information for this message
+                  const branchInfo = getMessageBranchInfo?.(data.message, index);
+                  const branchOptions = branchInfo?.branchOptions || [];
+                  const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
+                  const canRetry = branchInfo?.canRetry;
+
+                  return (
+                    <div key={data.message.id} className="flex flex-col">
+                      <ErrorBoundary className="mb-4">
+                        <ChatMessage
+                          message={data.message}
+                          messageIndex={index}
+                          toolCalls={data.toolCalls}
+                          subAgents={data.subAgents}
+                          isLoading={isLoading}
+                          isStreaming={isStreaming}
+                          actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
+                          reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
+                          ui={messageUi}
+                          stream={stream}
+                          onResumeInterrupt={resumeInterrupt}
+                          onRetry={retryFromMessage}
+                          onEdit={editMessage}
+                          getMessagesMetadata={getMessagesMetadata}
+                          setBranch={setBranch}
+                          graphId={assistant?.graph_id}
+                          branchOptions={branchOptions}
+                          currentBranchIndex={currentBranchIndex}
+                          canRetry={!!canRetry}
+                          activeSubAgentId={activeSubAgentId}
+                          setActiveSubAgentId={setActiveSubAgentId}
+                        />
+                      </ErrorBoundary>
+                    </div>
+                  );
+                })}
+                {error && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{tCommon("error")}</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Input Container */}
+        <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-3 sm:px-4">
+          <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow] duration-200 focus-within:border-primary/30 focus-within:shadow-primary/10">
+            <TasksSection
+              todos={todos}
+              files={files}
+              setFiles={setFiles}
+              isLoading={isLoading}
+              interrupt={interrupt}
+              metaOpen={metaOpen}
+              setMetaOpen={setMetaOpen}
+            />
+            <ChatInput
+              input={input}
+              setInput={setInput}
+              isLoading={isLoading}
+              submitDisabled={submitDisabled}
+              onSubmit={handleSubmit}
+              onStop={stopStream}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 });
