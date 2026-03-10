@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-import { Wifi, WifiOff } from "lucide-react";
+import { Activity } from "lucide-react";
 
 export function ConnectionStatusIndicator() {
   const { status } = useConnectionStatus();
@@ -16,22 +16,22 @@ export function ConnectionStatusIndicator() {
 
   const statusMap = {
     connected: {
-      icon: <Wifi className="h-4 w-4 text-emerald-500" />,
+      icon: <Activity className="h-4 w-4 text-emerald-500" />,
       color: "bg-emerald-500",
       text: t("connected"),
     },
     disconnected: {
-      icon: <WifiOff className="h-4 w-4 text-destructive" />,
+      icon: <Activity className="h-4 w-4 text-destructive" />,
       color: "bg-destructive",
       text: t("disconnected"),
     },
     connecting: {
-      icon: <Wifi className="h-4 w-4 text-yellow-500 animate-pulse" />,
+      icon: <Activity className="h-4 w-4 text-yellow-500 animate-pulse" />,
       color: "bg-yellow-500",
       text: t("connecting"),
     },
     error: {
-      icon: <WifiOff className="h-4 w-4 text-destructive" />,
+      icon: <Activity className="h-4 w-4 text-destructive" />,
       color: "bg-destructive",
       text: t("error"),
     },
