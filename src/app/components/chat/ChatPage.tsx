@@ -113,7 +113,10 @@ function HomePageInner({
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => setSidebar("1")}
+                    onClick={() => {
+                      setSidebar("1");
+                      setMemorySidebar(null);
+                    }}
                     className="relative"
                   >
                     <MessagesSquare className="h-4 w-4" />
@@ -134,7 +137,10 @@ function HomePageInner({
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => setMemorySidebar("1")}
+                    onClick={() => {
+                      setMemorySidebar("1");
+                      setSidebar(null);
+                    }}
                   >
                     <Database className="h-4 w-4" />
                     <span className="sr-only">{t("memory")}</span>
@@ -225,11 +231,10 @@ function HomePageInner({
         {/* Memory overlay panel */}
         <div
           className={cn(
-            "fixed bottom-4 z-[300] w-[320px] flex flex-col overflow-hidden",
+            "fixed left-4 bottom-4 z-[300] w-[320px] flex flex-col overflow-hidden",
             "rounded-2xl border border-border/60 bg-background shadow-xl",
             "transition-all duration-300 ease-out",
             "top-[5.5rem]",
-            sidebar ? "left-[344px]" : "left-4",
             memorySidebar
               ? "translate-x-0 opacity-100"
               : "-translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
