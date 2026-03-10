@@ -54,9 +54,8 @@ export function ConfigDialog({
   currentDeploymentUrl,
 }: ConfigDialogProps) {
   const t = useTranslations("config");
-  const [deploymentUrl, setDeploymentUrl] = useState(
-    initialConfig?.deploymentUrl || ""
-  );
+  // 从环境变量读取部署URL，不再允许用户手动输入
+  const deploymentUrl = process.env.NEXT_PUBLIC_BACKEND_URL || currentDeploymentUrl || "";
   const [assistantId, setAssistantId] = useState(
     initialConfig?.assistantId || ""
   );
@@ -84,7 +83,6 @@ export function ConfigDialog({
 
   useEffect(() => {
     if (open && initialConfig) {
-      setDeploymentUrl(initialConfig.deploymentUrl);
       setAssistantId(initialConfig.assistantId);
       setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
       setRecursionMultiplier(
@@ -217,7 +215,7 @@ export function ConfigDialog({
 
   const handleSave = async () => {
     if (!deploymentUrl) {
-      toast.error(t("deploymentUrlRequired"));
+      toast.error(t("backendUrlNotConfigured"));
       return;
     }
     if (!assistantId) {
@@ -273,7 +271,7 @@ export function ConfigDialog({
     }
 
     onSave({
-      deploymentUrl,
+      deploymentUrl: deploymentUrl || "",
       assistantId,
       recursionLimit: parsedRecursionLimit,
       recursionMultiplier: parsedRecursionMultiplier,
@@ -302,23 +300,6 @@ export function ConfigDialog({
           <DialogDescription>{t("configureDescription")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-5 py-4">
-          <div className="grid gap-2">
-            <Label
-              htmlFor="deploymentUrl"
-              className="flex items-center gap-1.5"
-            >
-              <Globe className="h-3.5 w-3.5" />
-              {t("deploymentUrl")}
-            </Label>
-            <Input
-              id="deploymentUrl"
-              placeholder={t("deploymentUrlPlaceholder")}
-              value={deploymentUrl}
-              onChange={(e) => setDeploymentUrl(e.target.value)}
-              className="bg-muted/30"
-            />
-          </div>
-
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <Label
