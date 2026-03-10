@@ -43,13 +43,13 @@ export function LanguageSwitcher() {
           variant="ghost"
           size="icon"
           className="h-9 w-9 px-0"
-          title={t("settings")}
+          aria-label={t("language")}
         >
           <Languages className="h-[1.2rem] w-[1.2rem]" />
-          <span className="sr-only">Toggle language</span>
+          <span className="sr-only">{t("language")}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" sideOffset={8}>
         {routing.locales.map((cur) => (
           <DropdownMenuItem
             key={cur}
