@@ -105,8 +105,8 @@ function HomePageInner({
       />
       <div className="flex h-screen flex-col">
         <header className="sticky top-4 left-4 right-4 z-sticky mx-4 flex h-16 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 backdrop-blur-md shadow-lg sm:px-4 md:px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold">{tCommon("appName")}</h1>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <h1 className="truncate text-base font-semibold sm:text-xl">{tCommon("appName")}</h1>
             {!sidebar && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -144,8 +144,8 @@ function HomePageInner({
               </Tooltip>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden max-w-[160px] truncate text-sm text-muted-foreground sm:block md:max-w-[240px]">
+          <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
+            <div className="hidden max-w-[160px] truncate text-sm text-muted-foreground md:block lg:max-w-[240px]">
               <span className="font-medium">{t("assistant")}:</span>{" "}
               {assistant?.name || config.assistantId}
               {assistant?.name && assistant.name !== assistant.assistant_id && (
@@ -154,17 +154,40 @@ function HomePageInner({
                 </span>
               )}
             </div>
+            {/* Settings button: icon-only on mobile, text on sm+ */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="sm:hidden"
+              onClick={() => setConfigDialogOpen(true)}
+              aria-label={tCommon("settings")}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
+              className="hidden sm:inline-flex"
               onClick={() => setConfigDialogOpen(true)}
             >
               <Settings className="mr-2 h-4 w-4" />
               {tCommon("settings")}
             </Button>
+            {/* New Thread button: icon-only on mobile, text on sm+ */}
+            <Button
+              variant="default"
+              size="icon"
+              className="sm:hidden"
+              onClick={() => setThreadId(null)}
+              disabled={!threadId}
+              aria-label={t("newThread")}
+            >
+              <SquarePen className="h-4 w-4" />
+            </Button>
             <Button
               variant="default"
               size="sm"
+              className="hidden sm:inline-flex"
               onClick={() => setThreadId(null)}
               disabled={!threadId}
             >
