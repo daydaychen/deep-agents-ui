@@ -24,6 +24,59 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { FileViewDialog } from "@/app/components/FileViewDialog";
 
+function FileListItem({
+  filePath,
+  rawContent,
+  onClick,
+  t,
+}: {
+  filePath: string;
+  rawContent: any;
+  onClick: (content: string) => void;
+  t: (key: string) => string;
+}) {
+  const fileContent = useMemo(() => {
+    if (
+      typeof rawContent === "object" &&
+      rawContent !== null &&
+      "content" in rawContent
+    ) {
+      const contentArray = (rawContent as { content: unknown }).content;
+      if (Array.isArray(contentArray)) {
+        return contentArray.join("\n");
+      } else {
+        return String(contentArray || "");
+      }
+    } else {
+      return String(rawContent || "");
+    }
+  }, [rawContent]);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(fileContent)}
+      className="group flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left transition-[background-color,border-color,color,transform] hover:border-border hover:bg-muted/50 active:scale-[0.98]"
+    >
+      <div className="group-hover:bg-primary/10 flex h-8 w-8 items-center justify-center rounded-md bg-muted/80 text-muted-foreground transition-colors group-hover:text-primary">
+        <FileText size={16} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-xs font-medium text-foreground transition-colors group-hover:text-primary">
+          {filePath}
+        </div>
+        <div className="truncate text-[10px] text-muted-foreground">
+          {fileContent.length} {t("characters")}
+        </div>
+      </div>
+      <ExternalLink
+        size={12}
+        className="text-muted-foreground/0 transition-[color,opacity] group-hover:text-muted-foreground/40"
+      />
+    </button>
+  );
+}
+
 export function FilesPopover({
   files,
   setFiles,
@@ -44,9 +97,11 @@ export function FilesPopover({
     [files, setFiles]
   );
 
+  const fileKeys = useMemo(() => Object.keys(files), [files]);
+
   return (
     <>
-      {Object.keys(files).length === 0 ? (
+      {fileKeys.length === 0 ? (
         <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-50">
           <FolderTree
             size={24}
@@ -58,52 +113,15 @@ export function FilesPopover({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-1.5 p-1">
-          {Object.keys(files).map((file) => {
-            const filePath = String(file);
-            const rawContent = files[file];
-            let fileContent: string;
-            if (
-              typeof rawContent === "object" &&
-              rawContent !== null &&
-              "content" in rawContent
-            ) {
-              const contentArray = (rawContent as { content: unknown }).content;
-              if (Array.isArray(contentArray)) {
-                fileContent = contentArray.join("\n");
-              } else {
-                fileContent = String(contentArray || "");
-              }
-            } else {
-              fileContent = String(rawContent || "");
-            }
-
-            return (
-              <button
-                key={filePath}
-                type="button"
-                onClick={() =>
-                  setSelectedFile({ path: filePath, content: fileContent })
-                }
-                className="group flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left transition-[background-color,border-color,color,transform] hover:border-border hover:bg-muted/50 active:scale-[0.98]"
-              >
-                <div className="group-hover:bg-primary/10 flex h-8 w-8 items-center justify-center rounded-md bg-muted/80 text-muted-foreground transition-colors group-hover:text-primary">
-                  <FileText size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium text-foreground transition-colors group-hover:text-primary">
-                    {filePath}
-                  </div>
-                  <div className="truncate text-[10px] text-muted-foreground">
-                    {fileContent.length} {t("characters")}
-                  </div>
-                </div>
-                <ExternalLink
-                  size={12}
-                  className="text-muted-foreground/0 transition-[color,opacity] group-hover:text-muted-foreground/40"
-                />
-              </button>
-            );
-          })}
+          {fileKeys.map((file) => (
+            <FileListItem
+              key={file}
+              filePath={file}
+              rawContent={files[file]}
+              onClick={(content) => setSelectedFile({ path: file, content })}
+              t={t}
+            />
+          ))}
         </div>
       )}
 
