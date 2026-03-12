@@ -98,8 +98,6 @@
     "updated": "Updated",
     "notAvailable": "N/A",
     "deploymentUrlRequired": "Deployment URL is required",
-    "backendUrlNotConfigured": "Backend URL not configured. Please check environment variable NEXT_PUBLIC_BACKEND_URL",
-    "backendUrlFromEnv": "Backend URL is read from environment variable. Contact admin to modify",
     "assistantIdRequired": "Assistant ID is required",
     "fixJsonErrors": "Please fix JSON errors before saving",
     "recursionLimitPositive": "Recursion limit must be a positive number",

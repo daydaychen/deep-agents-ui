@@ -98,8 +98,6 @@
     "updated": "更新时间",
     "notAvailable": "无",
     "deploymentUrlRequired": "部署 URL 是必需的",
-    "backendUrlNotConfigured": "后端 URL 未配置，请检查环境变量 NEXT_PUBLIC_BACKEND_URL",
-    "backendUrlFromEnv": "后端 URL 从环境变量读取，如需修改请联系管理员",
     "assistantIdRequired": "助手 ID 是必需的",
     "fixJsonErrors": "保存前请修复 JSON 错误",
     "recursionLimitPositive": "递归限制必须是正数",
