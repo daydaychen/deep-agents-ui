@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import ChatPage from "@/app/components/chat/ChatPage";
 import { routing } from "@/i18n/routing";
 import { setRequestLocale } from "next-intl/server";

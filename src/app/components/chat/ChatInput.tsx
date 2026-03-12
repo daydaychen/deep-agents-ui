@@ -17,7 +17,6 @@ import React, {
   useCallback,
   useRef,
   useEffect,
-  useState,
 } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -143,7 +142,6 @@ export const ChatInput = React.memo<ChatInputProps>(
     const t = useTranslations("chat");
     const isComposingRef = useRef(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [isFocused, setIsFocused] = useState(false);
 
     const { overrideConfig, config, threadId } = useChatState();
     const { setOverrideConfig } = useChatActions();
@@ -380,8 +378,6 @@ export const ChatInput = React.memo<ChatInputProps>(
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
               onCompositionStart={() => {
                 isComposingRef.current = true;
               }}

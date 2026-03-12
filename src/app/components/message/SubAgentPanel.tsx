@@ -6,7 +6,7 @@ import { MessageContent } from "./MessageContent";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { extractStringFromMessageContent } from "@/app/utils/utils";
-import { X, Bot, Loader2, CheckCircle2, AlertCircle, Terminal } from "lucide-react";
+import { X, Loader2, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";

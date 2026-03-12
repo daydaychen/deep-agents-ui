@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { routing } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";

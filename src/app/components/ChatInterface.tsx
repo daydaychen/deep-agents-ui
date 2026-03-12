@@ -59,8 +59,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     setFiles,
   } = useChatActions();
 
-  const isPanelOpen = !!activeSubAgentId;
-
   const submitDisabled = isLoading || !assistant;
   const handleSubmit = useCallback(
     (e?: FormEvent) => {
