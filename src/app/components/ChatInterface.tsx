@@ -15,8 +15,9 @@ import { useChatActions, useChatState } from "@/providers/chat-context";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
-import React, { FormEvent, useCallback, useMemo, useState } from "react";
+import React, { FormEvent, useCallback, useMemo, useState, useEffect } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface ChatInterfaceProps {
   assistant: Assistant | null;
@@ -121,28 +122,52 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     return map;
   }, [ui]);
 
+  // Track last active subagent id for smooth slide-out animation
+  const [lastActiveSubAgentId, setLastActiveSubAgentId] = useState<string | null>(null);
+  useEffect(() => {
+    if (activeSubAgentId) {
+      setLastActiveSubAgentId(activeSubAgentId);
+    }
+  }, [activeSubAgentId]);
+
   const tCommon = useTranslations("common");
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
       {/* SubAgent Trace Overlay Panel */}
-      <div
-        className={cn(
-          "fixed right-4 bottom-4 z-[300] w-full max-w-[400px] flex flex-col overflow-hidden",
-          "rounded-2xl border border-border/60 bg-background shadow-2xl",
-          "transition-all duration-300 ease-out",
-          "top-[5.5rem]",
-          activeSubAgentId
-            ? "translate-x-0 opacity-100"
-            : "translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
-        )}
-      >
-        <SubAgentPanel
-          subAgentId={activeSubAgentId}
-          subAgents={allSubAgents}
-          subagentMessagesMap={subagentMessagesMap}
-          onClose={() => setActiveSubAgentId(null)}
-        />
+      <div className="fixed left-4 right-4 bottom-4 top-[5.5rem] z-[300] pointer-events-none flex">
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={75} className="pointer-events-none" />
+          
+          <ResizableHandle
+            withHandle
+            className={cn(
+              "w-2 outline-none bg-transparent hover:bg-primary/20 transition-all",
+              activeSubAgentId ? "pointer-events-auto cursor-col-resize z-50 -mr-1 opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          />
+
+          <ResizablePanel
+            defaultSize={25}
+            minSize={20}
+            maxSize={60}
+            className={cn(
+              "transition-[transform,opacity] duration-300 ease-out",
+              activeSubAgentId
+                ? "translate-x-0 opacity-100 pointer-events-auto"
+                : "translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-2xl">
+              <SubAgentPanel
+                subAgentId={activeSubAgentId || lastActiveSubAgentId}
+                subAgents={allSubAgents}
+                subagentMessagesMap={subagentMessagesMap}
+                onClose={() => setActiveSubAgentId(null)}
+              />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
 
       <div className="relative flex h-full flex-col overflow-hidden">

@@ -26,6 +26,7 @@ import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useState } from "react";
 import useSWR from "swr";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface HomePageInnerProps {
   config: StandaloneConfig;
@@ -207,59 +208,91 @@ function HomePageInner({
         </header>
 
         {/* Thread overlay panel */}
-        <div
-          className={cn(
-            "fixed left-4 bottom-4 z-[300] w-[320px] flex flex-col overflow-hidden",
-            "rounded-2xl border border-border/60 bg-background shadow-xl",
-            "transition-all duration-300 ease-out",
-            "top-[5.5rem]",
-            sidebar
-              ? "translate-x-0 opacity-100"
-              : "-translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
-          )}
-        >
-          <ThreadList
-            onThreadSelect={async (id) => {
-              await setThreadId(id);
-            }}
-            onMutateReady={(fn) => setMutateThreads(() => fn)}
-            onClose={() => setSidebar(null)}
-            onInterruptCountChange={setInterruptCount}
-          />
+        <div className={cn("fixed left-4 right-4 bottom-4 top-[5.5rem] pointer-events-none flex transition-all duration-300 ease-out", sidebar ? "z-[301]" : "z-[300]")}>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel
+              defaultSize={20}
+              minSize={15}
+              maxSize={50}
+              className={cn(
+                "transition-[transform,opacity] duration-300 ease-out",
+                sidebar
+                  ? "translate-x-0 opacity-100 pointer-events-auto"
+                  : "-translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
+              )}
+            >
+              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-xl">
+                <ThreadList
+                  onThreadSelect={async (id) => {
+                    await setThreadId(id);
+                  }}
+                  onMutateReady={(fn) => setMutateThreads(() => fn)}
+                  onClose={() => setSidebar(null)}
+                  onInterruptCountChange={setInterruptCount}
+                />
+              </div>
+            </ResizablePanel>
+
+            <ResizableHandle
+              withHandle
+              className={cn(
+                "w-2 outline-none bg-transparent hover:bg-primary/20 transition-all",
+                sidebar ? "pointer-events-auto cursor-col-resize z-50 -ml-1 opacity-100" : "opacity-0 pointer-events-none"
+              )}
+            />
+
+            <ResizablePanel defaultSize={80} className="pointer-events-none" />
+          </ResizablePanelGroup>
         </div>
 
         {/* Memory overlay panel */}
-        <div
-          className={cn(
-            "fixed left-4 bottom-4 z-[300] w-[320px] flex flex-col overflow-hidden",
-            "rounded-2xl border border-border/60 bg-background shadow-xl",
-            "transition-all duration-300 ease-out",
-            "top-[5.5rem]",
-            memorySidebar
-              ? "translate-x-0 opacity-100"
-              : "-translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
-          )}
-        >
-          <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <Database className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
-                {t("memory")}
-              </h2>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMemorySidebar(null)}
-              className="h-8 w-8"
-              aria-label={tCommon("close")}
+        <div className={cn("fixed left-4 right-4 bottom-4 top-[5.5rem] pointer-events-none flex transition-all duration-300 ease-out", memorySidebar ? "z-[301]" : "z-[300]")}>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel
+              defaultSize={20}
+              minSize={15}
+              maxSize={50}
+              className={cn(
+                "transition-[transform,opacity] duration-300 ease-out",
+                memorySidebar
+                  ? "translate-x-0 opacity-100 pointer-events-auto"
+                  : "-translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
+              )}
             >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex-1 overflow-hidden p-4">
-            <Memory config={config} assistantName={assistant?.name} />
-          </div>
+              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-xl">
+                <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
+                  <div className="flex items-center gap-2">
+                    <Database className="h-4 w-4 text-primary" />
+                    <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
+                      {t("memory")}
+                    </h2>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMemorySidebar(null)}
+                    className="h-8 w-8"
+                    aria-label={tCommon("close")}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-hidden p-4">
+                  <Memory config={config} assistantName={assistant?.name} />
+                </div>
+              </div>
+            </ResizablePanel>
+
+            <ResizableHandle
+              withHandle
+              className={cn(
+                "w-2 outline-none bg-transparent hover:bg-primary/20 transition-all",
+                memorySidebar ? "pointer-events-auto cursor-col-resize z-50 -ml-1 opacity-100" : "opacity-0 pointer-events-none"
+              )}
+            />
+
+            <ResizablePanel defaultSize={80} className="pointer-events-none" />
+          </ResizablePanelGroup>
         </div>
 
         {/* Main chat area — full width */}
