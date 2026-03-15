@@ -30,6 +30,7 @@ import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { usePersistedMessages } from "./usePersistedMessages";
+import { getInterruptBefore as getInterruptBeforeFromUtils } from "@/lib/auth-mode-utils";
 
 // Extend useStream options with DeepAgent-specific options not yet exported in SDK types
 interface UseStreamOptionsWithDeepAgentExtensions
@@ -72,23 +73,6 @@ export function useChat({
   const isSubmittingRef = useRef(false);
   const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>({});
 
-  // Auth mode node definitions
-  const READ_MODE_NODES = useMemo(
-    () => [
-      "task",
-      "shell",
-      "write_file",
-      "edit_file",
-      "delete_file",
-      "click",
-      "navigate",
-      "fill",
-      "upsert_task",
-      "run_shell_command",
-    ],
-    []
-  );
-
   // Sync overrideConfig with assistant defaults on change
   useEffect(() => {
     if (activeAssistant) {
@@ -106,22 +90,27 @@ export function useChat({
         ? authModeValue as typeof validAuthModes[number]
         : "ask";
 
-      setOverrideConfig((prev) => ({
-        ...prev,
+      setOverrideConfig({
+        // 显式重置所有字段，不保留之前的覆盖配置
+        model: undefined,
+        small_model: undefined,
+        analyst: undefined,
+        config_validator: undefined,
+        databus_specialist: undefined,
         thinking,
         authMode,
-        // Keep existing model overrides if any
-      }));
+        recursionLimit: undefined,
+        interruptBefore: undefined,
+        interruptAfter: undefined,
+      });
     }
   }, [activeAssistant]);
 
   const getInterruptBefore = useCallback(
     (mode: OverrideConfig["authMode"]) => {
-      if (mode === "ask") return ["*"];
-      if (mode === "read") return READ_MODE_NODES;
-      return undefined;
+      return getInterruptBeforeFromUtils(mode);
     },
-    [READ_MODE_NODES]
+    []
   );
 
   const metadata = useMemo(
@@ -635,10 +624,27 @@ export function useChat({
     const error = stream.error;
     if (!error) return undefined;
 
+    // Type guard for API error objects
+    interface ApiError {
+      message?: string;
+      detail?: string | string[] | Record<string, unknown>;
+      error?: string;
+    }
+
+    function isApiError(err: unknown): err is ApiError {
+      return (
+        typeof err === "object" &&
+        err !== null &&
+        ("message" in err || "detail" in err || "error" in err)
+      );
+    }
+
     let errorMessage =
       typeof error === "string"
         ? error
-        : (error as any).message || JSON.stringify(error);
+        : isApiError(error)
+          ? error.message || JSON.stringify(error)
+          : JSON.stringify(error);
 
     // Try to parse JSON if the error message contains a JSON object
     if (errorMessage.includes("{") && errorMessage.includes("}")) {
@@ -652,7 +658,7 @@ export function useChat({
           if (parsed.detail) {
             if (Array.isArray(parsed.detail)) {
               errorMessage = parsed.detail
-                .map((d: any) =>
+                .map((d: unknown) =>
                   typeof d === "string" ? d : JSON.stringify(d)
                 )
                 .join(", ");

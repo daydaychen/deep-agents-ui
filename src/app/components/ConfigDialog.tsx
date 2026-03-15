@@ -25,6 +25,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StandaloneConfig } from "@/lib/config";
 import { DEFAULT_MESSAGE_LIMIT } from "@/lib/constants";
+import { parseJSON } from "@/lib/safe-json-parse";
+import { escapeHtml } from "@/lib/utils";
+import {
+  logAuditEvent,
+  createAssistantConfigAuditEvent,
+  createAuthModeChangeAuditEvent,
+} from "@/lib/audit-logger";
 import { Client } from "@langchain/langgraph-sdk";
 import type { Assistant } from "@langchain/langgraph-sdk";
 import { toast } from "sonner";
@@ -44,6 +51,7 @@ import {
 import { useTranslations } from "next-intl";
 import { KeyValueForm } from "@/app/components/ui/KeyValueForm";
 import { TagInput } from "@/app/components/ui/TagInput";
+import { createDuplicateKeyValidator } from "@/lib/validation";
 
 interface ConfigDialogProps {
   open: boolean;
@@ -61,19 +69,17 @@ const assistantFormSchema = z.object({
   configurable: z.array(z.object({ key: z.string(), value: z.string() })),
   metadata: z.array(z.object({ key: z.string(), value: z.string() })),
 }).superRefine((data, ctx) => {
-  const checkDuplicates = (arr: { key: string }[], path: string) => {
-    const keys = arr.map(e => e.key).filter(k => k !== "");
-    const duplicateKeys = keys.filter((key, index) => keys.indexOf(key) !== index);
-    if (duplicateKeys.length > 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Duplicate keys are not allowed",
-        path: [path],
-      });
-    }
-  };
-  checkDuplicates(data.configurable, "configurable");
-  checkDuplicates(data.metadata, "metadata");
+  const validateDuplicates = createDuplicateKeyValidator();
+  
+  const configurableResult = validateDuplicates(data.configurable, "configurable");
+  if (configurableResult) {
+    ctx.addIssue(configurableResult);
+  }
+  
+  const metadataResult = validateDuplicates(data.metadata, "metadata");
+  if (metadataResult) {
+    ctx.addIssue(metadataResult);
+  }
 });
 
 type AssistantFormValues = z.infer<typeof assistantFormSchema>;
@@ -173,7 +179,7 @@ export function ConfigDialog({
       const metadata = assistant.metadata || {};
       const configurable = config.configurable || {};
 
-      const toEntries = (obj: Record<string, any>, excludeKeys: string[] = []) =>
+      const toEntries = (obj: Record<string, unknown>, excludeKeys: string[] = []) =>
         Object.entries(obj)
           .filter(([key]) => !excludeKeys.includes(key))
           .map(([key, value]) => ({
@@ -201,10 +207,17 @@ export function ConfigDialog({
 
   // Map form to SDK data
   const mapFromForm = (values: AssistantFormValues) => {
+    const BLOCKED_KEYS = ["__proto__", "constructor", "prototype"];
+
     const fromEntries = (entries: { key: string; value: string }[]) => {
-      const obj: Record<string, any> = {};
+      const obj: Record<string, unknown> = {};
       entries.forEach(({ key, value }) => {
-        if (!key) return;
+        if (!key || BLOCKED_KEYS.includes(key)) {
+          if (BLOCKED_KEYS.includes(key)) {
+            console.warn("Blocked prototype pollution attempt:", key);
+          }
+          return;
+        }
         try {
           if (
             (value.startsWith("{") && value.endsWith("}")) ||
@@ -213,7 +226,7 @@ export function ConfigDialog({
             value === "false" ||
             !isNaN(Number(value))
           ) {
-            obj[key] = JSON.parse(value);
+            obj[key] = parseJSON(value);
           } else {
             obj[key] = value;
           }
@@ -329,9 +342,33 @@ export function ConfigDialog({
 
         const formValues = methods.getValues();
         const { config, metadata } = mapFromForm(formValues);
-        
+
         // Sync the local recursionLimit state to the config sent to server
         config.recursion_limit = parseInt(recursionLimit, 10);
+
+        // Check for auth mode change to Auto mode - require confirmation
+        const oldAuthMode = selectedAssistant.metadata?.authMode as string | undefined;
+        const newAuthMode = metadata.authMode as string | undefined;
+
+        if (newAuthMode === "auto" && oldAuthMode !== "auto") {
+          // Show warning confirmation dialog
+          const confirmed = window.confirm(
+            "切换到 Auto 模式将绕过所有安全审批。确定继续？"
+          );
+          if (!confirmed) {
+            setIsUpdatingAssistant(false);
+            return;
+          }
+
+          // Log audit event for auth mode change to Auto
+          const auditEvent = createAuthModeChangeAuditEvent(
+            selectedAssistant.assistant_id,
+            oldAuthMode,
+            newAuthMode,
+            userId
+          );
+          logAuditEvent(auditEvent);
+        }
 
         // Simple deep comparison to avoid redundant updates
         const currentData = JSON.stringify({
@@ -345,6 +382,15 @@ export function ConfigDialog({
             config,
             metadata,
           });
+
+          // Log general config update audit event
+          const configAuditEvent = createAssistantConfigAuditEvent(
+            selectedAssistant.assistant_id,
+            { authMode: newAuthMode, defaultModel: metadata.defaultModel },
+            userId
+          );
+          logAuditEvent(configAuditEvent);
+
           toast.success(t("assistantUpdated"));
         }
       } catch (error) {
@@ -519,9 +565,10 @@ export function ConfigDialog({
                             <DialogTitle>{t("deleteAssistant")}</DialogTitle>
                             <DialogDescription>
                               {t.rich("deleteAssistantDescription", {
-                                name:
+                                name: escapeHtml(
                                   selectedAssistant.name ||
-                                  selectedAssistant.graph_id,
+                                    selectedAssistant.graph_id
+                                ),
                                 strong: (chunks: any) => (
                                   <strong className="font-semibold text-foreground">
                                     {chunks}

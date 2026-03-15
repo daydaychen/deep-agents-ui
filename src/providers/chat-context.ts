@@ -14,7 +14,7 @@ export type StateType = {
     subject?: string;
     page_content?: string;
   };
-  ui?: any;
+  ui?: unknown;
 };
 
 export type LLMOverrideConfig = {

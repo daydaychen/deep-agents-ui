@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useChatState, useChatActions, OverrideConfig } from "@/providers/chat-context";
 
-export function DockToolbar() {
+export const DockToolbar = React.memo(() => {
   const t = useTranslations("chat");
   const { overrideConfig } = useChatState();
   const { setOverrideConfig } = useChatActions();
@@ -40,17 +41,17 @@ export function DockToolbar() {
     setOverrideConfig((prev) => ({ ...prev, thinking: !prev.thinking }));
   };
 
-  const AuthIcon = {
+  const AuthIcon = useMemo(() => ({
     ask: Shield,
     read: Eye,
     auto: Zap,
-  }[authMode];
+  }[authMode]), [authMode]);
 
-  const authColor = {
+  const authColor = useMemo(() => ({
     ask: "text-green-500",
     read: "text-yellow-500",
     auto: "text-red-500",
-  }[authMode];
+  }[authMode]), [authMode]);
 
   return (
     <div className="flex items-center gap-1 px-2 py-1.5 border-t bg-muted/10">
@@ -100,10 +101,13 @@ export function DockToolbar() {
       {/* Thinking Toggle */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={cn("h-7 w-7", isThinking ? "text-[#34d399]" : "text-muted-foreground")}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-7 w-7 transition-colors duration-200",
+              isThinking ? "text-[#34d399] animate-pulse" : "text-muted-foreground"
+            )}
             onClick={toggleThinking}
           >
             <Brain className="h-4 w-4" />
@@ -114,4 +118,6 @@ export function DockToolbar() {
       </Tooltip>
     </div>
   );
-}
+});
+
+DockToolbar.displayName = "DockToolbar";
