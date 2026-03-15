@@ -8,6 +8,7 @@ interface ProcessedMessage {
   toolCalls: ToolCall[];
   subAgents: SubAgent[];
   showAvatar: boolean;
+  reasoningContent?: string;
 }
 
 /**
@@ -34,7 +35,7 @@ export function useProcessedMessages(
 
     const messageMap = new Map<
       string,
-      { message: Message; toolCalls: ToolCall[] }
+      { message: Message; toolCalls: ToolCall[]; reasoningContent?: string }
     >();
 
     // Map to quickly find and update a ToolCall by its ID
@@ -105,9 +106,12 @@ export function useProcessedMessages(
           }
         );
 
+        const reasoningContent = message.additional_kwargs?.reasoning_content as string | undefined;
+
         messageMap.set(message.id!, {
           message,
           toolCalls: toolCallsWithStatus,
+          reasoningContent,
         });
       } else if (message.type === "tool") {
         const toolCallId = message.tool_call_id;
@@ -140,6 +144,7 @@ export function useProcessedMessages(
         ...data,
         subAgents,
         showAvatar: data.message.type !== prevMessage?.type,
+        reasoningContent: data.reasoningContent,
       };
     });
   }, [mainMessages, subagentMessagesMap, interrupt]);

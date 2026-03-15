@@ -169,8 +169,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             )}
           </div>
 
-          {/* 1. Text Content (Message Bubble) */}
-          {hasContent && (
+          {((hasContent || (!isUser && (message.additional_kwargs?.reasoning_content as string | undefined)))) && (
             <div className={cn(
               "relative min-w-0 overflow-hidden",
               "text-left w-full pl-2 border-l-2 border-muted/30 ml-0.5"
@@ -179,6 +178,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                 content={messageContent}
                 isUser={isUser}
                 isStreaming={isStreaming}
+                reasoningContent={message.additional_kwargs?.reasoning_content as string | undefined}
               />
             </div>
           )}
