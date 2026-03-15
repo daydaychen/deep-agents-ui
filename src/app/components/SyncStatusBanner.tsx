@@ -36,10 +36,12 @@ export function SyncStatusBanner({
         role="status"
         aria-live="polite"
       >
-        <Loader2
-          className="h-3 w-3 animate-spin"
+        <div
+          className="animate-spin"
           aria-hidden="true"
-        />
+        >
+          <Loader2 className="h-3 w-3" />
+        </div>
         <span>{syncingText}</span>
       </div>
     );

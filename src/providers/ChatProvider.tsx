@@ -40,6 +40,7 @@ export function ChatProvider({
     config,
   });
 
+  // chat is already memoized in useChat hook, use it directly as single dependency
   const state: ChatStateContextType = useMemo(
     () => ({
       stream: chat.stream,
@@ -63,30 +64,11 @@ export function ChatProvider({
       config: chat.config,
       threadId: chat.threadId,
     }),
-    [
-      chat.stream,
-      chat.todos,
-      chat.files,
-      chat.email,
-      chat.ui,
-      chat.messages,
-      chat.subagents,
-      chat.subagentMessagesMap,
-      chat.activeSubAgentId,
-      chat.isLoading,
-      chat.isThreadLoading,
-      chat.interrupt,
-      chat.getMessagesMetadata,
-      chat.error,
-      chat.branch,
-      chat.history,
-      chat.getMessageBranchInfo,
-      chat.overrideConfig,
-      chat.config,
-      chat.threadId,
-    ]
+    [chat]
   );
 
+  // chat is already memoized in useChat hook, use it directly as single dependency
+  // All action callbacks are stable references from useChat
   const actions: ChatActionsContextType = useMemo(
     () => ({
       sendMessage: chat.sendMessage,
@@ -102,20 +84,7 @@ export function ChatProvider({
       setBranch: chat.setBranch,
       setOverrideConfig: chat.setOverrideConfig,
     }),
-    [
-      chat.sendMessage,
-      chat.runSingleStep,
-      chat.continueStream,
-      chat.stopStream,
-      chat.markCurrentThreadAsResolved,
-      chat.resumeInterrupt,
-      chat.retryFromMessage,
-      chat.editMessage,
-      chat.setFiles,
-      chat.setActiveSubAgentId,
-      chat.setBranch,
-      // chat.setOverrideConfig is stable (from useState), no need to include
-    ]
+    [chat]
   );
 
   return (

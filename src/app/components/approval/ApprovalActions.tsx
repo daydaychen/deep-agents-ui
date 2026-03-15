@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check, Pencil, X } from "lucide-react";
+import { Check, Loader2, Pencil, X } from "lucide-react";
 import React from "react";
 import { useTranslations } from "next-intl";
 
@@ -36,6 +36,12 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
   }) => {
     const t = useTranslations("approval");
 
+    // Move useMemo before any early returns to satisfy React Hooks rules
+    const allowedDecisionsSet = React.useMemo(
+      () => new Set(allowedDecisions),
+      [allowedDecisions]
+    );
+
     if (isEditing) {
       return (
         <div className="flex flex-wrap gap-2">
@@ -44,6 +50,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             size="sm"
             onClick={onCancelEdit}
             disabled={isLoading}
+            className="min-h-[44px] min-w-[44px]"
           >
             {t("cancel")}
           </Button>
@@ -51,9 +58,15 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             size="sm"
             onClick={onEdit}
             disabled={isLoading}
-            className="bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+            className="min-h-[44px] min-w-[44px] bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
           >
-            <Check size={14} />
+            {isLoading ? (
+              <div className="mr-2 animate-spin">
+                <Loader2 className="h-4 w-4" />
+              </div>
+            ) : (
+              <Check size={14} />
+            )}
             {isLoading ? t("saving") : t("saveAndApprove")}
           </Button>
         </div>
@@ -68,6 +81,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             size="sm"
             onClick={onCancelRejection}
             disabled={isLoading}
+            className="min-h-[44px] min-w-[44px]"
           >
             {t("cancel")}
           </Button>
@@ -76,6 +90,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             size="sm"
             onClick={onRejectConfirm}
             disabled={isLoading}
+            className="min-h-[44px] min-w-[44px]"
           >
             {isLoading ? t("rejecting") : t("confirmReject")}
           </Button>
@@ -85,36 +100,37 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
 
     return (
       <div className="flex flex-wrap gap-2">
-        {allowedDecisions.includes("reject") && (
+        {allowedDecisionsSet.has("reject") && (
           <Button
             variant="outline"
             size="sm"
             onClick={onReject}
             disabled={isLoading}
-            className="text-destructive hover:bg-destructive/10"
+            className="min-h-[44px] min-w-[44px] text-destructive hover:bg-destructive/10"
           >
             <X size={14} />
             {t("reject")}
           </Button>
         )}
-        {allowedDecisions.includes("edit") && (
+        {allowedDecisionsSet.has("edit") && (
           <Button
             variant="outline"
             size="sm"
             onClick={onStartEdit}
             disabled={isLoading}
+            className="min-h-[44px] min-w-[44px]"
           >
             <Pencil size={14} />
             {t("edit")}
           </Button>
         )}
-        {allowedDecisions.includes("approve") && (
+        {allowedDecisionsSet.has("approve") && (
           <Button
             size="sm"
             onClick={onApprove}
             disabled={isLoading}
             className={cn(
-              "bg-green-600 text-white hover:bg-green-700",
+              "min-h-[44px] min-w-[44px] bg-green-600 text-white hover:bg-green-700",
               "dark:bg-green-600 dark:hover:bg-green-700"
             )}
           >

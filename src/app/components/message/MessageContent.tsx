@@ -4,6 +4,7 @@ import { MarkdownContent } from "@/app/components/MarkdownContent";
 import { cn } from "@/lib/utils";
 import React, { useState } from "react";
 import { Brain, ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface MessageContentProps {
   content: string;
@@ -14,14 +15,16 @@ interface MessageContentProps {
 
 export const MessageContent = React.memo<MessageContentProps>(
   ({ content, isUser, isStreaming, reasoningContent }) => {
+    const t = useTranslations("chat");
     const [isReasoningExpanded, setIsReasoningExpanded] = useState(true);
     return (
-      <div className={cn("relative flex flex-col gap-3 group")}>
+      <div className={cn("group relative flex flex-col gap-3")}>
         {!isUser && reasoningContent && (
-          <div className="flex flex-col gap-2 overflow-hidden rounded-xl border border-primary/10 bg-primary/5 transition-all duration-300">
+          <div className="border-primary/10 bg-primary/5 flex flex-col gap-2 overflow-hidden rounded-xl border transition-all duration-200">
             <button
               onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-primary/70 hover:bg-primary/5 transition-colors"
+              aria-expanded={isReasoningExpanded}
+              className="text-primary/90 hover:bg-primary/5 flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-colors"
             >
               {isReasoningExpanded ? (
                 <ChevronDown className="h-3.5 w-3.5" />
@@ -29,18 +32,23 @@ export const MessageContent = React.memo<MessageContentProps>(
                 <ChevronRight className="h-3.5 w-3.5" />
               )}
               <Brain className="h-3.5 w-3.5" />
-              <span>思考过程</span>
+              <span>{t("reasoningProcess")}</span>
             </button>
-            
-            <div 
+
+            <div
               className={cn(
-                "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
-                isReasoningExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                "grid transition-[grid-template-rows,opacity] duration-200 ease-in-out",
+                isReasoningExpanded
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
               )}
             >
               <div className="overflow-hidden">
-                <div className="px-3 pb-3 pt-1 text-sm text-primary/60 italic leading-relaxed border-t border-primary/5">
-                  <MarkdownContent content={reasoningContent} isStreaming={isStreaming} />
+                <div className="text-primary/80 border-primary/5 border-t px-3 pb-3 pt-1 text-sm italic leading-relaxed">
+                  <MarkdownContent
+                    content={reasoningContent}
+                    isStreaming={isStreaming}
+                  />
                 </div>
               </div>
             </div>
@@ -51,7 +59,7 @@ export const MessageContent = React.memo<MessageContentProps>(
           className={cn(
             "mt-0.5 overflow-hidden break-words text-sm font-normal leading-relaxed",
             isUser
-              ? "rounded-2xl rounded-tr-none border border-primary/20 bg-user-message px-3 py-2 text-foreground shadow-sm dark:border-primary/30"
+              ? "border-primary/20 dark:border-primary/30 rounded-2xl rounded-tr-none border bg-user-message px-3 py-2 text-foreground shadow-sm"
               : "rounded-2xl rounded-tl-none bg-accent/30 px-4 py-3 text-primary"
           )}
         >
@@ -62,7 +70,10 @@ export const MessageContent = React.memo<MessageContentProps>(
               </p>
             </div>
           ) : (
-            <MarkdownContent content={content} isStreaming={isStreaming} />
+            <MarkdownContent
+              content={content}
+              isStreaming={isStreaming}
+            />
           )}
         </div>
       </div>

@@ -168,7 +168,7 @@ export const Memory = React.memo<{
   }, [debouncedQuery, searchItems]);
 
   const sortedNamespaces = useMemo(() => {
-    return [...namespaces].sort((a, b) => {
+    return namespaces.toSorted((a, b) => {
       return a.namespace.join(".").localeCompare(b.namespace.join("."));
     });
   }, [namespaces]);
@@ -206,7 +206,9 @@ export const Memory = React.memo<{
           className="h-9 border-none bg-muted/30 pl-9 text-xs shadow-sm transition-all focus-visible:ring-1 focus-visible:ring-primary/30"
         />
         {isSearching && (
-          <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin">
+            <Loader2 className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
         )}
       </div>
 
@@ -219,10 +221,12 @@ export const Memory = React.memo<{
             </div>
             {isSearching ? (
               <div className="flex justify-center p-8">
-                <Loader2
-                  size={20}
-                  className="animate-spin text-muted-foreground/30"
-                />
+                <div className="animate-spin">
+                  <Loader2
+                    size={20}
+                    className="text-muted-foreground/30"
+                  />
+                </div>
               </div>
             ) : searchResults.length === 0 ? (
               <div className="p-8 text-center opacity-60">
@@ -327,11 +331,13 @@ export const Memory = React.memo<{
               <AlertCircle className="h-5 w-5" />
               <DialogTitle>{t("confirmDeletion")}</DialogTitle>
             </div>
-            <DialogDescription className="pt-2 break-words">
+            <DialogDescription className="break-words pt-2">
               {t.rich("deleteConfirm", {
                 key: itemToDelete?.key ?? "",
                 code: (chunks: any) => (
-                  <code className="break-all whitespace-pre-wrap">{chunks}</code>
+                  <code className="whitespace-pre-wrap break-all">
+                    {chunks}
+                  </code>
                 ),
               })}
             </DialogDescription>

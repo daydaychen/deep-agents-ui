@@ -46,7 +46,7 @@ interface ThreadListItemProps {
 export const ThreadListItem = React.memo<ThreadListItemProps>(
   ({ thread, isActive, onSelect, onMarkAsResolved, onDelete }) => {
     const t = useTranslations("thread");
-    
+
     return (
       <div
         className={cn(
@@ -81,6 +81,7 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label={t("moreOptions")}
                     onClick={(e) => {
                       e.stopPropagation();
                     }}

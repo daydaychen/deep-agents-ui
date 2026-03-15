@@ -71,6 +71,7 @@
     "thinking": "推理",
     "thinkingOn": "推理：开启",
     "thinkingOff": "推理：关闭",
+    "reasoningProcess": "思考过程",
     "authMode": {
       "ask": "询问模式 (严格)",
       "read": "只读模式 (安全)",
@@ -150,6 +151,9 @@
     "noMatchingMemories": "未找到匹配的记忆",
     "hierarchicalNamespaces": "分层命名空间",
     "noMemoryEntries": "未找到记忆条目",
+    "noItemsInNamespace": "此命名空间下暂无项目",
+    "created": "创建",
+    "updated": "更新",
     "confirmDeletion": "确认删除",
     "deleteConfirm": "确定要删除条目 <code>{key}</code> 吗？此操作无法撤销。",
     "cancel": "取消",
@@ -168,6 +172,7 @@
     "jsonPlaceholder": "输入 JSON 值（例如：'{\"key\": \"value\"}'）",
     "itemEmpty": "项目为空",
     "saveItemFailed": "保存项目失败：{error}",
+    "deleteMemoryItem": "删除记忆项目 {key}",
     "copiedToClipboard": "已复制到剪贴板",
     "namespaceType": "命名空间类型",
     "namespaceId": "命名空间 ID",
@@ -203,6 +208,7 @@
     "loadThreadsFailed": "加载对话失败",
     "markAsResolved": "标记为已解决",
     "deleteThread": "删除会话",
+    "moreOptions": "更多选项",
     "message": "条消息",
     "messages": "条消息"
   },

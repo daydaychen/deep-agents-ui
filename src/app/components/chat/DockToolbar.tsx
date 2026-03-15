@@ -1,20 +1,13 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Shield,
-  Eye,
-  Zap,
-  Brain,
-  Sparkles,
-  ChevronDown,
-} from "lucide-react";
+import { Shield, Eye, Zap, Brain, Sparkles, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
@@ -23,7 +16,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useChatState, useChatActions, OverrideConfig } from "@/providers/chat-context";
+import {
+  useChatState,
+  useChatActions,
+  OverrideConfig,
+} from "@/providers/chat-context";
 import { MODEL_OPTIONS } from "@/lib/constants";
 
 export const DockToolbar = React.memo(() => {
@@ -46,38 +43,39 @@ export const DockToolbar = React.memo(() => {
   const handleModelChange = (modelId: string) => {
     setOverrideConfig((prev) => ({
       ...prev,
-      model: modelId ? { model: modelId } : undefined
+      model: modelId ? { model: modelId } : undefined,
     }));
   };
 
   // Find current model option
-  const currentModelOption = useMemo(() => 
-    MODEL_OPTIONS.find(m => m.id === currentModel),
-    [currentModel]
-  );
+  const currentModelOption = MODEL_OPTIONS.find((m) => m.id === currentModel);
 
-  const AuthIcon = useMemo(() => ({
+  const AuthIcon = {
     ask: Shield,
     read: Eye,
     auto: Zap,
-  }[authMode]), [authMode]);
+  }[authMode];
 
-  const authColor = useMemo(() => ({
+  const authColor = {
     ask: "text-green-500",
     read: "text-yellow-500",
     auto: "text-red-500",
-  }[authMode]), [authMode]);
+  }[authMode];
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1.5 border-t bg-muted/10">
+    <div className="flex items-center gap-1 border-t bg-muted/10 px-2 py-1.5">
       {/* Model Switcher */}
       <DropdownMenu>
         <Tooltip>
           <TooltipTrigger asChild>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-muted-foreground hover:text-foreground"
+              >
                 <Sparkles className="h-4 w-4" />
-                <span className="text-xs max-w-[120px] truncate">
+                <span className="max-w-[120px] truncate text-xs">
                   {currentModelOption?.name || t("default")}
                 </span>
                 <ChevronDown className="h-3 w-3 opacity-50" />
@@ -86,7 +84,10 @@ export const DockToolbar = React.memo(() => {
           </TooltipTrigger>
           <TooltipContent>{t("model")}</TooltipContent>
         </Tooltip>
-        <DropdownMenuContent align="start" className="max-h-[400px] overflow-y-auto">
+        <DropdownMenuContent
+          align="start"
+          className="max-h-[400px] overflow-y-auto"
+        >
           <DropdownMenuItem onClick={() => handleModelChange("")}>
             <Sparkles className="mr-2 h-4 w-4" />
             {t("default")}
@@ -103,14 +104,18 @@ export const DockToolbar = React.memo(() => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="h-4 w-px bg-border mx-1" />
+      <div className="mx-1 h-4 w-px bg-border" />
 
       {/* Auth Mode Switcher */}
       <DropdownMenu>
         <Tooltip>
           <TooltipTrigger asChild>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-muted-foreground hover:text-foreground"
+              >
                 <AuthIcon className={cn("h-4 w-4", authColor)} />
                 <ChevronDown className="h-3 w-3 opacity-50" />
                 <span className="sr-only">{t(`authMode.${authMode}`)}</span>
@@ -151,7 +156,9 @@ export const DockToolbar = React.memo(() => {
             <span className="sr-only">{t("thinking")}</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{t(isThinking ? "thinkingOn" : "thinkingOff")}</TooltipContent>
+        <TooltipContent>
+          {t(isThinking ? "thinkingOn" : "thinkingOff")}
+        </TooltipContent>
       </Tooltip>
     </div>
   );

@@ -1,11 +1,11 @@
 "use client";
 
 import React, {
-  useMemo,
   useCallback,
   useState,
   useEffect,
   useRef,
+  useMemo,
 } from "react";
 import {
   FileText,
@@ -97,7 +97,7 @@ export function FilesPopover({
     [files, setFiles]
   );
 
-  const fileKeys = useMemo(() => Object.keys(files), [files]);
+  const fileKeys = Object.keys(files);
 
   return (
     <>
@@ -243,7 +243,7 @@ export const TasksFilesSidebar = React.memo<{
             />
           </button>
 
-          {tasksOpen && (
+          <div style={{ display: tasksOpen ? "block" : "none" }}>
             <ScrollArea className="flex-1 px-3">
               {todos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center opacity-50">
@@ -297,7 +297,7 @@ export const TasksFilesSidebar = React.memo<{
                 </div>
               )}
             </ScrollArea>
-          )}
+          </div>
         </div>
 
         {/* Files Section */}
@@ -332,7 +332,7 @@ export const TasksFilesSidebar = React.memo<{
             />
           </button>
 
-          {filesOpen && (
+          <div style={{ display: filesOpen ? "block" : "none" }}>
             <ScrollArea className="flex-1 px-3">
               <div className="pb-4">
                 <FilesPopover
@@ -342,7 +342,7 @@ export const TasksFilesSidebar = React.memo<{
                 />
               </div>
             </ScrollArea>
-          )}
+          </div>
         </div>
       </div>
     </div>

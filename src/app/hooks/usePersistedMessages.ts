@@ -29,14 +29,27 @@ export function usePersistedMessages(
 
   // Use ref for the actual data to avoid rapid re-renders during streaming
   const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
-  const [subagentMessagesMap, setSubagentMessagesMap] = useState<Map<string, Message[]>>(new Map());
+  const [subagentMessagesMap, setSubagentMessagesMap] = useState<
+    Map<string, Message[]>
+  >(new Map());
 
   const pendingWriteRef = useRef(false);
   const lastUpdateRef = useRef(0);
 
   // ============ 合并逻辑 (节流更新 UI) ============
+  // Extract primitive dependencies from subagents Map to avoid unnecessary re-runs
+  const subagentSize = subagents.size;
+  const subagentKeys = useMemo(() => Array.from(subagents.keys()), [subagents]);
+  const subagentMessageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    subagents.forEach((subagent, key) => {
+      counts[key] = subagent.messages?.length || 0;
+    });
+    return counts;
+  }, [subagents]);
+
   useEffect(() => {
-    if (subagents.size === 0) return;
+    if (subagentSize === 0) return;
 
     let hasChanges = false;
     subagents.forEach((subagent, toolCallId) => {
@@ -61,7 +74,7 @@ export function usePersistedMessages(
 
     if (hasChanges) {
       pendingWriteRef.current = true;
-      
+
       // Throttle UI updates to avoid "Maximum update depth exceeded"
       const now = Date.now();
       if (now - lastUpdateRef.current > UI_UPDATE_THROTTLE) {
@@ -69,7 +82,7 @@ export function usePersistedMessages(
         lastUpdateRef.current = now;
       }
     }
-  }, [isLoading, subagents]);
+  }, [isLoading, subagentSize, subagentKeys, subagentMessageCounts, subagents]);
 
   // Ensure UI is updated when loading finishes
   useEffect(() => {
@@ -99,20 +112,29 @@ export function usePersistedMessages(
             keyPath: ["threadId", "messageId"],
           });
           objectStore.createIndex("threadId", "threadId", { unique: false });
-          objectStore.createIndex("toolCallId", ["threadId", "toolCallId"], { unique: false });
+          objectStore.createIndex("toolCallId", ["threadId", "toolCallId"], {
+            unique: false,
+          });
           objectStore.createIndex("timestamp", "timestamp", { unique: false });
         };
       });
     };
 
-    dbReadyPromiseRef.current = openDB().then(db => {
-      dbRef.current = db;
-      return db;
-    }).catch(() => null);
+    const dbPromise = openDB()
+      .then((db) => {
+        dbRef.current = db;
+        return db;
+      })
+      .catch(() => null);
+
+    dbReadyPromiseRef.current = dbPromise;
 
     return () => {
-      dbRef.current?.close();
+      dbPromise.then((db) => {
+        db?.close();
+      });
       dbRef.current = null;
+      dbReadyPromiseRef.current = null;
     };
   }, [threadId]);
 
@@ -153,7 +175,9 @@ export function usePersistedMessages(
     [threadId]
   );
 
-  const loadSubagentMessages = useCallback(async (): Promise<Map<string, Message[]>> => {
+  const loadSubagentMessages = useCallback(async (): Promise<
+    Map<string, Message[]>
+  > => {
     if (!threadId || !dbReadyPromiseRef.current) return new Map();
     const db = await dbReadyPromiseRef.current;
     if (!db) return new Map();
@@ -163,15 +187,19 @@ export function usePersistedMessages(
       transaction = db.transaction([STORE_NAME], "readonly");
       const store = transaction.objectStore(STORE_NAME);
       const index = store.index("threadId");
-      const result = await new Promise<PersistedSubagentMessage[]>((resolve, reject) => {
-        const request = index.getAll(threadId);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
+      const result = await new Promise<PersistedSubagentMessage[]>(
+        (resolve, reject) => {
+          const request = index.getAll(threadId);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        }
+      );
 
       const subagentMap = new Map<string, Message[]>();
-      result.sort((a, b) => (a.timestamp - b.timestamp) || (a.index - b.index));
-      result.forEach(pm => {
+      const sortedResult = result.toSorted(
+        (a, b) => a.timestamp - b.timestamp || a.index - b.index
+      );
+      sortedResult.forEach((pm) => {
         if (!subagentMap.has(pm.toolCallId)) subagentMap.set(pm.toolCallId, []);
         subagentMap.get(pm.toolCallId)!.push(pm.message);
       });
@@ -190,11 +218,12 @@ export function usePersistedMessages(
       setSubagentMessagesMap(new Map());
       return;
     }
-    loadSubagentMessages().then(map => {
+    loadSubagentMessages().then((map) => {
       messagesCacheRef.current = map;
       setSubagentMessagesMap(new Map(map));
     });
-  }, [threadId, loadSubagentMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadId]);
 
   useEffect(() => {
     if (!pendingWriteRef.current) return;
@@ -213,9 +242,14 @@ export function usePersistedMessages(
       }
     }, BATCH_WRITE_INTERVAL);
     return () => clearTimeout(timer);
-  }, [isLoading, batchSaveToIndexedDB]);
+    // batchSaveToIndexedDB is stable from useCallback, only depends on threadId
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
-  return useMemo(() => ({
-    subagentMessagesMap,
-  }), [subagentMessagesMap]);
+  return useMemo(
+    () => ({
+      subagentMessagesMap,
+    }),
+    [subagentMessagesMap]
+  );
 }

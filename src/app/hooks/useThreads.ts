@@ -93,19 +93,28 @@ export function useThreads(props: {
               messageCount = values.messages.length;
             }
 
-            const firstHumanMessage = values.messages.find(
-              (m: any) => m.type === "human"
-            );
+            // Build type index for O(1) lookups instead of O(n) repeated .find() calls
+            let firstHumanMessage: any = null;
+            let firstAiMessage: any = null;
+            for (const m of values.messages) {
+              if (!firstHumanMessage && m.type === "human") {
+                firstHumanMessage = m;
+              }
+              if (!firstAiMessage && m.type === "ai") {
+                firstAiMessage = m;
+              }
+              if (firstHumanMessage && firstAiMessage) break;
+            }
+
             if (firstHumanMessage?.content) {
               const content =
                 typeof firstHumanMessage.content === "string"
                   ? firstHumanMessage.content
                   : firstHumanMessage.content[0]?.text || "";
-              title = content.slice(0, THREAD_TITLE_MAX_LENGTH) + (content.length > THREAD_TITLE_MAX_LENGTH ? "…" : "");
+              title =
+                content.slice(0, THREAD_TITLE_MAX_LENGTH) +
+                (content.length > THREAD_TITLE_MAX_LENGTH ? "…" : "");
             }
-            const firstAiMessage = values.messages.find(
-              (m: any) => m.type === "ai"
-            );
             if (firstAiMessage?.content) {
               const content =
                 typeof firstAiMessage.content === "string"

@@ -20,7 +20,7 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-      <div className="mb-4 rounded-sm border border-border bg-background p-3">
+      <div className="mb-4 rounded-md border border-border bg-background p-3">
         <div className="mb-2">
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {t("tool")}
@@ -41,7 +41,8 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
           <div>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+              aria-expanded={isExpanded}
+              className="flex cursor-pointer items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
             >
               {isExpanded ? (
                 <ChevronDown size={14} />
@@ -51,7 +52,7 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
               {t("arguments")}
             </button>
             {isExpanded && (
-              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded-sm border border-border bg-muted/40 p-2 font-mono text-xs text-foreground">
+              <pre className="mt-2 max-w-full overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-2 font-mono text-xs text-foreground">
                 {JSON.stringify(actionRequest.args, null, 2)}
               </pre>
             )}

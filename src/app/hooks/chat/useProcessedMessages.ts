@@ -1,5 +1,8 @@
 import type { SubAgent, ToolCall } from "@/app/types/types";
-import { extractStringFromMessageContent, extractSubAgents } from "@/app/utils/utils";
+import {
+  extractStringFromMessageContent,
+  extractSubAgents,
+} from "@/app/utils/utils";
 import { Message } from "@langchain/langgraph-sdk";
 import { useMemo } from "react";
 
@@ -33,119 +36,133 @@ export function useProcessedMessages(
      4. For each tool message, find the corresponding tool call in the toolCallMap and update it
     */
 
-    const messageMap = new Map<
-      string,
-      { message: Message; toolCalls: ToolCall[]; reasoningContent?: string }
-    >();
-
     // Map to quickly find and update a ToolCall by its ID
     const toolCallLookup = new Map<string, ToolCall>();
 
-    mainMessages.forEach((message: Message) => {
-      if (message.type === "ai") {
-        const toolCallsInMessage: Array<{
-          id?: string;
-          function?: { name?: string; arguments?: unknown };
-          name?: string;
-          type?: string;
-          args?: unknown;
-          input?: unknown;
-        }> = [];
+    // Single-pass processing: build processed messages array directly
+    const processedArray = mainMessages.reduce<ProcessedMessage[]>(
+      (acc, message, index) => {
+        let processedMessage: ProcessedMessage;
 
-        if (
-          message.additional_kwargs?.tool_calls &&
-          Array.isArray(message.additional_kwargs.tool_calls)
-        ) {
-          toolCallsInMessage.push(...message.additional_kwargs.tool_calls);
-        } else if (message.tool_calls && Array.isArray(message.tool_calls)) {
-          toolCallsInMessage.push(
-            ...message.tool_calls.filter(
-              (toolCall: { name?: string }) => toolCall.name !== ""
-            )
-          );
-        } else if (Array.isArray(message.content)) {
-          const toolUseBlocks = message.content.filter(
-            (block: { type?: string }) => block.type === "tool_use"
-          );
-          toolCallsInMessage.push(...toolUseBlocks);
-        }
-
-        const toolCallsWithStatus = toolCallsInMessage.map(
-          (toolCall: {
+        if (message.type === "ai") {
+          const toolCallsInMessage: Array<{
             id?: string;
             function?: { name?: string; arguments?: unknown };
             name?: string;
             type?: string;
             args?: unknown;
             input?: unknown;
-          }, tcIndex) => {
-            const name =
-              toolCall.function?.name ||
-              toolCall.name ||
-              toolCall.type ||
-              "unknown";
-            const args =
-              toolCall.function?.arguments ||
-              toolCall.args ||
-              toolCall.input ||
-              {};
-            
-            const id = toolCall.id || `${message.id}-tool-${tcIndex}`;
-            
-            const tc = {
-              id,
-              name,
-              args,
-              status: interrupt ? "interrupted" : ("pending" as const),
-            } as ToolCall;
+          }> = [];
 
-            // Add to lookup map
-            toolCallLookup.set(id, tc);
-            
-            return tc;
+          if (
+            message.additional_kwargs?.tool_calls &&
+            Array.isArray(message.additional_kwargs.tool_calls)
+          ) {
+            toolCallsInMessage.push(...message.additional_kwargs.tool_calls);
+          } else if (message.tool_calls && Array.isArray(message.tool_calls)) {
+            toolCallsInMessage.push(
+              ...message.tool_calls.filter(
+                (toolCall: { name?: string }) => toolCall.name !== ""
+              )
+            );
+          } else if (Array.isArray(message.content)) {
+            const toolUseBlocks = message.content.filter(
+              (block: { type?: string }) => block.type === "tool_use"
+            );
+            toolCallsInMessage.push(...toolUseBlocks);
           }
-        );
 
-        const reasoningContent = message.additional_kwargs?.reasoning_content as string | undefined;
+          const toolCallsWithStatus = toolCallsInMessage.map(
+            (
+              toolCall: {
+                id?: string;
+                function?: { name?: string; arguments?: unknown };
+                name?: string;
+                type?: string;
+                args?: unknown;
+                input?: unknown;
+              },
+              tcIndex
+            ) => {
+              const toolCallFunction = toolCall.function;
+              const name =
+                toolCallFunction?.name ||
+                toolCall.name ||
+                toolCall.type ||
+                "unknown";
+              const args =
+                toolCallFunction?.arguments ||
+                toolCall.args ||
+                toolCall.input ||
+                {};
 
-        messageMap.set(message.id!, {
-          message,
-          toolCalls: toolCallsWithStatus,
-          reasoningContent,
-        });
-      } else if (message.type === "tool") {
-        const toolCallId = message.tool_call_id;
-        if (!toolCallId) {
-          return;
+              const id = toolCall.id || `${message.id}-tool-${tcIndex}`;
+
+              const tc = {
+                id,
+                name,
+                args,
+                status: interrupt ? "interrupted" : ("pending" as const),
+              } as ToolCall;
+
+              // Add to lookup map
+              toolCallLookup.set(id, tc);
+
+              return tc;
+            }
+          );
+
+          const reasoningContent = message.additional_kwargs
+            ?.reasoning_content as string | undefined;
+
+          // Determine showAvatar by comparing with previous message
+          const prevMessage = index > 0 ? acc[index - 1].message : null;
+          const showAvatar = message.type !== prevMessage?.type;
+
+          // Extract subagents for this message using the unified utility
+          const subAgents = extractSubAgents(
+            toolCallsWithStatus,
+            subagentMessagesMap
+          );
+
+          processedMessage = {
+            message,
+            toolCalls: toolCallsWithStatus,
+            subAgents,
+            showAvatar,
+            reasoningContent,
+          };
+        } else if (message.type === "tool") {
+          const toolCallId = message.tool_call_id;
+          if (toolCallId) {
+            const tc = toolCallLookup.get(toolCallId);
+            if (tc) {
+              tc.status = "completed" as const;
+              tc.result = extractStringFromMessageContent(message);
+            }
+          }
+          // Tool messages are not added to the processed array directly
+          // They only update the corresponding tool call status
+          return acc;
+        } else {
+          // human message
+          const prevMessage = index > 0 ? acc[index - 1]?.message : null;
+          const showAvatar = message.type !== prevMessage?.type;
+
+          processedMessage = {
+            message,
+            toolCalls: [],
+            subAgents: [],
+            showAvatar,
+          };
         }
 
-        const tc = toolCallLookup.get(toolCallId);
-        if (tc) {
-          tc.status = "completed" as const;
-          tc.result = extractStringFromMessageContent(message);
-        }
-      } else if (message.type === "human") {
-        messageMap.set(message.id!, {
-          message,
-          toolCalls: [],
-        });
-      }
-    });
+        acc.push(processedMessage);
+        return acc;
+      },
+      []
+    );
 
-    const processedArray = Array.from(messageMap.values());
-
-    return processedArray.map((data, index) => {
-      const prevMessage = index > 0 ? processedArray[index - 1].message : null;
-      
-      // Extract subagents for this message using the unified utility
-      const subAgents = extractSubAgents(data.toolCalls, subagentMessagesMap);
-
-      return {
-        ...data,
-        subAgents,
-        showAvatar: data.message.type !== prevMessage?.type,
-        reasoningContent: data.reasoningContent,
-      };
-    });
+    return processedArray;
   }, [mainMessages, subagentMessagesMap, interrupt]);
 }

@@ -18,28 +18,54 @@ interface TasksSectionProps {
   setMetaOpen: React.Dispatch<React.SetStateAction<"tasks" | "files" | null>>;
 }
 
+// Static icon components with base classes - hoisted outside to avoid recreation
+const CompletedStatusIcon = (
+  <CheckCircle
+    size={16}
+    className="text-success/80"
+  />
+);
+const InProgressStatusIcon = (
+  <Clock
+    size={16}
+    className="text-warning/80"
+  />
+);
+const DefaultStatusIcon = (
+  <Circle
+    size={16}
+    className="text-tertiary/70"
+  />
+);
+
 const getStatusIcon = (status: TodoItem["status"], className?: string) => {
   switch (status) {
     case "completed":
-      return (
+      return className ? (
         <CheckCircle
           size={16}
           className={cn("text-success/80", className)}
         />
+      ) : (
+        CompletedStatusIcon
       );
     case "in_progress":
-      return (
+      return className ? (
         <Clock
           size={16}
           className={cn("text-warning/80", className)}
         />
+      ) : (
+        InProgressStatusIcon
       );
     default:
-      return (
+      return className ? (
         <Circle
           size={16}
           className={cn("text-tertiary/70", className)}
         />
+      ) : (
+        DefaultStatusIcon
       );
   }
 };

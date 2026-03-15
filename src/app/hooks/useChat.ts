@@ -31,6 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { usePersistedMessages } from "./usePersistedMessages";
 import { getInterruptBefore as getInterruptBeforeFromUtils } from "@/lib/auth-mode-utils";
+import { useLatest } from "@/lib/hooks/useLatest";
 
 // Extend useStream options with DeepAgent-specific options not yet exported in SDK types
 interface UseStreamOptionsWithDeepAgentExtensions
@@ -71,23 +72,27 @@ export function useChat({
   const client = useClient();
   const [sessionId, setSessionId] = useState<string>(() => generateId());
   const isSubmittingRef = useRef(false);
-  const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>({});
+  const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>(
+    () => ({})
+  );
+
+  // Derived values to avoid subscribing to entire activeAssistant object
+  const hasActiveAssistant = !!activeAssistant;
+  const assistantThinking =
+    activeAssistant?.config?.configurable?.thinking ??
+    activeAssistant?.metadata?.thinking;
+  const assistantThinkingBoolean =
+    typeof assistantThinking === "boolean" ? assistantThinking : false;
+  const assistantAuthMode = activeAssistant?.metadata?.authMode;
 
   // Sync overrideConfig with assistant defaults on change
   useEffect(() => {
-    if (activeAssistant) {
-      const assistantConfig = activeAssistant.config?.configurable || {};
-      const assistantMetadata = activeAssistant.metadata || {};
-
-      // Safely extract thinking value (handle empty object case)
-      const thinkingValue = assistantConfig.thinking ?? assistantMetadata.thinking;
-      const thinking = typeof thinkingValue === "boolean" ? thinkingValue : false;
-
+    if (hasActiveAssistant) {
       // Safely extract authMode value (handle empty object case)
-      const validAuthModes = ["ask", "read", "auto"] as const;
-      const authModeValue = String(assistantMetadata.authMode || "");
-      const authMode = validAuthModes.includes(authModeValue as typeof validAuthModes[number])
-        ? authModeValue as typeof validAuthModes[number]
+      const VALID_AUTH_MODES = new Set(["ask", "read", "auto"]);
+      const authModeValue = String(assistantAuthMode || "");
+      const authMode = VALID_AUTH_MODES.has(authModeValue)
+        ? (authModeValue as "ask" | "read" | "auto")
         : "ask";
 
       setOverrideConfig({
@@ -97,21 +102,18 @@ export function useChat({
         analyst: undefined,
         config_validator: undefined,
         databus_specialist: undefined,
-        thinking,
+        thinking: assistantThinkingBoolean,
         authMode,
         recursionLimit: undefined,
         interruptBefore: undefined,
         interruptAfter: undefined,
       });
     }
-  }, [activeAssistant]);
+  }, [hasActiveAssistant, assistantThinkingBoolean, assistantAuthMode]);
 
-  const getInterruptBefore = useCallback(
-    (mode: OverrideConfig["authMode"]) => {
-      return getInterruptBeforeFromUtils(mode || "ask");
-    },
-    []
-  );
+  const getInterruptBefore = useCallback((mode: OverrideConfig["authMode"]) => {
+    return getInterruptBeforeFromUtils(mode || "ask");
+  }, []);
 
   const metadata = useMemo(
     () => ({
@@ -121,6 +123,13 @@ export function useChat({
     }),
     [sessionId, config.userId]
   );
+
+  // Use useLatest to store frequently changing config values for stable callbacks
+  const overrideConfigRef = useLatest(overrideConfig);
+  const activeAssistantConfigRef = useLatest(activeAssistant?.config);
+  const metadataRef = useLatest(metadata);
+  const recursionLimitRef = useLatest(recursionLimit);
+  const recursionMultiplierRef = useLatest(recursionMultiplier);
 
   // Manage session_id: reuse from thread metadata or generate new one
   useEffect(() => {
@@ -201,8 +210,9 @@ export function useChat({
       const overrides = overrideConfig[key as keyof typeof prefixes];
       if (overrides) {
         configKeys.forEach((configKey) => {
-          if (overrides[configKey] !== undefined) {
-            finalConfigurable[`${prefix}${configKey}`] = overrides[configKey];
+          const overrideValue = overrides[configKey];
+          if (overrideValue !== undefined) {
+            finalConfigurable[`${prefix}${configKey}`] = overrideValue;
           }
         });
       }
@@ -218,19 +228,34 @@ export function useChat({
     stream.isLoading
   );
 
-  const sendMessage = useCallback(
-    (content: string) => {
+  // Store sendMessage handler in ref for stable reference
+  const sendMessageRef = useRef<(content: string) => void>(() => {});
+
+  // Update ref when dependencies change
+  useEffect(() => {
+    sendMessageRef.current = (content: string) => {
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
       const newMessage: Message = { id: generateId(), type: "human", content };
 
+      // Read current values from refs to avoid dependency on changing state
+      const currentOverrideConfig = overrideConfigRef.current;
+      const currentMetadata = metadataRef.current;
+      const currentRecursionLimit = recursionLimitRef.current;
+      const currentRecursionMultiplier = recursionMultiplierRef.current;
+      const currentAssistantConfig = activeAssistantConfigRef.current;
+
       const finalRecursionLimit =
-        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
+        currentRecursionMultiplier;
       const finalInterruptBefore =
-        overrideConfig.interruptBefore ||
-        getInterruptBefore(overrideConfig.authMode);
-      const finalInterruptAfter = overrideConfig.interruptAfter;
+        currentOverrideConfig.interruptBefore ||
+        getInterruptBefore(currentOverrideConfig.authMode);
+      const finalInterruptAfter = currentOverrideConfig.interruptAfter;
+
+      // Cache getFinalConfigurable result to avoid repeated calls
+      const finalConfigurable = getFinalConfigurable();
 
       stream.submit(
         { messages: [newMessage] },
@@ -238,13 +263,13 @@ export function useChat({
           optimisticValues: (prev) => ({
             messages: [...(prev.messages ?? []), newMessage],
           }),
-          metadata,
+          metadata: currentMetadata,
           config: {
-            ...(activeAssistant?.config ?? {}),
+            ...(currentAssistantConfig ?? {}),
             recursion_limit: finalRecursionLimit,
             configurable: {
-              ...getFinalConfigurable(),
-              user_id: metadata.user_id,
+              ...finalConfigurable,
+              user_id: currentMetadata.user_id,
             },
           },
           streamMode: ["messages", "updates"],
@@ -258,21 +283,18 @@ export function useChat({
             : {}),
         }
       );
-    },
-    [
-      stream,
-      overrideConfig.recursionLimit,
-      overrideConfig.interruptBefore,
-      overrideConfig.interruptAfter,
-      overrideConfig.authMode,
-      recursionLimit,
-      recursionMultiplier,
-      activeAssistant?.config,
-      getFinalConfigurable,
-      metadata,
-      getInterruptBefore,
-    ]
-  );
+    };
+  }, [
+    stream.isLoading,
+    stream.submit,
+    getFinalConfigurable,
+    getInterruptBefore,
+  ]);
+
+  // Stable callback that delegates to ref
+  const sendMessage = useCallback((content: string) => {
+    sendMessageRef.current(content);
+  }, []);
 
   const runSingleStep = useCallback(
     (
@@ -285,20 +307,33 @@ export function useChat({
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
 
+      // Read current values from refs to avoid dependency on changing state
+      const currentOverrideConfig = overrideConfigRef.current;
+      const currentMetadata = metadataRef.current;
+      const currentRecursionLimit = recursionLimitRef.current;
+      const currentRecursionMultiplier = recursionMultiplierRef.current;
+      const currentAssistantConfig = activeAssistantConfigRef.current;
+
       const finalRecursionLimit =
-        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const computedInterruptBefore = getInterruptBefore(overrideConfig.authMode);
+        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
+        currentRecursionMultiplier;
+      const computedInterruptBefore = getInterruptBefore(
+        currentOverrideConfig.authMode
+      );
       const finalInterruptBefore =
-        overrideConfig.interruptBefore ||
+        currentOverrideConfig.interruptBefore ||
         computedInterruptBefore ||
         (isRerunningSubagent ? undefined : ["tools"]);
       const finalInterruptAfter =
-        overrideConfig.interruptAfter ||
+        currentOverrideConfig.interruptAfter ||
         (isRerunningSubagent ? ["tools"] : undefined);
 
+      // Cache getFinalConfigurable result to avoid repeated calls
+      const finalConfigurable = getFinalConfigurable();
+
       const assistantConfig = {
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable(),
+        ...(currentAssistantConfig ?? {}),
+        configurable: finalConfigurable,
       };
 
       if (checkpoint) {
@@ -306,7 +341,7 @@ export function useChat({
           ...(optimisticMessages
             ? { optimisticValues: { messages: optimisticMessages } }
             : {}),
-          metadata,
+          metadata: currentMetadata,
           config: {
             ...assistantConfig,
             recursion_limit: finalRecursionLimit,
@@ -326,7 +361,7 @@ export function useChat({
         stream.submit(
           { messages },
           {
-            metadata,
+            metadata: currentMetadata,
             config: {
               ...assistantConfig,
               recursion_limit: finalRecursionLimit,
@@ -344,19 +379,8 @@ export function useChat({
         );
       }
     },
-    [
-      stream,
-      overrideConfig.recursionLimit,
-      overrideConfig.interruptBefore,
-      overrideConfig.interruptAfter,
-      recursionLimit,
-      recursionMultiplier,
-      activeAssistant?.config,
-      getFinalConfigurable,
-      metadata,
-      getInterruptBefore,
-      overrideConfig.authMode,
-    ]
+    // Minimal dependencies - only stable references
+    [stream.isLoading, stream.submit, getFinalConfigurable, getInterruptBefore]
   );
 
   const setFiles = useCallback(
@@ -374,24 +398,37 @@ export function useChat({
       // We don't reset activeSubAgentId here because continue often means
       // resuming a subagent or the next step in the same chain
 
+      // Read current values from refs to avoid dependency on changing state
+      const currentOverrideConfig = overrideConfigRef.current;
+      const currentMetadata = metadataRef.current;
+      const currentRecursionLimit = recursionLimitRef.current;
+      const currentRecursionMultiplier = recursionMultiplierRef.current;
+      const currentAssistantConfig = activeAssistantConfigRef.current;
+
       const finalRecursionLimit =
-        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const computedInterruptBefore = getInterruptBefore(overrideConfig.authMode);
+        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
+        currentRecursionMultiplier;
+      const computedInterruptBefore = getInterruptBefore(
+        currentOverrideConfig.authMode
+      );
       const finalInterruptBefore =
-        overrideConfig.interruptBefore ||
+        currentOverrideConfig.interruptBefore ||
         computedInterruptBefore ||
         (hasTaskToolCall ? undefined : ["tools"]);
       const finalInterruptAfter =
-        overrideConfig.interruptAfter ||
+        currentOverrideConfig.interruptAfter ||
         (hasTaskToolCall ? ["tools"] : undefined);
 
+      // Cache getFinalConfigurable result to avoid repeated calls
+      const finalConfigurable = getFinalConfigurable();
+
       const assistantConfig = {
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable(),
+        ...(currentAssistantConfig ?? {}),
+        configurable: finalConfigurable,
       };
 
       stream.submit(undefined, {
-        metadata,
+        metadata: currentMetadata,
         config: {
           ...assistantConfig,
           recursion_limit: finalRecursionLimit,
@@ -405,46 +442,39 @@ export function useChat({
         ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
       });
     },
-    [
-      stream,
-      overrideConfig.recursionLimit,
-      overrideConfig.interruptBefore,
-      overrideConfig.interruptAfter,
-      overrideConfig.authMode,
-      recursionLimit,
-      recursionMultiplier,
-      activeAssistant?.config,
-      getFinalConfigurable,
-      metadata,
-      getInterruptBefore,
-    ]
+    // Minimal dependencies - only stable references
+    [stream.isLoading, stream.submit, getFinalConfigurable, getInterruptBefore]
   );
 
   const markCurrentThreadAsResolved = useCallback(() => {
     if (stream.isLoading || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setActiveSubAgentId(null);
+    // Read current metadata from ref to avoid dependency on changing state
+    const currentMetadata = metadataRef.current;
     stream.submit(null, {
       command: { goto: "__end__", update: null },
-      metadata,
+      metadata: currentMetadata,
       streamResumable: true,
     });
-  }, [stream, metadata]);
+  }, [stream.isLoading, stream.submit]);
 
   const resumeInterrupt = useCallback(
     (value: any) => {
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       // Keep activeSubAgentId if any
+      // Read current metadata from ref to avoid dependency on changing state
+      const currentMetadata = metadataRef.current;
       stream.submit(null, {
         command: { resume: value },
-        metadata,
+        metadata: currentMetadata,
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
       });
     },
-    [stream, metadata]
+    [stream.isLoading, stream.submit]
   );
 
   const stopStream = useCallback(() => {
@@ -489,11 +519,22 @@ export function useChat({
         return;
       }
 
+      // Read current values from refs to avoid dependency on changing state
+      const currentOverrideConfig = overrideConfigRef.current;
+      const currentRecursionLimit = recursionLimitRef.current;
+      const currentRecursionMultiplier = recursionMultiplierRef.current;
+      const currentAssistantConfig = activeAssistantConfigRef.current;
+
       const finalRecursionLimit =
-        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
+        currentRecursionMultiplier;
+
+      // Cache getFinalConfigurable result to avoid repeated calls
+      const finalConfigurable = getFinalConfigurable();
+
       const assistantConfig = {
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable(),
+        ...(currentAssistantConfig ?? {}),
+        configurable: finalConfigurable,
       };
 
       stream.submit(undefined, {
@@ -506,21 +547,20 @@ export function useChat({
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
-        ...(overrideConfig.interruptBefore
-          ? { interruptBefore: overrideConfig.interruptBefore }
+        ...(currentOverrideConfig.interruptBefore
+          ? { interruptBefore: currentOverrideConfig.interruptBefore }
           : {}),
-        ...(overrideConfig.interruptAfter
-          ? { interruptAfter: overrideConfig.interruptAfter }
+        ...(currentOverrideConfig.interruptAfter
+          ? { interruptAfter: currentOverrideConfig.interruptAfter }
           : {}),
       });
     },
+    // Minimal dependencies - only stable references
     [
-      stream,
-      activeAssistant?.config,
-      recursionLimit,
-      recursionMultiplier,
+      stream.isLoading,
+      stream.submit,
+      stream.getMessagesMetadata,
       resolveMessageIndex,
-      overrideConfig,
       getFinalConfigurable,
     ]
   );
@@ -533,8 +573,8 @@ export function useChat({
 
       const indexToUse = resolveMessageIndex(message, index);
 
-      const metadata = stream.getMessagesMetadata(message, indexToUse);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+      const msgMetadata = stream.getMessagesMetadata(message, indexToUse);
+      const parentCheckpoint = msgMetadata?.firstSeenState?.parent_checkpoint;
 
       if (!parentCheckpoint) {
         console.warn("No parent checkpoint found for message", message.id);
@@ -549,11 +589,23 @@ export function useChat({
         content: message.content,
       };
 
+      // Read current values from refs to avoid dependency on changing state
+      const currentOverrideConfig = overrideConfigRef.current;
+      const currentMetadata = metadataRef.current;
+      const currentRecursionLimit = recursionLimitRef.current;
+      const currentRecursionMultiplier = recursionMultiplierRef.current;
+      const currentAssistantConfig = activeAssistantConfigRef.current;
+
       const finalRecursionLimit =
-        (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
+        currentRecursionMultiplier;
+
+      // Cache getFinalConfigurable result to avoid repeated calls
+      const finalConfigurable = getFinalConfigurable();
+
       const assistantConfig = {
-        ...(activeAssistant?.config ?? {}),
-        configurable: getFinalConfigurable(),
+        ...(currentAssistantConfig ?? {}),
+        configurable: finalConfigurable,
       };
 
       stream.submit(
@@ -564,26 +616,25 @@ export function useChat({
             ...assistantConfig,
             recursion_limit: finalRecursionLimit,
           },
-          metadata,
+          metadata: currentMetadata,
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(overrideConfig.interruptBefore
-            ? { interruptBefore: overrideConfig.interruptBefore }
+          ...(currentOverrideConfig.interruptBefore
+            ? { interruptBefore: currentOverrideConfig.interruptBefore }
             : {}),
-          ...(overrideConfig.interruptAfter
-            ? { interruptAfter: overrideConfig.interruptAfter }
+          ...(currentOverrideConfig.interruptAfter
+            ? { interruptAfter: currentOverrideConfig.interruptAfter }
             : {}),
         }
       );
     },
+    // Minimal dependencies - only stable references
     [
-      stream,
-      activeAssistant?.config,
-      recursionLimit,
-      recursionMultiplier,
+      stream.isLoading,
+      stream.submit,
+      stream.getMessagesMetadata,
       resolveMessageIndex,
-      overrideConfig,
       getFinalConfigurable,
     ]
   );
@@ -643,46 +694,59 @@ export function useChat({
       typeof error === "string"
         ? error
         : isApiError(error)
-          ? error.message || JSON.stringify(error)
-          : JSON.stringify(error);
+        ? error.message || JSON.stringify(error)
+        : JSON.stringify(error);
 
     // Try to parse JSON if the error message contains a JSON object
-    if (errorMessage.includes("{") && errorMessage.includes("}")) {
-      try {
-        const startIdx = errorMessage.indexOf("{");
-        const endIdx = errorMessage.lastIndexOf("}") + 1;
-        if (startIdx !== -1 && endIdx > startIdx) {
-          const jsonStr = errorMessage.substring(startIdx, endIdx);
-          const parsed = JSON.parse(jsonStr);
-
-          if (parsed.detail) {
-            if (Array.isArray(parsed.detail)) {
-              errorMessage = parsed.detail
-                .map((d: unknown) =>
-                  typeof d === "string" ? d : JSON.stringify(d)
-                )
-                .join(", ");
-            } else if (typeof parsed.detail === "object") {
-              errorMessage = JSON.stringify(parsed.detail);
-            } else {
-              errorMessage = String(parsed.detail);
-            }
-          } else if (parsed.message) {
-            errorMessage = String(parsed.message);
-          } else if (parsed.error) {
-            errorMessage =
-              typeof parsed.error === "string"
-                ? parsed.error
-                : JSON.stringify(parsed.error);
-          }
-        }
-      } catch {
-        // Ignore parsing errors and keep original
+    if (!errorMessage.includes("{") || !errorMessage.includes("}")) {
+      // Filter out CancelledError as it's not a real error
+      if (errorMessage.includes("CancelledError")) {
+        return undefined;
       }
+      return errorMessage;
+    }
+
+    try {
+      const startIdx = errorMessage.indexOf("{");
+      const endIdx = errorMessage.lastIndexOf("}") + 1;
+      if (startIdx === -1 || endIdx <= startIdx) {
+        // Filter out CancelledError as it's not a real error
+        if (errorMessage.includes("CancelledError")) {
+          return undefined;
+        }
+        return errorMessage;
+      }
+
+      const jsonStr = errorMessage.substring(startIdx, endIdx);
+      const parsed = JSON.parse(jsonStr);
+
+      // Extract error message from parsed JSON with early exits
+      if (parsed.detail) {
+        if (Array.isArray(parsed.detail)) {
+          errorMessage = parsed.detail
+            .map((d: unknown) =>
+              typeof d === "string" ? d : JSON.stringify(d)
+            )
+            .join(", ");
+        } else if (typeof parsed.detail === "object") {
+          errorMessage = JSON.stringify(parsed.detail);
+        } else {
+          errorMessage = String(parsed.detail);
+        }
+      } else if (parsed.message) {
+        errorMessage = String(parsed.message);
+      } else if (parsed.error) {
+        errorMessage =
+          typeof parsed.error === "string"
+            ? parsed.error
+            : JSON.stringify(parsed.error);
+      }
+    } catch {
+      // Ignore parsing errors and keep original
     }
 
     // Filter out CancelledError as it's not a real error
-    if (errorMessage && errorMessage.includes("CancelledError")) {
+    if (errorMessage.includes("CancelledError")) {
       return undefined;
     }
     return errorMessage;
@@ -714,7 +778,9 @@ export function useChat({
     const extendedStream = stream as ExtendedStream;
     if (extendedStream.activeSubagents.length > 0) {
       const lastActive =
-        extendedStream.activeSubagents[extendedStream.activeSubagents.length - 1];
+        extendedStream.activeSubagents[
+          extendedStream.activeSubagents.length - 1
+        ];
 
       // Only auto-activate if it's a NEW subagent we haven't activated yet
       if (lastActive.id !== lastAutoActivatedIdRef.current) {

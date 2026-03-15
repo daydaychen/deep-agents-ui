@@ -10,18 +10,16 @@ export interface KeyedItem {
  */
 export function findDuplicateKeys<T extends KeyedItem>(items: T[]): string[] {
   const seen = new Set<string>();
-  const duplicates: string[] = [];
+  const duplicates = new Set<string>();
 
   for (const item of items) {
     if (item.key && seen.has(item.key)) {
-      if (!duplicates.includes(item.key)) {
-        duplicates.push(item.key);
-      }
+      duplicates.add(item.key);
     }
     seen.add(item.key);
   }
 
-  return duplicates;
+  return Array.from(duplicates);
 }
 
 /**

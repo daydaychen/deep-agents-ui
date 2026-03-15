@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Item } from "@langchain/langgraph-sdk";
 import { Database, Trash2 } from "lucide-react";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString("zh-CN", {
@@ -24,9 +25,11 @@ interface MemoryItemCardProps {
 
 export const MemoryItemCard = React.memo<MemoryItemCardProps>(
   ({ item, onSelect, onDelete, isDeleting }) => {
+    const t = useTranslations("memory");
+
     return (
       <div
-        className="group relative cursor-pointer space-y-2 rounded-md border border-border px-3 py-3 shadow-sm transition-colors hover:bg-accent"
+        className="group relative cursor-pointer space-y-2 rounded-md border border-border px-3 py-3 shadow-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         onClick={() => onSelect(item)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -46,6 +49,7 @@ export const MemoryItemCard = React.memo<MemoryItemCardProps>(
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+            aria-label={t("deleteMemoryItem", { key: item.key })}
             onClick={(e) => onDelete(item.namespace, item.key, e)}
             disabled={isDeleting}
           >
@@ -61,12 +65,12 @@ export const MemoryItemCard = React.memo<MemoryItemCardProps>(
           </span>
           {item.createdAt && (
             <p className="text-[10px] text-muted-foreground">
-              创建: {formatDate(item.createdAt)}
+              {t("created")}: {formatDate(item.createdAt)}
             </p>
           )}
           {item.updatedAt && (
             <p className="text-[10px] text-muted-foreground">
-              更新: {formatDate(item.updatedAt)}
+              {t("updated")}: {formatDate(item.updatedAt)}
             </p>
           )}
         </div>

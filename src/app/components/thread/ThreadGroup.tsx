@@ -39,7 +39,10 @@ export const ThreadGroup = React.memo<ThreadGroupProps>(
         <h4 className="m-0 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {GROUP_LABELS[groupType]}
         </h4>
-        <div className="flex flex-col gap-1">
+        <div
+          className="flex flex-col gap-1"
+          style={{ contentVisibility: "auto" }}
+        >
           {threads.map((thread) => (
             <ThreadListItem
               key={thread.id}
