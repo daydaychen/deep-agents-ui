@@ -15,6 +15,7 @@ export const MemoryNamespaceItem = React.memo<MemoryNamespaceItemProps>(
     return (
       <button
         onClick={onClick}
+        aria-expanded={isExpanded}
         className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm font-medium transition-colors hover:bg-muted"
       >
         <div className="flex items-center gap-2">
@@ -27,7 +28,7 @@ export const MemoryNamespaceItem = React.memo<MemoryNamespaceItemProps>(
         <ChevronDown
           size={14}
           className={cn(
-            "text-muted-foreground transition-transform duration-200",
+            "text-muted-foreground transition-transform duration-200 ease-out",
             isExpanded ? "rotate-180" : "rotate-0"
           )}
         />

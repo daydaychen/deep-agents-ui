@@ -1,6 +1,6 @@
 import type { Item } from "@langchain/langgraph-sdk";
 import { DEFAULT_MEMORY_LIMIT } from "@/lib/constants";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 /**
@@ -16,25 +16,26 @@ export function useMemoryNamespace(
     null
   );
   const [namespaceItems, setNamespaceItems] = useState<Item[]>([]);
-  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [isLoadingItems, startLoadingItems] = useTransition();
 
   const handleNamespaceClick = useCallback(
-    async (namespace: string[]) => {
+    (namespace: string[]) => {
       if (selectedNamespace?.join(".") === namespace.join(".")) {
         setSelectedNamespace(null);
         setNamespaceItems([]);
       } else {
         setSelectedNamespace(namespace);
-        setIsLoadingItems(true);
-        try {
-          const items = await searchItems(namespace, { limit: DEFAULT_MEMORY_LIMIT });
-          setNamespaceItems(items);
-        } catch (error) {
-          toast.error(`加载项目失败: ${error}`);
-          setNamespaceItems([]);
-        } finally {
-          setIsLoadingItems(false);
-        }
+        startLoadingItems(async () => {
+          try {
+            const items = await searchItems(namespace, {
+              limit: DEFAULT_MEMORY_LIMIT,
+            });
+            setNamespaceItems(items);
+          } catch (error) {
+            toast.error(`加载项目失败: ${error}`);
+            setNamespaceItems([]);
+          }
+        });
       }
     },
     [searchItems, selectedNamespace]

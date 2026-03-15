@@ -2,12 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowUp, Command, Square } from "lucide-react";
-import React, {
-  FormEvent,
-  useCallback,
-  useRef,
-  useEffect,
-} from "react";
+import React, { FormEvent, useCallback, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useChatState } from "@/providers/chat-context";
 import { useTranslations } from "next-intl";
@@ -35,12 +30,9 @@ export const ChatInput = React.memo<ChatInputProps>(
     React.useLayoutEffect(() => {
       const textarea = textareaRef.current;
       if (textarea) {
-        // Reset height to let it shrink if needed, then set to scrollHeight
-        textarea.style.height = "inherit";
         const scrollHeight = textarea.scrollHeight;
-        if (scrollHeight > 0) {
-          textarea.style.height = `${scrollHeight}px`;
-        }
+        textarea.style.cssText =
+          scrollHeight > 0 ? `height: ${scrollHeight}px;` : "height: inherit;";
       }
     }, [input]);
 
@@ -131,7 +123,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                   variant="ghost"
                   onClick={onStop}
                   disabled={!isLoading}
-                  className="h-7 gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-2xs font-bold text-destructive transition-[background-color,color,opacity,transform] hover:bg-destructive/10 cursor-pointer"
+                  className="h-7 cursor-pointer gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-2xs font-bold text-destructive transition-[background-color,color,opacity,transform] hover:bg-destructive/10"
                 >
                   <Square
                     size={10}
@@ -145,7 +137,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                   size="icon-sm"
                   disabled={submitDisabled || !hasInput}
                   className={cn(
-                    "rounded-xl will-change-[box-shadow,filter] cursor-pointer transition-[background-color,border-color,color,box-shadow,filter,opacity] duration-200",
+                    "cursor-pointer rounded-xl transition-[background-color,border-color,color,box-shadow,filter,opacity] duration-200 will-change-[box-shadow,filter]",
                     hasInput
                       ? "text-primary-foreground bg-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:brightness-110 active:brightness-90"
                       : "bg-muted text-muted-foreground/20 opacity-30"

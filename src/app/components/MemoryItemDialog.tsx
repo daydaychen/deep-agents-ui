@@ -51,12 +51,20 @@ export const MemoryItemDialog = React.memo<{
   const [content, setContent] = useState("");
 
   const itemUpdate = useSWRMutation(
-    { kind: "memory-item-update", namespaceId, namespaceType, itemKey, content },
+    {
+      kind: "memory-item-update",
+      namespaceId,
+      namespaceType,
+      itemKey,
+      content,
+    },
     async () => {
       if (!namespaceId || !namespaceType || !itemKey || !content) return;
 
       const now = new Date().toISOString();
-      const contentArray = content.split("\n").filter((line) => line.trim() !== "");
+      const contentArray = content
+        .split("\n")
+        .filter((line) => line.trim() !== "");
 
       const newValue: Record<string, unknown> = {
         content: contentArray,
@@ -157,7 +165,10 @@ export const MemoryItemDialog = React.memo<{
   const idOptions = useMemo(() => {
     const options = [];
     if (config.userId) {
-      options.push({ label: `${t("user")} (${config.userId})`, value: config.userId });
+      options.push({
+        label: `${t("user")} (${config.userId})`,
+        value: config.userId,
+      });
     }
     if (config.assistantId) {
       options.push({
@@ -173,20 +184,20 @@ export const MemoryItemDialog = React.memo<{
       open={true}
       onOpenChange={onClose}
     >
-      <DialogContent className="flex h-[80vh] max-h-[80vh] min-w-[60vw] flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-2 border-b">
+      <DialogContent className="flex h-[80vh] max-h-[80vh] min-w-[60vw] flex-col overflow-hidden p-0">
+        <DialogHeader className="border-b px-6 pb-2 pt-6">
           <DialogTitle className="flex items-center gap-2">
-            <Database className="text-primary h-5 w-5" />
+            <Database className="h-5 w-5 text-primary" />
             {item ? t("edit") : t("newItemTitle")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <ScrollArea className="flex-1 h-full">
-            <div className="p-6 space-y-4">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <ScrollArea className="h-full flex-1">
+            <div className="space-y-4 p-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground uppercase">
+                  <label className="text-xs font-medium uppercase text-muted-foreground">
                     {t("namespaceId")}
                   </label>
                   {isEditingMode ? (
@@ -209,13 +220,13 @@ export const MemoryItemDialog = React.memo<{
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="px-3 py-2 bg-muted/50 rounded-md text-sm">
+                    <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
                       {namespaceId}
                     </div>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground uppercase">
+                  <label className="text-xs font-medium uppercase text-muted-foreground">
                     {t("namespaceType")}
                   </label>
                   {isEditingMode ? (
@@ -229,12 +240,14 @@ export const MemoryItemDialog = React.memo<{
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="memories">{t("memories")}</SelectItem>
+                        <SelectItem value="memories">
+                          {t("memories")}
+                        </SelectItem>
                         <SelectItem value="reports">{t("reports")}</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="px-3 py-2 bg-muted/50 rounded-md text-sm">
+                    <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
                       {t(namespaceType)}
                     </div>
                   )}
@@ -242,7 +255,7 @@ export const MemoryItemDialog = React.memo<{
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase">
+                <label className="text-xs font-medium uppercase text-muted-foreground">
                   {t("key")}
                 </label>
                 {isEditingMode ? (
@@ -253,23 +266,26 @@ export const MemoryItemDialog = React.memo<{
                       placeholder="/filename.md"
                       className={cn(
                         "text-sm",
-                        !itemKey.startsWith("/") && "border-destructive focus-visible:ring-destructive"
+                        !itemKey.startsWith("/") &&
+                          "border-destructive focus-visible:ring-destructive"
                       )}
                     />
                     {!itemKey.startsWith("/") && (
-                      <p className="text-[10px] text-destructive">{t("invalidKey")}</p>
+                      <p className="text-[10px] text-destructive">
+                        {t("invalidKey")}
+                      </p>
                     )}
                   </div>
                 ) : (
-                  <div className="px-3 py-2 bg-muted/50 rounded-md text-sm font-mono">
+                  <div className="rounded-md bg-muted/50 px-3 py-2 font-mono text-sm">
                     {itemKey}
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col space-y-2 min-h-[300px]">
+              <div className="flex min-h-[300px] flex-col space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-muted-foreground uppercase">
+                  <label className="text-xs font-medium uppercase text-muted-foreground">
                     {t("content")}
                   </label>
                   {!isEditingMode && (
@@ -281,7 +297,10 @@ export const MemoryItemDialog = React.memo<{
                         className="h-7 px-2 text-xs"
                         disabled={editDisabled}
                       >
-                        <Edit size={14} className="mr-1" />
+                        <Edit
+                          size={14}
+                          className="mr-1"
+                        />
                         {t("edit")}
                       </Button>
                       <Button
@@ -290,7 +309,10 @@ export const MemoryItemDialog = React.memo<{
                         size="sm"
                         className="h-7 px-2 text-xs"
                       >
-                        <Copy size={14} className="mr-1" />
+                        <Copy
+                          size={14}
+                          className="mr-1"
+                        />
                         {t("copy")}
                       </Button>
                       <Button
@@ -299,14 +321,17 @@ export const MemoryItemDialog = React.memo<{
                         size="sm"
                         className="h-7 px-2 text-xs"
                       >
-                        <Download size={14} className="mr-1" />
+                        <Download
+                          size={14}
+                          className="mr-1"
+                        />
                         {t("download")}
                       </Button>
                     </div>
                   )}
                 </div>
-                
-                <div className="flex-1 min-h-[300px]">
+
+                <div className="min-h-[300px] flex-1">
                   {isEditingMode ? (
                     <Textarea
                       value={content}
@@ -315,7 +340,7 @@ export const MemoryItemDialog = React.memo<{
                       className="h-full min-h-[300px] resize-none font-mono text-sm"
                     />
                   ) : (
-                    <div className="bg-muted/30 min-h-[200px] rounded-md border p-4 overflow-auto">
+                    <div className="min-h-[200px] overflow-auto rounded-md border bg-muted/30 p-4">
                       {content ? (
                         <MarkdownContent content={content} />
                       ) : (
@@ -334,13 +359,16 @@ export const MemoryItemDialog = React.memo<{
         </div>
 
         {isEditingMode && (
-          <div className="p-4 flex justify-end gap-2 border-t bg-muted/20">
+          <div className="flex justify-end gap-2 border-t bg-muted/20 p-4">
             <Button
               onClick={handleCancel}
               variant="outline"
               size="sm"
             >
-              <X size={16} className="mr-1" />
+              <X
+                size={16}
+                className="mr-1"
+              />
               {t("cancel")}
             </Button>
             <Button
@@ -349,9 +377,14 @@ export const MemoryItemDialog = React.memo<{
               disabled={itemUpdate.isMutating || !isValid}
             >
               {itemUpdate.isMutating ? (
-                <Loader2 size={16} className="mr-1 animate-spin" />
+                <div className="mr-1 animate-spin">
+                  <Loader2 size={16} />
+                </div>
               ) : (
-                <Save size={16} className="mr-1" />
+                <Save
+                  size={16}
+                  className="mr-1"
+                />
               )}
               {t("save")}
             </Button>

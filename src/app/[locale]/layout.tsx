@@ -8,8 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Inter } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { DeferredAnalytics } from "@/components/analytics";
 import type { Metadata, Viewport } from "next";
 import "../globals.css";
 
@@ -17,7 +16,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Deep Agents UI",
-  description: "A powerful AI agent chat interface for interacting with LangGraph-powered assistants",
+  description:
+    "A powerful AI agent chat interface for interacting with LangGraph-powered assistants",
 };
 
 export const viewport: Viewport = {
@@ -52,7 +52,7 @@ export default async function LocaleLayout({
   // Enable static rendering
   setRequestLocale(locale);
 
-  // Explicitly passing the locale to getMessages 
+  // Explicitly passing the locale to getMessages
   // ensures we get the correct translations for the current route
   const messages = await getMessages({ locale });
 
@@ -80,8 +80,7 @@ export default async function LocaleLayout({
           </NextIntlClientProvider>
           <Toaster />
         </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        <DeferredAnalytics />
       </body>
     </html>
   );

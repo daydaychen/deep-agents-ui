@@ -80,28 +80,31 @@ export const FileViewDialog = React.memo<{
     }
   );
 
+  // Derived values to avoid subscribing to entire file object
+  const hasFile = !!file;
+  const filePath = file?.path ?? "";
+  const fileContentValue = file?.content ?? "";
+
   useEffect(() => {
-    setFileName(String(file?.path || ""));
-    setFileContent(String(file?.content || ""));
-    setIsEditingMode(file === null);
+    setFileName(String(filePath));
+    setFileContent(String(fileContentValue));
+    setIsEditingMode(!hasFile);
     // Reset ready state when file changes
     setIsReady(false);
-    
+
     // Delay rendering of syntax highlighter to ensure dialog opens smoothly
     const timer = setTimeout(() => {
       setIsReady(true);
     }, 100);
     return () => clearTimeout(timer);
-  }, [file]);
+  }, [hasFile, filePath, fileContentValue]);
 
   const fileExtension = useMemo(() => {
     const fileNameStr = String(fileName || "");
     return fileNameStr.split(".").pop()?.toLowerCase() || "";
   }, [fileName]);
 
-  const isMarkdown = useMemo(() => {
-    return fileExtension === "md" || fileExtension === "markdown";
-  }, [fileExtension]);
+  const isMarkdown = fileExtension === "md" || fileExtension === "markdown";
 
   const language = useMemo(() => {
     return LANGUAGE_MAP[fileExtension] || "text";
@@ -158,7 +161,7 @@ export const FileViewDialog = React.memo<{
         <DialogTitle className="sr-only">{file?.path || t("new")}</DialogTitle>
         <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-lg text-primary">
               <FileText className="h-4 w-4 shrink-0" />
             </div>
             {isEditingMode && file === null ? (
@@ -234,13 +237,17 @@ export const FileViewDialog = React.memo<{
               className="h-full min-h-[400px] resize-none border-none bg-muted/20 font-mono text-sm focus-visible:ring-0"
             />
           ) : (
-            <ScrollArea className="bg-muted/10 h-full rounded-xl border border-border/50">
+            <ScrollArea className="h-full rounded-xl border border-border/50 bg-muted/10">
               <div className="min-h-full p-6">
                 {fileContent ? (
                   !isReady ? (
                     <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground/40">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      <span className="text-xs font-medium uppercase tracking-widest">{t("loading")}</span>
+                      <div className="animate-spin">
+                        <Loader2 className="h-6 w-6" />
+                      </div>
+                      <span className="text-xs font-medium uppercase tracking-widest">
+                        {t("loading")}
+                      </span>
                     </div>
                   ) : isMarkdown ? (
                     <div className="rounded-md">
@@ -249,8 +256,12 @@ export const FileViewDialog = React.memo<{
                   ) : isVeryLargeFile ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400">
-                        <span className="font-bold">⚠️ Large File Detected:</span>
-                        <span>Syntax highlighting disabled for better performance.</span>
+                        <span className="font-bold">
+                          ⚠️ Large File Detected:
+                        </span>
+                        <span>
+                          Syntax highlighting disabled for better performance.
+                        </span>
                       </div>
                       <pre className="overflow-auto whitespace-pre-wrap rounded-lg bg-[#1e1e1e] p-4 font-mono text-xs leading-relaxed text-zinc-300 shadow-inner">
                         <code>{fileContent}</code>
@@ -276,7 +287,10 @@ export const FileViewDialog = React.memo<{
                   )
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                    <FileText size={40} className="mb-4 text-muted-foreground/20" />
+                    <FileText
+                      size={40}
+                      className="mb-4 text-muted-foreground/20"
+                    />
                     <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
                       {t("empty")}
                     </p>
@@ -310,10 +324,9 @@ export const FileViewDialog = React.memo<{
               }
             >
               {fileUpdate.isMutating ? (
-                <Loader2
-                  size={16}
-                  className="mr-1 animate-spin"
-                />
+                <div className="mr-1 animate-spin">
+                  <Loader2 size={16} />
+                </div>
               ) : (
                 <Save
                   size={16}

@@ -14,13 +14,33 @@ import {
   useMarkThreadAsResolved,
   useThreads,
 } from "@/app/hooks/useThreads";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, MessageSquare, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+
+// Static JSX elements - hoisted outside components to avoid recreation
+const loadingSkeletonElements = (
+  <div className="space-y-2 p-4">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <Skeleton
+        key={i}
+        className="h-16 w-full"
+      />
+    ))}
+  </div>
+);
 
 function ErrorState({ message }: { message: string }) {
   const t = useTranslations("thread");
@@ -33,16 +53,7 @@ function ErrorState({ message }: { message: string }) {
 }
 
 function LoadingState() {
-  return (
-    <div className="space-y-2 p-4">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton
-          key={i}
-          className="h-16 w-full"
-        />
-      ))}
-    </div>
-  );
+  return loadingSkeletonElements;
 }
 
 function EmptyState() {
@@ -77,6 +88,13 @@ export function ThreadList({
   // State hooks first
   const [currentThreadId, setCurrentThreadId] = useQueryState("threadId");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [isPending, startTransition] = useTransition();
+
+  const handleFilterChange = (filter: StatusFilter) => {
+    startTransition(() => {
+      setStatusFilter(filter);
+    });
+  };
 
   const threads = useThreads({
     status: statusFilter === "all" ? undefined : statusFilter,
@@ -95,9 +113,9 @@ export function ThreadList({
   // Group threads by time and status using the custom hook
   const grouped = useThreadGrouping(flattened);
 
-  const interruptedCount = useMemo(() => {
-    return flattened.filter((t) => t.status === "interrupted").length;
-  }, [flattened]);
+  const interruptedCount = flattened.filter(
+    (t) => t.status === "interrupted"
+  ).length;
 
   // Expose thread list revalidation to parent component
   // Use refs to create a stable callback that always calls the latest mutate function
@@ -175,7 +193,7 @@ export function ThreadList({
         <div className="flex items-center gap-3">
           <ThreadStatusFilter
             value={statusFilter}
-            onChange={setStatusFilter}
+            onChange={handleFilterChange}
             interruptedCount={interruptedCount}
           />
           {onClose && (
@@ -192,52 +210,61 @@ export function ThreadList({
         </div>
       </div>
 
-      <ScrollArea className="h-0 flex-1">
-        {threads.error && <ErrorState message={threads.error.message} />}
-
-        {!threads.error && !threads.data && threads.isLoading && (
-          <LoadingState />
-        )}
-
-        {!threads.error && !threads.isLoading && isEmpty && <EmptyState />}
-
-        {!threads.error && !isEmpty && (
-          <div className="box-border w-full max-w-full overflow-hidden px-2 pb-6 pt-2">
-            {getThreadGroupKeys().map((groupType) => (
-              <ThreadGroup
-                key={groupType}
-                groupType={groupType}
-                threads={grouped[groupType]}
-                currentThreadId={currentThreadId}
-                onThreadSelect={onThreadSelect}
-                onMarkAsResolved={handleMarkAsResolved}
-                onDeleteThread={handleDeleteThread}
-              />
-            ))}
-
-            {!isReachingEnd && (
-              <div className="flex justify-center py-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 border-dashed px-6 text-xs"
-                  onClick={() => threads.setSize(threads.size + 1)}
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      {t("loading")}
-                    </>
-                  ) : (
-                    t("loadMore")
-                  )}
-                </Button>
-              </div>
-            )}
+      <div className="relative h-0 flex-1">
+        {isPending && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         )}
-      </ScrollArea>
+        <ScrollArea className={cn("h-full w-full", isPending && "opacity-50")}>
+          {threads.error && <ErrorState message={threads.error.message} />}
+
+          {!threads.error && !threads.data && threads.isLoading && (
+            <LoadingState />
+          )}
+
+          {!threads.error && !threads.isLoading && isEmpty && <EmptyState />}
+
+          {!threads.error && !isEmpty && (
+            <div className="box-border w-full max-w-full overflow-hidden px-2 pb-6 pt-2">
+              {getThreadGroupKeys().map((groupType) => (
+                <ThreadGroup
+                  key={groupType}
+                  groupType={groupType}
+                  threads={grouped[groupType]}
+                  currentThreadId={currentThreadId}
+                  onThreadSelect={onThreadSelect}
+                  onMarkAsResolved={handleMarkAsResolved}
+                  onDeleteThread={handleDeleteThread}
+                />
+              ))}
+
+              {!isReachingEnd && (
+                <div className="flex justify-center py-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 border-dashed px-6 text-xs"
+                    onClick={() => threads.setSize((size) => size + 1)}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <div className="mr-2 animate-spin">
+                          <Loader2 className="h-3.5 w-3.5" />
+                        </div>
+                        {t("loading")}
+                      </>
+                    ) : (
+                      t("loadMore")
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </ScrollArea>
+      </div>
     </div>
   );
 }

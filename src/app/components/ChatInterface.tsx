@@ -15,15 +15,34 @@ import { useChatActions, useChatState } from "@/providers/chat-context";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
-import React, { FormEvent, useCallback, useMemo, useState, useEffect } from "react";
+import React, {
+  FormEvent,
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 interface ChatInterfaceProps {
   assistant: Assistant | null;
 }
 
 const loadingSkeletons = [1, 2, 3];
+
+// Static JSX elements - hoisted outside component to avoid recreation on every render
+const loadingSkeletonElements = (
+  <div className="flex flex-col gap-4 p-6">
+    {loadingSkeletons.map((i) => (
+      <MessageSkeleton key={i} />
+    ))}
+  </div>
+);
 
 export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
@@ -110,10 +129,10 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   // Memoize UI components by message ID for O(1) lookup instead of O(n) filter per message
   const uiByMessageId = useMemo(() => {
     if (!ui) return new Map<string, UiComponent[]>();
-    
+
     // Type guard: check if ui is an array
     if (!Array.isArray(ui)) return new Map<string, UiComponent[]>();
-    
+
     const map = new Map<string, UiComponent[]>();
     for (const u of (ui as UiComponent[])) {
       const messageId = u.metadata?.message_id;
@@ -127,27 +146,34 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   }, [ui]);
 
   // Track last active subagent id for smooth slide-out animation
-  const [lastActiveSubAgentId, setLastActiveSubAgentId] = useState<string | null>(null);
-  useEffect(() => {
-    if (activeSubAgentId) {
-      setLastActiveSubAgentId(activeSubAgentId);
-    }
-  }, [activeSubAgentId]);
+  const lastActiveSubAgentIdRef = useRef<string | null>(null);
+
+  if (activeSubAgentId) {
+    lastActiveSubAgentIdRef.current = activeSubAgentId;
+  }
+
+  const lastActiveSubAgentId =
+    activeSubAgentId ?? lastActiveSubAgentIdRef.current;
 
   const tCommon = useTranslations("common");
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
       {/* SubAgent Trace Overlay Panel */}
-      <div className="fixed left-4 right-4 bottom-4 top-[5.5rem] z-[300] pointer-events-none flex">
+      <div className="pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] z-[300] flex">
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={75} className="pointer-events-none" />
-          
+          <ResizablePanel
+            defaultSize={75}
+            className="pointer-events-none"
+          />
+
           <ResizableHandle
             withHandle
             className={cn(
-              "w-2 outline-none bg-transparent hover:bg-primary/20 transition-all",
-              activeSubAgentId ? "pointer-events-auto cursor-col-resize z-50 -mr-1 opacity-100" : "opacity-0 pointer-events-none"
+              "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
+              activeSubAgentId
+                ? "pointer-events-auto z-50 -mr-1 cursor-col-resize opacity-100"
+                : "pointer-events-none opacity-0"
             )}
           />
 
@@ -158,8 +184,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             className={cn(
               "transition-[transform,opacity] duration-300 ease-out",
               activeSubAgentId
-                ? "translate-x-0 opacity-100 pointer-events-auto"
-                : "translate-x-[calc(100%+1rem)] opacity-0 pointer-events-none"
+                ? "pointer-events-auto translate-x-0 opacity-100"
+                : "pointer-events-none translate-x-[calc(100%+1rem)] opacity-0"
             )}
           >
             <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-2xl">
@@ -176,37 +202,44 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
       <div className="relative flex h-full flex-col overflow-hidden">
         <div
-          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-pretty"
+          className="scrollbar-pretty flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
           ref={scrollRef}
+          style={{ touchAction: "pan-y" }}
         >
           <div
             className={cn(
-              "mx-auto w-full transition-[padding,max-width,opacity] duration-200 ease-in-out px-3 pb-4 pt-2 md:px-4 max-w-[900px]"
+              "mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 transition-[padding,max-width,opacity] duration-200 ease-in-out md:px-4"
             )}
             ref={contentRef}
+            style={{ contentVisibility: "auto" }}
           >
             {isThreadLoading && processedMessages.length === 0 ? (
-              <div className="flex flex-col gap-4 p-6">
-                {loadingSkeletons.map((i) => (
-                  <MessageSkeleton key={i} />
-                ))}
-              </div>
+              loadingSkeletonElements
             ) : (
               <>
                 {processedMessages.map((data, index) => {
                   // O(1) lookup from memoized map instead of O(n) filter
-                  const messageUi = data.message.id ? uiByMessageId.get(data.message.id) : undefined;
+                  const messageUi = data.message.id
+                    ? uiByMessageId.get(data.message.id)
+                    : undefined;
                   const isLastMessage = index === processedMessages.length - 1;
                   const isStreaming = isLastMessage && isLoading;
 
                   // Get branch information for this message
-                  const branchInfo = getMessageBranchInfo?.(data.message, index);
+                  const branchInfo = getMessageBranchInfo?.(
+                    data.message,
+                    index
+                  );
                   const branchOptions = branchInfo?.branchOptions || [];
-                  const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
+                  const currentBranchIndex =
+                    branchInfo?.currentBranchIndex ?? 0;
                   const canRetry = branchInfo?.canRetry;
 
                   return (
-                    <div key={data.message.id} className="flex flex-col">
+                    <div
+                      key={data.message.id}
+                      className="flex flex-col"
+                    >
                       <ErrorBoundary className="mb-4">
                         <ChatMessage
                           message={data.message}
@@ -215,8 +248,12 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                           subAgents={data.subAgents}
                           isLoading={isLoading}
                           isStreaming={isStreaming}
-                          actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
-                          reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
+                          actionRequestsMap={
+                            isLastMessage ? actionRequestsMap : undefined
+                          }
+                          reviewConfigsMap={
+                            isLastMessage ? reviewConfigsMap : undefined
+                          }
                           ui={messageUi}
                           stream={stream}
                           onResumeInterrupt={resumeInterrupt}
@@ -235,21 +272,24 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                     </div>
                   );
                 })}
-                {error && (
-                  <Alert variant="destructive" className="mb-4">
+                {error ? (
+                  <Alert
+                    variant="destructive"
+                    className="mb-4"
+                  >
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>{tCommon("error")}</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
-                )}
+                ) : null}
               </>
             )}
           </div>
         </div>
 
         {/* Input Container */}
-        <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-3 sm:px-4">
-          <div className="mx-auto max-w-[800px] flex flex-col overflow-hidden rounded-[26px] border border-border shadow-2xl shadow-primary/5 bg-background transition-[border-color,box-shadow] duration-200 focus-within:border-primary/30 focus-within:shadow-primary/10">
+        <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent px-3 pb-4 pt-8 sm:px-4">
+          <div className="focus-within:border-primary/30 mx-auto flex max-w-[800px] flex-col overflow-hidden rounded-[26px] border border-border bg-background shadow-2xl shadow-primary/5 transition-[border-color,box-shadow] duration-200 focus-within:shadow-primary/10">
             <TasksSection
               todos={todos}
               files={files}

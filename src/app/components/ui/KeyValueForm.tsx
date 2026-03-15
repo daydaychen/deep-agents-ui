@@ -19,19 +19,21 @@ interface KeyValueFormProps {
 }
 
 export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
-  const {
-    control,
-    register,
-  } = useFormContext();
+  const { control, register } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name,
   });
 
   // Check for duplicate keys using O(n) algorithm
-  const fieldKeys = fields.map((field) => (field as { key?: string }).key ?? "");
+  const fieldKeys = fields.map(
+    (field) => (field as { key?: string }).key ?? ""
+  );
   const items = fieldKeys.map((key) => ({ key }));
-  const duplicateKeys = findDuplicateKeys(items);
+  const duplicateKeys = React.useMemo(
+    () => new Set(findDuplicateKeys(items)),
+    [items]
+  );
 
   return (
     <div className="space-y-3">
@@ -47,8 +49,13 @@ export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
               type="button"
               variant="secondary"
               size="sm"
-              className="h-5 px-2 text-[10px] bg-muted/50 hover:bg-muted text-muted-foreground"
-              onClick={() => append({ key: suggestion.key, value: suggestion.defaultValue || "" })}
+              className="h-5 bg-muted/50 px-2 text-[10px] text-muted-foreground hover:bg-muted"
+              onClick={() =>
+                append({
+                  key: suggestion.key,
+                  value: suggestion.defaultValue || "",
+                })
+              }
             >
               + {suggestion.label}
             </Button>
@@ -59,19 +66,20 @@ export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
       <div className="space-y-2">
         {fields.map((field, index) => {
           const fieldKey = (field as { key?: string }).key ?? "";
-          const isDuplicate = fieldKey && duplicateKeys.includes(fieldKey);
+          const isDuplicate = fieldKey && duplicateKeys.has(fieldKey);
           return (
             <div
               key={field.id}
-              className="group flex animate-in fade-in slide-in-from-top-2 duration-200 items-start gap-2"
+              className="group flex items-start gap-2 duration-200 animate-in fade-in slide-in-from-top-2"
             >
               <div className="flex-1 space-y-1">
                 <Input
                   {...register(`${name}.${index}.key`)}
                   placeholder="Key"
                   className={cn(
-                    "h-8 text-xs font-mono",
-                    isDuplicate && "border-destructive focus-visible:ring-destructive"
+                    "h-8 font-mono text-xs",
+                    isDuplicate &&
+                      "border-destructive focus-visible:ring-destructive"
                   )}
                 />
                 {isDuplicate && (
@@ -85,7 +93,7 @@ export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
                 <Input
                   {...register(`${name}.${index}.value`)}
                   placeholder="Value"
-                  className="h-8 text-xs font-mono"
+                  className="h-8 font-mono text-xs"
                 />
               </div>
               <Button
@@ -93,7 +101,7 @@ export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => remove(index)}
-                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>

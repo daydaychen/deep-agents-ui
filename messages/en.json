@@ -18,7 +18,8 @@
     "error": "Error",
     "success": "Success",
     "warning": "Warning",
-    "info": "Info"
+    "info": "Info",
+    "characters": "characters"
   },
   "page": {
     "title": "Databus Pilot | AI Agent Interface",
@@ -71,6 +72,7 @@
     "thinking": "Reasoning",
     "thinkingOn": "Reasoning: ON",
     "thinkingOff": "Reasoning: OFF",
+    "reasoningProcess": "Reasoning Process",
     "authMode": {
       "ask": "Ask Mode (Strict)",
       "read": "Read Mode (Safe)",
@@ -150,6 +152,9 @@
     "noMatchingMemories": "No matching memories found",
     "hierarchicalNamespaces": "Hierarchical Namespaces",
     "noMemoryEntries": "No memory entries found",
+    "noItemsInNamespace": "No items in this namespace",
+    "created": "Created",
+    "updated": "Updated",
     "confirmDeletion": "Confirm Deletion",
     "deleteConfirm": "Are you sure you want to delete the entry <code>{key}</code>? This action cannot be undone.",
     "cancel": "Cancel",
@@ -168,6 +173,7 @@
     "jsonPlaceholder": "Enter JSON value (e.g., '{\"key\": \"value\"}')",
     "itemEmpty": "Item is empty",
     "saveItemFailed": "Failed to save item: {error}",
+    "deleteMemoryItem": "Delete memory item {key}",
     "copiedToClipboard": "Copied to clipboard",
     "namespaceType": "Namespace Type",
     "namespaceId": "Namespace ID",
@@ -203,6 +209,7 @@
     "loadThreadsFailed": "Failed to load conversations",
     "markAsResolved": "Mark as Resolved",
     "deleteThread": "Delete Thread",
+    "moreOptions": "More options",
     "message": "message",
     "messages": "messages"
   },

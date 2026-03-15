@@ -5,7 +5,11 @@ import { SubAgent, ToolCall } from "@/app/types/types";
 
 export function formatDate(date: string | number | Date): string {
   const d = new Date(date);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 /**
@@ -18,22 +22,26 @@ export function extractSubAgents(
   toolCalls: ToolCall[],
   subagentMessagesMap?: Map<string, Message[]>
 ): SubAgent[] {
-  return toolCalls
-    .filter((toolCall: ToolCall) => {
-      return (
-        toolCall.name === "task" &&
-        toolCall.args["subagent_type"] &&
-        toolCall.args["subagent_type"] !== "" &&
-        toolCall.args["subagent_type"] !== null
-      );
-    })
-    .map((toolCall: ToolCall) => {
-      const subagentType = (toolCall.args as Record<string, unknown>)[
-        "subagent_type"
-      ] as string;
-      
-      // Get messages for this subagent from the map or toolCall
-      const messages = subagentMessagesMap?.get(toolCall.id) || toolCall.subAgentMessages || [];
+  const result: SubAgent[] = [];
+  for (const toolCall of toolCalls) {
+    const toolCallArgs = toolCall.args;
+    const subagentTypeValue = toolCallArgs["subagent_type"];
+
+    // Filter: only process "task" tool calls with subagent_type
+    if (
+      toolCall.name !== "task" ||
+      !subagentTypeValue ||
+      subagentTypeValue === "" ||
+      subagentTypeValue === null
+    ) {
+      continue;
+    }
+
+    const subagentType = subagentTypeValue as string;
+
+    // Get messages for this subagent from the map or toolCall
+    const messages =
+      subagentMessagesMap?.get(toolCall.id) || toolCall.subAgentMessages || [];
 
       // Try to find agentName from the messages metadata
       let agentName = subagentType; // Default to subagent_type from args
@@ -49,17 +57,18 @@ export function extractSubAgents(
         }
       }
 
-      return {
-        id: toolCall.id,
-        name: toolCall.name,
-        subAgentName: subagentType,
-        agentName: agentName,
-        input: toolCall.args,
-        output: toolCall.result ? { result: toolCall.result } : undefined,
-        status: toolCall.status as SubAgent["status"],
-        messages: messages,
-      } as SubAgent;
-    });
+    result.push({
+      id: toolCall.id,
+      name: toolCall.name,
+      subAgentName: subagentType,
+      agentName: agentName,
+      input: toolCall.args,
+      output: toolCall.result ? { result: toolCall.result } : undefined,
+      status: toolCall.status as SubAgent["status"],
+      messages: messages,
+    } as SubAgent);
+  }
+  return result;
 }
 
 export function formatTokenCount(count: number): string {
@@ -74,27 +83,41 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function extractStringFromMessageContent(message: Message): string {
-  return typeof message.content === "string"
-    ? message.content
-    : Array.isArray(message.content)
-    ? message.content
-        .filter(
-          (c: unknown) =>
-            (typeof c === "object" &&
-              c !== null &&
-              "type" in c &&
-              (c as { type: string }).type === "text") ||
-            typeof c === "string"
-        )
-        .map((c: unknown) =>
-          typeof c === "string"
-            ? c
-            : typeof c === "object" && c !== null && "text" in c
-            ? (c as { text?: string }).text || ""
-            : ""
-        )
-        .join("")
-    : "";
+  if (typeof message.content === "string") {
+    return message.content;
+  }
+
+  if (!Array.isArray(message.content)) {
+    return "";
+  }
+
+  // Combined filter + map + join into single loop
+  const result: string[] = [];
+  for (const c of message.content) {
+    // Filter: only process text blocks or strings
+    const isTextBlock =
+      typeof c === "object" &&
+      c !== null &&
+      "type" in c &&
+      (c as { type: string }).type === "text";
+    const isString = typeof c === "string";
+
+    if (!isTextBlock && !isString) {
+      continue;
+    }
+
+    // Map: extract text content
+    const text =
+      typeof c === "string"
+        ? c
+        : typeof c === "object" && c !== null && "text" in c
+        ? (c as { text?: string }).text || ""
+        : "";
+
+    result.push(text);
+  }
+
+  return result.join("");
 }
 
 export function extractSubAgentContent(data: unknown): string {

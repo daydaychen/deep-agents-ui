@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useTransition } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -61,26 +61,31 @@ interface ConfigDialogProps {
   currentDeploymentUrl?: string;
 }
 
-const assistantFormSchema = z.object({
-  tags: z.array(z.string()),
-  recursion_limit: z.number().min(1),
-  authMode: z.enum(["ask", "read", "auto"]).optional(),
-  defaultModel: z.string().optional(),
-  configurable: z.array(z.object({ key: z.string(), value: z.string() })),
-  metadata: z.array(z.object({ key: z.string(), value: z.string() })),
-}).superRefine((data, ctx) => {
-  const validateDuplicates = createDuplicateKeyValidator();
-  
-  const configurableResult = validateDuplicates(data.configurable, "configurable");
-  if (configurableResult) {
-    ctx.addIssue(configurableResult);
-  }
-  
-  const metadataResult = validateDuplicates(data.metadata, "metadata");
-  if (metadataResult) {
-    ctx.addIssue(metadataResult);
-  }
-});
+const assistantFormSchema = z
+  .object({
+    tags: z.array(z.string()),
+    recursion_limit: z.number().min(1),
+    authMode: z.enum(["ask", "read", "auto"]).optional(),
+    defaultModel: z.string().optional(),
+    configurable: z.array(z.object({ key: z.string(), value: z.string() })),
+    metadata: z.array(z.object({ key: z.string(), value: z.string() })),
+  })
+  .superRefine((data, ctx) => {
+    const validateDuplicates = createDuplicateKeyValidator();
+
+    const configurableResult = validateDuplicates(
+      data.configurable,
+      "configurable"
+    );
+    if (configurableResult) {
+      ctx.addIssue(configurableResult);
+    }
+
+    const metadataResult = validateDuplicates(data.metadata, "metadata");
+    if (metadataResult) {
+      ctx.addIssue(metadataResult);
+    }
+  });
 
 type AssistantFormValues = z.infer<typeof assistantFormSchema>;
 
@@ -109,12 +114,12 @@ export function ConfigDialog({
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(
     null
   );
-  const [loadingAssistants, setLoadingAssistants] = useState(false);
-  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [isPendingAssistants, startLoadingAssistants] = useTransition();
+  const [isPendingDetails, startLoadingDetails] = useTransition();
   const [useCustomId, setUseCustomId] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isPendingDelete, startDeleting] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isUpdatingAssistant, setIsUpdatingAssistant] = useState(false);
+  const [isPendingUpdate, startUpdatingAssistant] = useTransition();
 
   const methods = useForm<AssistantFormValues>({
     resolver: zodResolver(assistantFormSchema),
@@ -143,14 +148,13 @@ export function ConfigDialog({
 
   // Fetch assistants when deployment URL is available
   useEffect(() => {
-    const fetchAssistants = async () => {
-      const urlToUse = deploymentUrl || currentDeploymentUrl;
+    const urlToUse = deploymentUrl || currentDeploymentUrl;
 
-      if (!urlToUse || !open) {
-        return;
-      }
+    if (!urlToUse || !open) {
+      return;
+    }
 
-      setLoadingAssistants(true);
+    startLoadingAssistants(async () => {
       try {
         const client = new Client({
           apiUrl: urlToUse,
@@ -164,12 +168,8 @@ export function ConfigDialog({
       } catch (error) {
         console.error("Failed to fetch assistants:", error);
         setAssistants([]);
-      } finally {
-        setLoadingAssistants(false);
       }
-    };
-
-    fetchAssistants();
+    });
   }, [deploymentUrl, currentDeploymentUrl, open]);
 
   // Map assistant to form data
@@ -179,20 +179,26 @@ export function ConfigDialog({
       const metadata = assistant.metadata || {};
       const configurable = config.configurable || {};
 
-      const toEntries = (obj: Record<string, unknown>, excludeKeys: string[] = []) =>
-        Object.entries(obj)
-          .filter(([key]) => !excludeKeys.includes(key))
+      const toEntries = (
+        obj: Record<string, unknown>,
+        excludeKeys: string[] = []
+      ) => {
+        const excludeKeysSet = new Set(excludeKeys);
+        return Object.entries(obj)
+          .filter(([key]) => !excludeKeysSet.has(key))
           .map(([key, value]) => ({
             key,
             value: typeof value === "string" ? value : JSON.stringify(value),
           }));
+      };
 
-      const validAuthModes = ["ask", "read", "auto"] as const;
+      const VALID_AUTH_MODES = new Set(["ask", "read", "auto"]);
       const authModeValue = String(metadata.authMode || "");
-      const authMode = validAuthModes.includes(authModeValue as typeof validAuthModes[number]) 
-        ? authModeValue as typeof validAuthModes[number]
+      const authMode = VALID_AUTH_MODES.has(authModeValue)
+        ? (authModeValue as "ask" | "read" | "auto")
         : "ask";
-      const defaultModel = typeof metadata.defaultModel === "string" ? metadata.defaultModel : "";
+      const defaultModel =
+        typeof metadata.defaultModel === "string" ? metadata.defaultModel : "";
 
       return {
         tags: config.tags || [],
@@ -207,13 +213,13 @@ export function ConfigDialog({
 
   // Map form to SDK data
   const mapFromForm = (values: AssistantFormValues) => {
-    const BLOCKED_KEYS = ["__proto__", "constructor", "prototype"];
+    const BLOCKED_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
     const fromEntries = (entries: { key: string; value: string }[]) => {
       const obj: Record<string, unknown> = {};
       entries.forEach(({ key, value }) => {
-        if (!key || BLOCKED_KEYS.includes(key)) {
-          if (BLOCKED_KEYS.includes(key)) {
+        if (!key || BLOCKED_KEYS.has(key)) {
+          if (BLOCKED_KEYS.has(key)) {
             console.warn("Blocked prototype pollution attempt:", key);
           }
           return;
@@ -253,15 +259,14 @@ export function ConfigDialog({
 
   // Fetch selected assistant details
   useEffect(() => {
-    const fetchDetails = async () => {
-      const urlToUse = deploymentUrl || currentDeploymentUrl;
+    const urlToUse = deploymentUrl || currentDeploymentUrl;
 
-      if (!urlToUse || !assistantId || !open) {
-        setSelectedAssistant(null);
-        return;
-      }
+    if (!urlToUse || !assistantId || !open) {
+      setSelectedAssistant(null);
+      return;
+    }
 
-      setLoadingDetails(true);
+    startLoadingDetails(async () => {
       try {
         const client = new Client({
           apiUrl: urlToUse,
@@ -273,13 +278,16 @@ export function ConfigDialog({
       } catch (error) {
         console.error("Failed to fetch assistant details:", error);
         setSelectedAssistant(null);
-      } finally {
-        setLoadingDetails(false);
       }
-    };
-
-    fetchDetails();
-  }, [assistantId, deploymentUrl, currentDeploymentUrl, open, reset, mapToForm]);
+    });
+  }, [
+    assistantId,
+    deploymentUrl,
+    currentDeploymentUrl,
+    open,
+    reset,
+    mapToForm,
+  ]);
 
   const handleDeleteAssistant = async () => {
     if (!selectedAssistant) return;
@@ -288,25 +296,24 @@ export function ConfigDialog({
 
     if (!urlToUse) return;
 
-    setIsDeleting(true);
-    try {
-      const client = new Client({
-        apiUrl: urlToUse,
-      });
+    startDeleting(async () => {
+      try {
+        const client = new Client({
+          apiUrl: urlToUse,
+        });
 
-      await client.assistants.delete(selectedAssistant.assistant_id);
-      toast.success(t("assistantDeleted"));
-      setAssistantId("");
-      setAssistants((prev) =>
-        prev.filter((a) => a.assistant_id !== selectedAssistant.assistant_id)
-      );
-      setSelectedAssistant(null);
-    } catch (error) {
-      console.error("Failed to delete assistant:", error);
-      toast.error(t("assistantDeleteFailed"));
-    } finally {
-      setIsDeleting(false);
-    }
+        await client.assistants.delete(selectedAssistant.assistant_id);
+        toast.success(t("assistantDeleted"));
+        setAssistantId("");
+        setAssistants((prev) =>
+          prev.filter((a) => a.assistant_id !== selectedAssistant.assistant_id)
+        );
+        setSelectedAssistant(null);
+      } catch (error) {
+        console.error("Failed to delete assistant:", error);
+        toast.error(t("assistantDeleteFailed"));
+      }
+    });
   };
 
   const handleSave = async () => {
@@ -333,73 +340,91 @@ export function ConfigDialog({
 
     // Update assistant on server if details are modified
     if (selectedAssistant) {
-      try {
-        setIsUpdatingAssistant(true);
-        const urlToUse = deploymentUrl || currentDeploymentUrl;
-        const client = new Client({
-          apiUrl: urlToUse || "",
-        });
+      const urlToUse = deploymentUrl || currentDeploymentUrl;
 
-        const formValues = methods.getValues();
-        const { config, metadata } = mapFromForm(formValues);
+      // Check for auth mode change to Auto mode - require confirmation (must be outside transition)
+      const formValues = methods.getValues();
+      const { config, metadata } = mapFromForm(formValues);
+      const oldAuthMode = selectedAssistant.metadata?.authMode as
+        | string
+        | undefined;
+      const newAuthMode = metadata.authMode as string | undefined;
 
-        // Sync the local recursionLimit state to the config sent to server
-        config.recursion_limit = parseInt(recursionLimit, 10);
-
-        // Check for auth mode change to Auto mode - require confirmation
-        const oldAuthMode = selectedAssistant.metadata?.authMode as string | undefined;
-        const newAuthMode = metadata.authMode as string | undefined;
-
-        if (newAuthMode === "auto" && oldAuthMode !== "auto") {
-          // Show warning confirmation dialog
-          const confirmed = window.confirm(
-            "切换到 Auto 模式将绕过所有安全审批。确定继续？"
-          );
-          if (!confirmed) {
-            setIsUpdatingAssistant(false);
-            return;
-          }
-
-          // Log audit event for auth mode change to Auto
-          const auditEvent = createAuthModeChangeAuditEvent(
-            selectedAssistant.assistant_id,
-            oldAuthMode,
-            newAuthMode,
-            userId
-          );
-          logAuditEvent(auditEvent);
+      if (newAuthMode === "auto" && oldAuthMode !== "auto") {
+        // Show warning confirmation dialog
+        const confirmed = window.confirm(
+          "切换到 Auto 模式将绕过所有安全审批。确定继续？"
+        );
+        if (!confirmed) {
+          return;
         }
 
-        // Simple deep comparison to avoid redundant updates
-        const currentData = JSON.stringify({
-          config: selectedAssistant.config,
-          metadata: selectedAssistant.metadata,
-        });
-        const newData = JSON.stringify({ config, metadata });
+        // Log audit event for auth mode change to Auto
+        const auditEvent = createAuthModeChangeAuditEvent(
+          selectedAssistant.assistant_id,
+          oldAuthMode,
+          newAuthMode,
+          userId
+        );
+        logAuditEvent(auditEvent);
+      }
 
-        if (currentData !== newData) {
-          await client.assistants.update(selectedAssistant.assistant_id, {
-            config,
-            metadata,
+      startUpdatingAssistant(async () => {
+        try {
+          const client = new Client({
+            apiUrl: urlToUse || "",
           });
 
-          // Log general config update audit event
-          const configAuditEvent = createAssistantConfigAuditEvent(
-            selectedAssistant.assistant_id,
-            { authMode: newAuthMode, defaultModel: metadata.defaultModel },
-            userId
-          );
-          logAuditEvent(configAuditEvent);
+          // Sync the local recursionLimit state to the config sent to server
+          config.recursion_limit = parseInt(recursionLimit, 10);
 
-          toast.success(t("assistantUpdated"));
+          // Simple deep comparison to avoid redundant updates
+          // Check key count first to avoid expensive JSON.stringify when obviously different
+          const currentConfigKeys = Object.keys(selectedAssistant.config || {});
+          const newConfigKeys = Object.keys(config || {});
+          const currentMetadataKeys = Object.keys(
+            selectedAssistant.metadata || {}
+          );
+          const newMetadataKeys = Object.keys(metadata || {});
+
+          const keyCountsMatch =
+            currentConfigKeys.length === newConfigKeys.length &&
+            currentMetadataKeys.length === newMetadataKeys.length;
+
+          let dataChanged = false;
+          if (!keyCountsMatch) {
+            dataChanged = true;
+          } else {
+            const currentData = JSON.stringify({
+              config: selectedAssistant.config,
+              metadata: selectedAssistant.metadata,
+            });
+            const newData = JSON.stringify({ config, metadata });
+            dataChanged = currentData !== newData;
+          }
+
+          if (dataChanged) {
+            await client.assistants.update(selectedAssistant.assistant_id, {
+              config,
+              metadata,
+            });
+
+            // Log general config update audit event
+            const configAuditEvent = createAssistantConfigAuditEvent(
+              selectedAssistant.assistant_id,
+              { authMode: newAuthMode, defaultModel: metadata.defaultModel },
+              userId
+            );
+            logAuditEvent(configAuditEvent);
+
+            toast.success(t("assistantUpdated"));
+          }
+        } catch (error) {
+          console.error("Failed to update assistant on server:", error);
+          toast.error(t("assistantUpdateFailed"));
+          // We continue to save local config anyway
         }
-      } catch (error) {
-        console.error("Failed to update assistant on server:", error);
-        toast.error(t("assistantUpdateFailed"));
-        // We continue to save local config anyway
-      } finally {
-        setIsUpdatingAssistant(false);
-      }
+      });
     }
 
     onSave({
@@ -432,22 +457,28 @@ export function ConfigDialog({
           <DialogDescription>{t("configureDescription")}</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="general" className="w-full mt-2">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="general" className="flex items-center gap-2">
+        <Tabs
+          defaultValue="general"
+          className="mt-2 w-full"
+        >
+          <TabsList className="mb-6 grid w-full grid-cols-3">
+            <TabsTrigger
+              value="general"
+              className="flex items-center gap-2"
+            >
               <LayoutGrid className="h-3.5 w-3.5" />
               {t("general")}
             </TabsTrigger>
-            <TabsTrigger 
-              value="config" 
+            <TabsTrigger
+              value="config"
               className="flex items-center gap-2"
               disabled={!selectedAssistant}
             >
               <Settings2 className="h-3.5 w-3.5" />
               {t("assistantConfig")}
             </TabsTrigger>
-            <TabsTrigger 
-              value="metadata" 
+            <TabsTrigger
+              value="metadata"
               className="flex items-center gap-2"
               disabled={!selectedAssistant}
             >
@@ -456,7 +487,10 @@ export function ConfigDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="space-y-6 animate-in fade-in-50 duration-300">
+          <TabsContent
+            value="general"
+            className="space-y-6 duration-300 animate-in fade-in-50"
+          >
             <div className="grid gap-5 py-2">
               <div className="grid gap-2">
                 <Label
@@ -471,7 +505,7 @@ export function ConfigDialog({
                   placeholder={t("deploymentUrlPlaceholder")}
                   value={deploymentUrl}
                   onChange={(e) => setDeploymentUrl(e.target.value)}
-                  className="bg-muted/30 h-9"
+                  className="h-9 bg-muted/30"
                 />
               </div>
 
@@ -500,15 +534,15 @@ export function ConfigDialog({
                       <Select
                         value={assistantId}
                         onValueChange={setAssistantId}
-                        disabled={loadingAssistants}
+                        disabled={isPendingAssistants}
                       >
                         <SelectTrigger
                           id="assistantId"
-                          className="bg-muted/30 h-9"
+                          className="h-9 bg-muted/30"
                         >
                           <SelectValue
                             placeholder={
-                              loadingAssistants
+                              isPendingAssistants
                                 ? t("loadingAssistants")
                                 : t("assistantIdPlaceholder")
                             }
@@ -537,9 +571,9 @@ export function ConfigDialog({
                           placeholder={t("assistantIdPlaceholder")}
                           value={assistantId}
                           onChange={(e) => setAssistantId(e.target.value)}
-                          className="bg-muted/30 h-9"
+                          className="h-9 bg-muted/30"
                         />
-                        {loadingAssistants && (
+                        {isPendingAssistants && (
                           <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
                         )}
                       </div>
@@ -550,7 +584,7 @@ export function ConfigDialog({
                       <Button
                         variant="outline"
                         size="icon"
-                        className="shrink-0 h-9 w-9 text-destructive hover:bg-destructive/10"
+                        className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10"
                         onClick={() => setShowDeleteConfirm(true)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -592,9 +626,9 @@ export function ConfigDialog({
                                 await handleDeleteAssistant();
                                 setShowDeleteConfirm(false);
                               }}
-                              disabled={isDeleting}
+                              disabled={isPendingDelete}
                             >
-                              {isDeleting ? (
+                              {isPendingDelete ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               ) : (
                                 t("deletePermanently")
@@ -639,7 +673,7 @@ export function ConfigDialog({
                     placeholder="100"
                     value={recursionLimit}
                     onChange={(e) => setRecursionLimit(e.target.value)}
-                    className="bg-muted/30 h-9"
+                    className="h-9 bg-muted/30"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -657,7 +691,7 @@ export function ConfigDialog({
                     placeholder="6"
                     value={recursionMultiplier}
                     onChange={(e) => setRecursionMultiplier(e.target.value)}
-                    className="bg-muted/30 h-9"
+                    className="h-9 bg-muted/30"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -673,17 +707,20 @@ export function ConfigDialog({
                     placeholder={t("userIdPlaceholder")}
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
-                    className="bg-muted/30 h-9"
+                    className="h-9 bg-muted/30"
                   />
                 </div>
               </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="config" className="space-y-6 animate-in fade-in-50 duration-300">
-            {loadingDetails ? (
+          <TabsContent
+            value="config"
+            className="space-y-6 duration-300 animate-in fade-in-50"
+          >
+            {isPendingDetails ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+                <Loader2 className="text-primary/50 h-8 w-8 animate-spin" />
               </div>
             ) : (
               <FormProvider {...methods}>
@@ -696,15 +733,23 @@ export function ConfigDialog({
                       </Label>
                       <Select
                         value={watch("authMode")}
-                        onValueChange={(val) => setValue("authMode", val as "ask" | "read" | "auto")}
+                        onValueChange={(val) =>
+                          setValue("authMode", val as "ask" | "read" | "auto")
+                        }
                       >
                         <SelectTrigger className="h-9">
                           <SelectValue placeholder="Select mode" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ask">🛡️ {t("authMode.ask")}</SelectItem>
-                          <SelectItem value="read">👁️ {t("authMode.read")}</SelectItem>
-                          <SelectItem value="auto">⚡ {t("authMode.auto")}</SelectItem>
+                          <SelectItem value="ask">
+                            🛡️ {t("authMode.ask")}
+                          </SelectItem>
+                          <SelectItem value="read">
+                            👁️ {t("authMode.read")}
+                          </SelectItem>
+                          <SelectItem value="auto">
+                            ⚡ {t("authMode.auto")}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -715,7 +760,9 @@ export function ConfigDialog({
                       </Label>
                       <Input
                         value={watch("defaultModel")}
-                        onChange={(e) => setValue("defaultModel", e.target.value)}
+                        onChange={(e) =>
+                          setValue("defaultModel", e.target.value)
+                        }
                         placeholder="e.g. gpt-4o"
                         className="h-9"
                       />
@@ -727,20 +774,32 @@ export function ConfigDialog({
                       <Tag className="h-3.5 w-3.5" />
                       {t("tags")}
                     </Label>
-                    <TagInput 
-                      tags={watch("tags")} 
+                    <TagInput
+                      tags={watch("tags")}
                       onChange={(tags) => setValue("tags", tags)}
                       placeholder="Add tag..."
                     />
                   </div>
 
-                  <KeyValueForm 
-                    name="configurable" 
+                  <KeyValueForm
+                    name="configurable"
                     label={t("configurable")}
                     suggestions={[
-                      { label: "Workspace", key: "workspace_path", defaultValue: "/workspace" },
-                      { label: "Style", key: "coding_style", defaultValue: "react-best-practices" },
-                      { label: "User ID", key: "user_id", defaultValue: "user" },
+                      {
+                        label: "Workspace",
+                        key: "workspace_path",
+                        defaultValue: "/workspace",
+                      },
+                      {
+                        label: "Style",
+                        key: "coding_style",
+                        defaultValue: "react-best-practices",
+                      },
+                      {
+                        label: "User ID",
+                        key: "user_id",
+                        defaultValue: "user",
+                      },
                     ]}
                   />
                 </div>
@@ -748,17 +807,20 @@ export function ConfigDialog({
             )}
           </TabsContent>
 
-          <TabsContent value="metadata" className="space-y-6 animate-in fade-in-50 duration-300">
-            {loadingDetails ? (
+          <TabsContent
+            value="metadata"
+            className="space-y-6 duration-300 animate-in fade-in-50"
+          >
+            {isPendingDetails ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+                <Loader2 className="text-primary/50 h-8 w-8 animate-spin" />
               </div>
             ) : (
               <FormProvider {...methods}>
                 <div className="py-2">
-                  <KeyValueForm 
-                    name="metadata" 
-                    label={t("assistantMetadata")} 
+                  <KeyValueForm
+                    name="metadata"
+                    label={t("assistantMetadata")}
                   />
                 </div>
               </FormProvider>
@@ -766,7 +828,7 @@ export function ConfigDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="gap-2 sm:gap-0 mt-4">
+        <DialogFooter className="mt-4 gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
@@ -775,10 +837,14 @@ export function ConfigDialog({
           </Button>
           <Button
             onClick={handleSave}
-            className="px-8 min-w-[120px]"
-            disabled={loadingDetails || isUpdatingAssistant || !methods.formState.isValid}
+            className="min-w-[120px] px-8"
+            disabled={
+              isPendingDetails ||
+              isPendingUpdate ||
+              !methods.formState.isValid
+            }
           >
-            {isUpdatingAssistant || isDeleting ? (
+            {isPendingUpdate || isPendingDelete ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               t("saveSettings")

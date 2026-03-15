@@ -33,11 +33,9 @@ export const EditMessage = React.memo<EditMessageProps>(
     React.useLayoutEffect(() => {
       const textarea = textareaRef.current;
       if (textarea) {
-        textarea.style.height = "inherit";
         const scrollHeight = textarea.scrollHeight;
-        if (scrollHeight > 0) {
-          textarea.style.height = `${scrollHeight}px`;
-        }
+        textarea.style.cssText =
+          scrollHeight > 0 ? `height: ${scrollHeight}px;` : "height: inherit;";
       }
     }, [content]);
 

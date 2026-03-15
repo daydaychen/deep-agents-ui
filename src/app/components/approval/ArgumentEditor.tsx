@@ -22,10 +22,14 @@ export const ArgumentEditor = React.memo<ArgumentEditorProps>(
         <div className="mt-2 space-y-3">
           {Object.entries(args).map(([key, value]) => (
             <div key={key}>
-              <label className="mb-1 block text-xs font-medium text-foreground">
+              <label
+                htmlFor={`arg-${key}`}
+                className="mb-1 block text-xs font-medium text-foreground"
+              >
                 {key}
               </label>
               <Textarea
+                id={`arg-${key}`}
                 value={
                   editedArgs[key] !== undefined
                     ? typeof editedArgs[key] === "string"
