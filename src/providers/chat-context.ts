@@ -20,7 +20,7 @@ export type StateType = {
 export type LLMOverrideConfig = {
   model?: string;
   temperature?: number;
-  max_completion_tokens?: number;
+  max_tokens?: number;
   top_p?: number;
   presence_penalty?: number;
 };

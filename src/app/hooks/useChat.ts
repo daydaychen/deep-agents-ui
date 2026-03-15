@@ -142,7 +142,7 @@ export function useChat({
     const configKeys: (keyof LLMOverrideConfig)[] = [
       "model",
       "temperature",
-      "max_completion_tokens",
+      "max_tokens",
       "top_p",
       "presence_penalty",
     ];

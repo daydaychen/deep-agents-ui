@@ -281,17 +281,17 @@ export const ChatInput = React.memo<ChatInputProps>(
                   {t("tokens")}
                 </Label>
                 <span className="font-mono text-2xs opacity-50">
-                  {overrides.max_completion_tokens ?? t("default")}
+                  {overrides.max_tokens ?? t("default")}
                 </span>
               </div>
               <Input
                 type="number"
                 placeholder="4096"
-                value={overrides.max_completion_tokens ?? ""}
+                value={overrides.max_tokens ?? ""}
                 onChange={(e) =>
                   updateOverride(
                     agentKey,
-                    "max_completion_tokens",
+                    "max_tokens",
                     e.target.value === "" ? undefined : parseInt(e.target.value)
                   )
                 }
