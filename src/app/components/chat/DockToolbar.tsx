@@ -106,7 +106,7 @@ export const DockToolbar = React.memo(() => {
             size="icon"
             className={cn(
               "h-7 w-7 transition-colors duration-200",
-              isThinking ? "text-[#34d399] animate-pulse" : "text-muted-foreground"
+              isThinking ? "text-[#34d399]" : "text-muted-foreground"
             )}
             onClick={toggleThinking}
           >
