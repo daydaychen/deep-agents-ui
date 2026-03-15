@@ -32,6 +32,7 @@ export const DockToolbar = React.memo(() => {
 
   const authMode = overrideConfig.authMode || "ask";
   const isThinking = overrideConfig.thinking ?? false;
+  const currentModel = overrideConfig.model?.model || "default";
 
   const handleAuthModeChange = (mode: OverrideConfig["authMode"]) => {
     setOverrideConfig((prev) => ({ ...prev, authMode: mode }));
@@ -39,6 +40,13 @@ export const DockToolbar = React.memo(() => {
 
   const toggleThinking = () => {
     setOverrideConfig((prev) => ({ ...prev, thinking: !prev.thinking }));
+  };
+
+  const handleModelChange = (modelType: "default" | "small" | "analyst") => {
+    setOverrideConfig((prev) => ({
+      ...prev,
+      model: modelType === "default" ? undefined : { model: modelType }
+    }));
   };
 
   const AuthIcon = useMemo(() => ({
@@ -55,16 +63,35 @@ export const DockToolbar = React.memo(() => {
 
   return (
     <div className="flex items-center gap-1 px-2 py-1.5 border-t bg-muted/10">
-      {/* Model Switcher (Placeholder for now, can be expanded) */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-            <Sparkles className="h-4 w-4" />
-            <span className="sr-only">{t("model")}</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{t("model")}</TooltipContent>
-      </Tooltip>
+      {/* Model Switcher */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-muted-foreground hover:text-foreground">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-xs">{currentModel === "default" ? t("default") : t(currentModel)}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>{t("model")}</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => handleModelChange("default")}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            {t("default")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleModelChange("small")}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            {t("small")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleModelChange("analyst")}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            {t("analyst")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="h-4 w-px bg-border mx-1" />
 
