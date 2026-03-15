@@ -67,7 +67,15 @@
     "interruptBeforeTools": "Interrupt Before Tools",
     "interruptAfterTools": "Interrupt After Tools",
     "stopCore": "STOP CORE",
-    "sendShortcut": "Send"
+    "sendShortcut": "Send",
+    "thinking": "Reasoning",
+    "thinkingOn": "Reasoning: ON",
+    "thinkingOff": "Reasoning: OFF",
+    "authMode": {
+      "ask": "Ask Mode (Strict)",
+      "read": "Read Mode (Safe)",
+      "auto": "Auto Mode (Fast)"
+    }
   },
   "config": {
     "title": "Configuration",
@@ -96,6 +104,8 @@
     "optional": "Optional",
     "userId": "User ID",
     "userIdPlaceholder": "user-identifier",
+    "defaultAuthMode": "Default Auth Mode",
+    "defaultModel": "Default Model",
     "saveSettings": "Save Settings",
     "created": "Created",
     "updated": "Updated",

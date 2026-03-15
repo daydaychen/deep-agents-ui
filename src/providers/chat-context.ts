@@ -34,6 +34,8 @@ export type OverrideConfig = {
   recursionLimit?: number;
   interruptBefore?: string[];
   interruptAfter?: string[];
+  thinking?: boolean;
+  authMode?: "ask" | "read" | "auto";
 };
 
 // Re-export Assistant type for convenience

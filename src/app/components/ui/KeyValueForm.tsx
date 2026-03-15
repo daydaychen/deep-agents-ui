@@ -5,12 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Plus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface Suggestion {
+  label: string;
+  key: string;
+  defaultValue?: string;
+}
+
 interface KeyValueFormProps {
   name: string;
   label?: string;
+  suggestions?: Suggestion[];
 }
 
-export function KeyValueForm({ name, label }: KeyValueFormProps) {
+export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
   const {
     control,
     register,
@@ -29,7 +36,27 @@ export function KeyValueForm({ name, label }: KeyValueFormProps) {
 
   return (
     <div className="space-y-3">
-      {label && <label className="text-xs font-semibold">{label}</label>}
+      <div className="flex items-center justify-between">
+        {label && <label className="text-xs font-semibold">{label}</label>}
+      </div>
+      
+      {suggestions && suggestions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pb-1">
+          {suggestions.map((suggestion) => (
+            <Button
+              key={suggestion.key}
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-5 px-2 text-[10px] bg-muted/50 hover:bg-muted text-muted-foreground"
+              onClick={() => append({ key: suggestion.key, value: suggestion.defaultValue || "" })}
+            >
+              + {suggestion.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-2">
         {fields.map((field, index) => {
           const isDuplicate =

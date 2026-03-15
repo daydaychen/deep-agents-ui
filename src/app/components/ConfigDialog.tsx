@@ -37,7 +37,6 @@ import {
   User,
   Calendar,
   Trash2,
-  Info,
   Tag,
   Database,
   LayoutGrid,
@@ -57,6 +56,8 @@ interface ConfigDialogProps {
 const assistantFormSchema = z.object({
   tags: z.array(z.string()),
   recursion_limit: z.number().min(1),
+  authMode: z.enum(["ask", "read", "auto"]).optional(),
+  defaultModel: z.string().optional(),
   configurable: z.array(z.object({ key: z.string(), value: z.string() })),
   metadata: z.array(z.object({ key: z.string(), value: z.string() })),
 }).superRefine((data, ctx) => {
@@ -172,17 +173,28 @@ export function ConfigDialog({
       const metadata = assistant.metadata || {};
       const configurable = config.configurable || {};
 
-      const toEntries = (obj: Record<string, any>) =>
-        Object.entries(obj).map(([key, value]) => ({
-          key,
-          value: typeof value === "string" ? value : JSON.stringify(value),
-        }));
+      const toEntries = (obj: Record<string, any>, excludeKeys: string[] = []) =>
+        Object.entries(obj)
+          .filter(([key]) => !excludeKeys.includes(key))
+          .map(([key, value]) => ({
+            key,
+            value: typeof value === "string" ? value : JSON.stringify(value),
+          }));
+
+      const validAuthModes = ["ask", "read", "auto"] as const;
+      const authModeValue = String(metadata.authMode || "");
+      const authMode = validAuthModes.includes(authModeValue as typeof validAuthModes[number]) 
+        ? authModeValue as typeof validAuthModes[number]
+        : "ask";
+      const defaultModel = typeof metadata.defaultModel === "string" ? metadata.defaultModel : "";
 
       return {
         tags: config.tags || [],
         recursion_limit: config.recursion_limit || 100,
+        authMode,
+        defaultModel,
         configurable: toEntries(configurable),
-        metadata: toEntries(metadata),
+        metadata: toEntries(metadata, ["authMode", "defaultModel"]),
       };
     };
   }, []);
@@ -194,7 +206,6 @@ export function ConfigDialog({
       entries.forEach(({ key, value }) => {
         if (!key) return;
         try {
-          // Try to parse as JSON if it looks like it, otherwise keep as string
           if (
             (value.startsWith("{") && value.endsWith("}")) ||
             (value.startsWith("[") && value.endsWith("]")) ||
@@ -213,13 +224,17 @@ export function ConfigDialog({
       return obj;
     };
 
+    const metadata = fromEntries(values.metadata);
+    if (values.authMode) metadata.authMode = values.authMode;
+    if (values.defaultModel) metadata.defaultModel = values.defaultModel;
+
     return {
       config: {
         tags: values.tags,
         recursion_limit: values.recursion_limit,
         configurable: fromEntries(values.configurable),
       },
-      metadata: fromEntries(values.metadata),
+      metadata,
     };
   };
 
@@ -626,6 +641,40 @@ export function ConfigDialog({
             ) : (
               <FormProvider {...methods}>
                 <div className="grid gap-6 py-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="flex items-center gap-1.5">
+                        <Settings2 className="h-3.5 w-3.5" />
+                        {t("defaultAuthMode")}
+                      </Label>
+                      <Select
+                        value={watch("authMode")}
+                        onValueChange={(val) => setValue("authMode", val as any)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Select mode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ask">🛡️ {t("authMode.ask")}</SelectItem>
+                          <SelectItem value="read">👁️ {t("authMode.read")}</SelectItem>
+                          <SelectItem value="auto">⚡ {t("authMode.auto")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="flex items-center gap-1.5">
+                        <Globe className="h-3.5 w-3.5" />
+                        {t("defaultModel")}
+                      </Label>
+                      <Input
+                        value={watch("defaultModel")}
+                        onChange={(e) => setValue("defaultModel", e.target.value)}
+                        placeholder="e.g. gpt-4o"
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid gap-2">
                     <Label className="flex items-center gap-1.5">
                       <Tag className="h-3.5 w-3.5" />
@@ -640,7 +689,12 @@ export function ConfigDialog({
 
                   <KeyValueForm 
                     name="configurable" 
-                    label={t("configurable")} 
+                    label={t("configurable")}
+                    suggestions={[
+                      { label: "Workspace", key: "workspace_path", defaultValue: "/workspace" },
+                      { label: "Style", key: "coding_style", defaultValue: "react-best-practices" },
+                      { label: "User ID", key: "user_id", defaultValue: "user" },
+                    ]}
                   />
                 </div>
               </FormProvider>

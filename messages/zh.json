@@ -67,7 +67,15 @@
     "interruptBeforeTools": "在工具前中断",
     "interruptAfterTools": "在工具后中断",
     "stopCore": "停止核心",
-    "sendShortcut": "发送"
+    "sendShortcut": "发送",
+    "thinking": "推理",
+    "thinkingOn": "推理：开启",
+    "thinkingOff": "推理：关闭",
+    "authMode": {
+      "ask": "询问模式 (严格)",
+      "read": "只读模式 (安全)",
+      "auto": "自动模式 (快速)"
+    }
   },
   "config": {
     "title": "配置",
@@ -96,6 +104,8 @@
     "optional": "可选",
     "userId": "用户 ID",
     "userIdPlaceholder": "用户标识符",
+    "defaultAuthMode": "默认授权模式",
+    "defaultModel": "默认模型",
     "saveSettings": "保存设置",
     "created": "创建时间",
     "updated": "更新时间",
