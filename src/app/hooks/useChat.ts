@@ -22,12 +22,15 @@ import {
 import type {
   UseStreamOptions,
   UseStreamThread,
+  SubagentStreamInterface,
 } from "@langchain/langgraph-sdk/react";
 import { useStream } from "@langchain/langgraph-sdk/react";
+import type { BaseStream } from "@langchain/langgraph-sdk/react";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { usePersistedMessages } from "./usePersistedMessages";
+import { getInterruptBefore as getInterruptBeforeFromUtils } from "@/lib/auth-mode-utils";
 
 // Extend useStream options with DeepAgent-specific options not yet exported in SDK types
 interface UseStreamOptionsWithDeepAgentExtensions
@@ -35,6 +38,12 @@ interface UseStreamOptionsWithDeepAgentExtensions
   filterSubagentMessages?: boolean;
   streamSubgraphs?: boolean;
 }
+
+// Extended stream type that includes subagents property
+type ExtendedStream = BaseStream<StateType> & {
+  subagents: Map<string, SubagentStreamInterface<any, any, any>>;
+  activeSubagents: { id: string }[];
+};
 
 // Re-export types from chat-context as the single source of truth
 export type {
@@ -63,6 +72,46 @@ export function useChat({
   const [sessionId, setSessionId] = useState<string>(() => generateId());
   const isSubmittingRef = useRef(false);
   const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>({});
+
+  // Sync overrideConfig with assistant defaults on change
+  useEffect(() => {
+    if (activeAssistant) {
+      const assistantConfig = activeAssistant.config?.configurable || {};
+      const assistantMetadata = activeAssistant.metadata || {};
+
+      // Safely extract thinking value (handle empty object case)
+      const thinkingValue = assistantConfig.thinking ?? assistantMetadata.thinking;
+      const thinking = typeof thinkingValue === "boolean" ? thinkingValue : false;
+
+      // Safely extract authMode value (handle empty object case)
+      const validAuthModes = ["ask", "read", "auto"] as const;
+      const authModeValue = String(assistantMetadata.authMode || "");
+      const authMode = validAuthModes.includes(authModeValue as typeof validAuthModes[number])
+        ? authModeValue as typeof validAuthModes[number]
+        : "ask";
+
+      setOverrideConfig({
+        // 显式重置所有字段，不保留之前的覆盖配置
+        model: undefined,
+        small_model: undefined,
+        analyst: undefined,
+        config_validator: undefined,
+        databus_specialist: undefined,
+        thinking,
+        authMode,
+        recursionLimit: undefined,
+        interruptBefore: undefined,
+        interruptAfter: undefined,
+      });
+    }
+  }, [activeAssistant]);
+
+  const getInterruptBefore = useCallback(
+    (mode: OverrideConfig["authMode"]) => {
+      return getInterruptBeforeFromUtils(mode || "ask");
+    },
+    []
+  );
 
   const metadata = useMemo(
     () => ({
@@ -127,8 +176,9 @@ export function useChat({
 
   // Helper to map overrides to configurable with prefixes
   const getFinalConfigurable = useCallback((): Record<string, any> => {
-    const finalConfigurable = {
+    const finalConfigurable: Record<string, any> = {
       ...(activeAssistant?.config?.configurable ?? {}),
+      thinking: overrideConfig.thinking ?? false,
     };
 
     const prefixes = {
@@ -164,7 +214,7 @@ export function useChat({
   // 消息持久化和缓存 - 返回 subagentMessagesMap
   const { subagentMessagesMap } = usePersistedMessages(
     threadId,
-    stream.subagents,
+    (stream as ExtendedStream).subagents,
     stream.isLoading
   );
 
@@ -177,7 +227,9 @@ export function useChat({
 
       const finalRecursionLimit =
         (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
-      const finalInterruptBefore = overrideConfig.interruptBefore;
+      const finalInterruptBefore =
+        overrideConfig.interruptBefore ||
+        getInterruptBefore(overrideConfig.authMode);
       const finalInterruptAfter = overrideConfig.interruptAfter;
 
       stream.submit(
@@ -212,11 +264,13 @@ export function useChat({
       overrideConfig.recursionLimit,
       overrideConfig.interruptBefore,
       overrideConfig.interruptAfter,
+      overrideConfig.authMode,
       recursionLimit,
       recursionMultiplier,
       activeAssistant?.config,
       getFinalConfigurable,
       metadata,
+      getInterruptBefore,
     ]
   );
 
@@ -233,8 +287,10 @@ export function useChat({
 
       const finalRecursionLimit =
         (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+      const computedInterruptBefore = getInterruptBefore(overrideConfig.authMode);
       const finalInterruptBefore =
         overrideConfig.interruptBefore ||
+        computedInterruptBefore ||
         (isRerunningSubagent ? undefined : ["tools"]);
       const finalInterruptAfter =
         overrideConfig.interruptAfter ||
@@ -298,6 +354,8 @@ export function useChat({
       activeAssistant?.config,
       getFinalConfigurable,
       metadata,
+      getInterruptBefore,
+      overrideConfig.authMode,
     ]
   );
 
@@ -318,8 +376,10 @@ export function useChat({
 
       const finalRecursionLimit =
         (overrideConfig.recursionLimit || recursionLimit) * recursionMultiplier;
+      const computedInterruptBefore = getInterruptBefore(overrideConfig.authMode);
       const finalInterruptBefore =
         overrideConfig.interruptBefore ||
+        computedInterruptBefore ||
         (hasTaskToolCall ? undefined : ["tools"]);
       const finalInterruptAfter =
         overrideConfig.interruptAfter ||
@@ -350,11 +410,13 @@ export function useChat({
       overrideConfig.recursionLimit,
       overrideConfig.interruptBefore,
       overrideConfig.interruptAfter,
+      overrideConfig.authMode,
       recursionLimit,
       recursionMultiplier,
       activeAssistant?.config,
       getFinalConfigurable,
       metadata,
+      getInterruptBefore,
     ]
   );
 
@@ -562,10 +624,27 @@ export function useChat({
     const error = stream.error;
     if (!error) return undefined;
 
+    // Type guard for API error objects
+    interface ApiError {
+      message?: string;
+      detail?: string | string[] | Record<string, unknown>;
+      error?: string;
+    }
+
+    function isApiError(err: unknown): err is ApiError {
+      return (
+        typeof err === "object" &&
+        err !== null &&
+        ("message" in err || "detail" in err || "error" in err)
+      );
+    }
+
     let errorMessage =
       typeof error === "string"
         ? error
-        : (error as any).message || JSON.stringify(error);
+        : isApiError(error)
+          ? error.message || JSON.stringify(error)
+          : JSON.stringify(error);
 
     // Try to parse JSON if the error message contains a JSON object
     if (errorMessage.includes("{") && errorMessage.includes("}")) {
@@ -579,7 +658,7 @@ export function useChat({
           if (parsed.detail) {
             if (Array.isArray(parsed.detail)) {
               errorMessage = parsed.detail
-                .map((d: any) =>
+                .map((d: unknown) =>
                   typeof d === "string" ? d : JSON.stringify(d)
                 )
                 .join(", ");
@@ -632,9 +711,10 @@ export function useChat({
 
   // Auto-activate subagent when it starts streaming
   useEffect(() => {
-    if (stream.activeSubagents.length > 0) {
+    const extendedStream = stream as ExtendedStream;
+    if (extendedStream.activeSubagents.length > 0) {
       const lastActive =
-        stream.activeSubagents[stream.activeSubagents.length - 1];
+        extendedStream.activeSubagents[extendedStream.activeSubagents.length - 1];
 
       // Only auto-activate if it's a NEW subagent we haven't activated yet
       if (lastActive.id !== lastAutoActivatedIdRef.current) {
@@ -645,7 +725,7 @@ export function useChat({
       // Clear the ref when streaming stops so we can re-activate if needed next time
       lastAutoActivatedIdRef.current = null;
     }
-  }, [stream.activeSubagents, stream.isLoading]);
+  }, [stream, stream.isLoading]);
 
   // Stable return object to prevent downstream infinite loops in providers/consumers
   return useMemo(
@@ -657,7 +737,7 @@ export function useChat({
       ui: stream.values.ui,
       setFiles,
       messages: stream.messages,
-      subagents: stream.subagents,
+      subagents: (stream as ExtendedStream).subagents,
       subagentMessagesMap,
       activeSubAgentId,
       setActiveSubAgentId,

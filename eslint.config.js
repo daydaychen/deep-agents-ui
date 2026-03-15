@@ -22,7 +22,7 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.configs.recommended.rules,
-      "@typescript-eslint/no-explicit-any": 0,
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { args: "none", argsIgnorePattern: "^_", varsIgnorePattern: "^_" },

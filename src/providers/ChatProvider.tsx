@@ -114,7 +114,7 @@ export function ChatProvider({
       chat.setFiles,
       chat.setActiveSubAgentId,
       chat.setBranch,
-      chat.setOverrideConfig,
+      // chat.setOverrideConfig is stable (from useState), no need to include
     ]
   );
 

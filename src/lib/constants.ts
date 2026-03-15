@@ -18,3 +18,69 @@ export const ANIMATION_DURATION_NORMAL_MS = 300;
 
 // Recursion and processing limits
 export const DEFAULT_RECURSION_LIMIT = 100;
+
+// Model options
+export interface ModelOption {
+  id: string;
+  name: string;
+  icon?: React.ReactNode;
+}
+
+export const MODEL_OPTIONS: ModelOption[] = [
+  {
+    id: "Qwen/Qwen3.5-397B-A17B",
+    name: "Qwen 3.5 397B",
+  },
+  {
+    id: "Qwen/Qwen3.5-122B-A10B",
+    name: "Qwen 3.5 122B",
+  },
+  {
+    id: "Qwen/Qwen3.5-35B-A3B",
+    name: "Qwen 3.5 35B",
+  },
+  {
+    id: "Qwen/Qwen3.5-27B",
+    name: "Qwen 3.5 27B",
+  },
+  {
+    id: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    name: "Qwen 3 Coder",
+  },
+  {
+    id: "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    name: "Qwen 3 Coder 30B",
+  },
+  {
+    id: "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    name: "Qwen 3 30B Instruct",
+  },
+  {
+    id: "Qwen/Qwen3-30B-A3B-Thinking-2507",
+    name: "Qwen 3 30B Thinking",
+  },
+  {
+    id: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    name: "Qwen 3 235B",
+  },
+  {
+    id: "Qwen/Qwen3-235B-A22B-Thinking-2507",
+    name: "Qwen 3 235B Thinking",
+  },
+  {
+    id: "deepseek-ai/DeepSeek-V3.2",
+    name: "DeepSeek V3.2",
+  },
+  {
+    id: "MiniMax/MiniMax-M2.5",
+    name: "MiniMax M2.5",
+  },
+  {
+    id: "ZhipuAI/GLM-5",
+    name: "GLM-5",
+  },
+  {
+    id: "moonshotai/Kimi-K2.5",
+    name: "Kimi K2.5",
+  },
+];

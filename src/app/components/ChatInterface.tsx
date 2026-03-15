@@ -110,6 +110,10 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   // Memoize UI components by message ID for O(1) lookup instead of O(n) filter per message
   const uiByMessageId = useMemo(() => {
     if (!ui) return new Map<string, any[]>();
+    
+    // Type guard: check if ui is an array
+    if (!Array.isArray(ui)) return new Map<string, any[]>();
+    
     const map = new Map<string, any[]>();
     for (const u of ui) {
       const messageId = u.metadata?.message_id;
