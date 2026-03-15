@@ -225,11 +225,11 @@ export async function getRuntimeConfig(
 ): Promise<ToolResult & { config?: unknown }> {
   try {
     const state = await client.threads.getState(threadId);
-    
+
     return {
       success: true,
       message: "成功获取运行时配置",
-      config: state.values?.ui
+      config: (state.values as Record<string, unknown>)?.ui
     };
   } catch (error) {
     console.error("获取运行时配置失败:", error);

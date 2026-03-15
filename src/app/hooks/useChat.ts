@@ -108,7 +108,7 @@ export function useChat({
 
   const getInterruptBefore = useCallback(
     (mode: OverrideConfig["authMode"]) => {
-      return getInterruptBeforeFromUtils(mode);
+      return getInterruptBeforeFromUtils(mode || "ask");
     },
     []
   );
