@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useChatState, useChatActions, OverrideConfig } from "@/providers/chat-context";
+import { MODEL_OPTIONS } from "@/lib/constants";
 
 export const DockToolbar = React.memo(() => {
   const t = useTranslations("chat");
@@ -32,7 +33,7 @@ export const DockToolbar = React.memo(() => {
 
   const authMode = overrideConfig.authMode || "ask";
   const isThinking = overrideConfig.thinking ?? false;
-  const currentModel = overrideConfig.model?.model || "default";
+  const currentModel = overrideConfig.model?.model || "";
 
   const handleAuthModeChange = (mode: OverrideConfig["authMode"]) => {
     setOverrideConfig((prev) => ({ ...prev, authMode: mode }));
@@ -42,12 +43,18 @@ export const DockToolbar = React.memo(() => {
     setOverrideConfig((prev) => ({ ...prev, thinking: !prev.thinking }));
   };
 
-  const handleModelChange = (modelType: "default" | "small" | "analyst") => {
+  const handleModelChange = (modelId: string) => {
     setOverrideConfig((prev) => ({
       ...prev,
-      model: modelType === "default" ? undefined : { model: modelType }
+      model: modelId ? { model: modelId } : undefined
     }));
   };
+
+  // Find current model option
+  const currentModelOption = useMemo(() => 
+    MODEL_OPTIONS.find(m => m.id === currentModel),
+    [currentModel]
+  );
 
   const AuthIcon = useMemo(() => ({
     ask: Shield,
@@ -70,26 +77,29 @@ export const DockToolbar = React.memo(() => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-muted-foreground hover:text-foreground">
                 <Sparkles className="h-4 w-4" />
-                <span className="text-xs">{currentModel === "default" ? t("default") : t(currentModel)}</span>
+                <span className="text-xs max-w-[120px] truncate">
+                  {currentModelOption?.name || t("default")}
+                </span>
                 <ChevronDown className="h-3 w-3 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent>{t("model")}</TooltipContent>
         </Tooltip>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => handleModelChange("default")}>
+        <DropdownMenuContent align="start" className="max-h-[400px] overflow-y-auto">
+          <DropdownMenuItem onClick={() => handleModelChange("")}>
             <Sparkles className="mr-2 h-4 w-4" />
             {t("default")}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleModelChange("small")}>
-            <Sparkles className="mr-2 h-4 w-4" />
-            {t("small")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleModelChange("analyst")}>
-            <Sparkles className="mr-2 h-4 w-4" />
-            {t("analyst")}
-          </DropdownMenuItem>
+          {MODEL_OPTIONS.map((modelOption) => (
+            <DropdownMenuItem
+              key={modelOption.id}
+              onClick={() => handleModelChange(modelOption.id)}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {modelOption.name}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
