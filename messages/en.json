@@ -282,5 +282,16 @@
     "executionResult": "Execution Result",
     "noArgs": "no-args",
     "noResult": "No Result Yet"
+  },
+  "messageToolbar": {
+    "copy": "Copy message",
+    "copied": "Copied!",
+    "retry": "Retry generation",
+    "provider": "Provider:",
+    "model": "Model:",
+    "stopReason": "Stop Reason:",
+    "input": "Input:",
+    "output": "Output:",
+    "total": "Total:"
   }
 }

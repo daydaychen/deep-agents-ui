@@ -20,6 +20,7 @@ import { useLatest } from "@/lib/hooks/useLatest";
 import { AIMessage, Message } from "@langchain/langgraph-sdk";
 import { Check, Copy, Cpu, RotateCcw, Zap } from "lucide-react";
 import React, { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const DEFAULT_BRANCH_OPTIONS: string[] = [];
 
@@ -69,6 +70,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     className,
     message,
   }) => {
+    const t = useTranslations("messageToolbar");
     const hasContent = messageContent && messageContent.trim() !== "";
     const [copySuccess, setCopySuccess] = useState(false);
 
@@ -158,7 +160,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                         size="icon"
                         onClick={handleCopy}
                         aria-label={
-                          copySuccess ? "Message copied" : "Copy message"
+                          copySuccess ? t("copied") : t("copy")
                         }
                         className={cn(
                           "h-6 w-6 rounded-full transition-all duration-200",
@@ -178,7 +180,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                       side="bottom"
                       className="px-2 py-1 text-[10px]"
                     >
-                      <span>{copySuccess ? "Copied!" : "Copy message"}</span>
+                      <span>{copySuccess ? t("copied") : t("copy")}</span>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -200,7 +202,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                         variant="ghost"
                         size="icon"
                         onClick={onRetry}
-                        aria-label="Retry generation"
+                        aria-label={t("retry")}
                         className="h-6 w-6 rounded-full text-muted-foreground transition-all duration-200 hover:bg-accent/60 hover:text-foreground"
                       >
                         <RotateCcw className="h-3 w-3" />
@@ -210,7 +212,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                       side="bottom"
                       className="px-2 py-1 text-[10px]"
                     >
-                      <span>Retry generation</span>
+                      <span>{t("retry")}</span>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -236,7 +238,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                     >
                       <div className="flex items-center gap-2 text-xs">
                         <span className="font-semibold text-muted-foreground/70">
-                          Provider:
+                          {t("provider")}
                         </span>
                         <span className="text-foreground">
                           {modelProvider || "Unknown"}
@@ -244,14 +246,14 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <span className="font-semibold text-muted-foreground/70">
-                          Model:
+                          {t("model")}
                         </span>
                         <span className="text-foreground">{modelName}</span>
                       </div>
                       {stopReason && (
                         <div className="flex items-center gap-2 text-xs">
                           <span className="font-semibold text-muted-foreground/70">
-                            Stop Reason:
+                            {t("stopReason")}
                           </span>
                           <span className="text-foreground">{stopReason}</span>
                         </div>
@@ -274,7 +276,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                     >
                       <div className="flex items-center justify-between gap-4 text-xs">
                         <span className="font-semibold text-muted-foreground/70">
-                          Input:
+                          {t("input")}
                         </span>
                         <span className="text-foreground">
                           {usage.input_tokens || 0}
@@ -282,7 +284,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                       </div>
                       <div className="flex items-center justify-between gap-4 text-xs">
                         <span className="font-semibold text-muted-foreground/70">
-                          Output:
+                          {t("output")}
                         </span>
                         <span className="text-foreground">
                           {usage.output_tokens || 0}
@@ -290,7 +292,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                       </div>
                       <div className="my-1 flex items-center justify-between gap-4 border-t border-muted-foreground/10 pt-1 text-xs">
                         <span className="font-semibold text-muted-foreground/70">
-                          Total:
+                          {t("total")}
                         </span>
                         <span className="font-medium text-foreground">
                           {usage.total_tokens || 0}

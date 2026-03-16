@@ -282,5 +282,16 @@
     "executionResult": "执行结果",
     "noArgs": "无参数",
     "noResult": "暂无结果"
+  },
+  "messageToolbar": {
+    "copy": "复制消息",
+    "copied": "已复制!",
+    "retry": "重新生成",
+    "provider": "提供商:",
+    "model": "模型:",
+    "stopReason": "停止原因:",
+    "input": "输入:",
+    "output": "输出:",
+    "total": "总计:"
   }
 }
