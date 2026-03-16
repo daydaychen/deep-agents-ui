@@ -16,15 +16,16 @@ interface MessageContentProps {
 export const MessageContent = React.memo<MessageContentProps>(
   ({ content, isUser, isStreaming, reasoningContent }) => {
     const t = useTranslations("chat");
-    const [isReasoningExpanded, setIsReasoningExpanded] = useState(true);
+    const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+
     return (
       <div className={cn("group relative flex flex-col gap-3")}>
         {!isUser && reasoningContent && (
-          <div className="border-primary/10 bg-primary/5 flex flex-col gap-2 overflow-hidden rounded-xl border transition-all duration-200">
+          <div className="border-border/40 bg-muted/20 flex flex-col gap-2 overflow-hidden rounded-lg border transition-all duration-200">
             <button
               onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
               aria-expanded={isReasoningExpanded}
-              className="text-primary/90 hover:bg-primary/5 flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-colors"
+              className="text-muted-foreground hover:bg-muted/30 flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors"
             >
               {isReasoningExpanded ? (
                 <ChevronDown className="h-3.5 w-3.5" />
@@ -44,7 +45,7 @@ export const MessageContent = React.memo<MessageContentProps>(
               )}
             >
               <div className="overflow-hidden">
-                <div className="text-primary/80 border-primary/5 border-t px-3 pb-3 pt-1 text-sm italic leading-relaxed">
+                <div className="text-muted-foreground border-border/20 border-t px-3 pb-3 pt-2 text-sm italic leading-relaxed">
                   <MarkdownContent
                     content={reasoningContent}
                     isStreaming={isStreaming}
