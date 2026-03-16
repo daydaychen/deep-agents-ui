@@ -161,8 +161,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
       {/* SubAgent Trace Overlay Panel */}
-      <div className="pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] z-[300] flex">
-        <ResizablePanelGroup direction="horizontal">
+      <div className="pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] z-[300] flex overflow-hidden">
+        <ResizablePanelGroup
+          direction="horizontal"
+          id="subagent-panel-group"
+        >
           <ResizablePanel
             defaultSize={75}
             className="pointer-events-none"

@@ -93,7 +93,7 @@ app/
 4. Add error boundaries for robustness
 5. Implement proper loading/error states
 6. Add i18n translations for all user-facing strings
-2. Extract `usePersistedMessages.ts` IndexedDB operations
-3. Break down `page.tsx` into smaller components
-4. Add error boundaries for robustness
-5. Implement proper loading/error states
+7. Extract `usePersistedMessages.ts` IndexedDB operations
+8. Break down `page.tsx` into smaller components
+9. Add error boundaries for robustness
+10. Implement proper loading/error states

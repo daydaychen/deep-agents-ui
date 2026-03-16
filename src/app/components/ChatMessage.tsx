@@ -217,12 +217,12 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               )}
             >
               {!isUser && (
-                <div className="mb-0.5 flex items-center gap-2 px-1 opacity-20">
-                  <div className="h-[1px] flex-1 bg-border" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                <div className="mb-0.5 flex items-center gap-2 px-1">
+                  <div className="h-[1px] flex-1 bg-border/40 dark:bg-border/30" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 dark:text-muted-foreground/50">
                     {tChat("coreExecution")}
                   </span>
-                  <div className="h-[1px] flex-1 bg-border" />
+                  <div className="h-[1px] flex-1 bg-border/40 dark:bg-border/30" />
                 </div>
               )}
               {toolCalls.map((toolCall: ToolCall) => {

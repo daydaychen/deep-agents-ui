@@ -108,7 +108,7 @@ components/
 4. Implement proper loading skeletons
 5. Add component-level error boundaries
 6. Add i18n support for all hardcoded strings
-2. Extract `TasksFilesSidebar.tsx` tasks/files panels
-3. Create shared base components for dialogs
-4. Implement proper loading skeletons
-5. Add component-level error boundaries
+7. Extract `TasksFilesSidebar.tsx` tasks/files panels
+8. Create shared base components for dialogs
+9. Implement proper loading skeletons
+10. Add component-level error boundaries

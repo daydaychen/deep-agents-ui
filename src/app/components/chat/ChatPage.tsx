@@ -237,11 +237,11 @@ function HomePageInner({
         {/* Thread overlay panel */}
         <div
           className={cn(
-            "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex transition-all duration-300 ease-out",
+            "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex overflow-hidden transition-all duration-300 ease-out",
             sidebar ? "z-sidebar" : "z-sticky"
           )}
         >
-          <ResizablePanelGroup direction="horizontal">
+          <ResizablePanelGroup direction="horizontal" id="thread-panel-group">
             <ResizablePanel
               defaultSize={20}
               minSize={15}
@@ -285,11 +285,11 @@ function HomePageInner({
         {/* Memory overlay panel */}
         <div
           className={cn(
-            "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex transition-all duration-300 ease-out",
+            "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex overflow-hidden transition-all duration-300 ease-out",
             memorySidebar ? "z-sidebar" : "z-sticky"
           )}
         >
-          <ResizablePanelGroup direction="horizontal">
+          <ResizablePanelGroup direction="horizontal" id="memory-panel-group">
             <ResizablePanel
               defaultSize={20}
               minSize={15}
