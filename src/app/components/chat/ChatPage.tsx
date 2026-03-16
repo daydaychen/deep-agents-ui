@@ -238,7 +238,7 @@ function HomePageInner({
         <div
           className={cn(
             "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex transition-all duration-300 ease-out",
-            sidebar ? "z-[301]" : "z-[300]"
+            sidebar ? "z-sidebar" : "z-sticky"
           )}
         >
           <ResizablePanelGroup direction="horizontal">
@@ -286,7 +286,7 @@ function HomePageInner({
         <div
           className={cn(
             "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex transition-all duration-300 ease-out",
-            memorySidebar ? "z-[301]" : "z-[300]"
+            memorySidebar ? "z-sidebar" : "z-sticky"
           )}
         >
           <ResizablePanelGroup direction="horizontal">

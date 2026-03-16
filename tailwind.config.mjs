@@ -96,6 +96,7 @@ export default {
         base: "0",
         dropdown: "100",
         sticky: "200",
+        sidebar: "250",
         overlay: "300",
         modal: "400",
         popover: "500",
