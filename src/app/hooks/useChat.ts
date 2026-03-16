@@ -30,7 +30,6 @@ import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { usePersistedMessages } from "./usePersistedMessages";
-import { getInterruptBefore as getInterruptBeforeFromUtils } from "@/lib/auth-mode-utils";
 import { useLatest } from "@/lib/hooks/useLatest";
 
 // Extend useStream options with DeepAgent-specific options not yet exported in SDK types
@@ -105,15 +104,9 @@ export function useChat({
         thinking: assistantThinkingBoolean,
         authMode,
         recursionLimit: undefined,
-        interruptBefore: undefined,
-        interruptAfter: undefined,
       });
     }
   }, [hasActiveAssistant, assistantThinkingBoolean, assistantAuthMode]);
-
-  const getInterruptBefore = useCallback((mode: OverrideConfig["authMode"]) => {
-    return getInterruptBeforeFromUtils(mode || "ask");
-  }, []);
 
   const metadata = useMemo(
     () => ({
@@ -249,10 +242,6 @@ export function useChat({
       const finalRecursionLimit =
         (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
         currentRecursionMultiplier;
-      const finalInterruptBefore =
-        currentOverrideConfig.interruptBefore ||
-        getInterruptBefore(currentOverrideConfig.authMode);
-      const finalInterruptAfter = currentOverrideConfig.interruptAfter;
 
       // Cache getFinalConfigurable result to avoid repeated calls
       const finalConfigurable = getFinalConfigurable();
@@ -270,24 +259,19 @@ export function useChat({
             configurable: {
               ...finalConfigurable,
               user_id: currentMetadata.user_id,
+              // Pass auth_mode to backend for interrupt policy
+              auth_mode: currentOverrideConfig.authMode ?? "ask",
             },
           },
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(finalInterruptBefore
-            ? { interruptBefore: finalInterruptBefore }
-            : {}),
-          ...(finalInterruptAfter
-            ? { interruptAfter: finalInterruptAfter }
-            : {}),
         }
       );
     };
   }, [
     stream,
     getFinalConfigurable,
-    getInterruptBefore,
     overrideConfigRef,
     metadataRef,
     recursionLimitRef,
@@ -321,23 +305,17 @@ export function useChat({
       const finalRecursionLimit =
         (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
         currentRecursionMultiplier;
-      const computedInterruptBefore = getInterruptBefore(
-        currentOverrideConfig.authMode
-      );
-      const finalInterruptBefore =
-        currentOverrideConfig.interruptBefore ||
-        computedInterruptBefore ||
-        (isRerunningSubagent ? undefined : ["tools"]);
-      const finalInterruptAfter =
-        currentOverrideConfig.interruptAfter ||
-        (isRerunningSubagent ? ["tools"] : undefined);
 
       // Cache getFinalConfigurable result to avoid repeated calls
       const finalConfigurable = getFinalConfigurable();
 
       const assistantConfig = {
         ...(currentAssistantConfig ?? {}),
-        configurable: finalConfigurable,
+        configurable: {
+          ...finalConfigurable,
+          // Pass auth_mode to backend for interrupt policy
+          auth_mode: currentOverrideConfig.authMode ?? "ask",
+        },
       };
 
       if (checkpoint) {
@@ -354,12 +332,6 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(finalInterruptBefore
-            ? { interruptBefore: finalInterruptBefore }
-            : {}),
-          ...(finalInterruptAfter
-            ? { interruptAfter: finalInterruptAfter }
-            : {}),
         });
       } else {
         stream.submit(
@@ -373,12 +345,6 @@ export function useChat({
             streamMode: ["messages", "updates"],
             streamSubgraphs: true,
             streamResumable: true,
-            ...(finalInterruptBefore
-              ? { interruptBefore: finalInterruptBefore }
-              : { interruptBefore: ["tools"] }),
-            ...(finalInterruptAfter
-              ? { interruptAfter: finalInterruptAfter }
-              : {}),
           }
         );
       }
@@ -386,7 +352,6 @@ export function useChat({
     [
       stream,
       getFinalConfigurable,
-      getInterruptBefore,
       overrideConfigRef,
       metadataRef,
       recursionLimitRef,
@@ -420,23 +385,17 @@ export function useChat({
       const finalRecursionLimit =
         (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
         currentRecursionMultiplier;
-      const computedInterruptBefore = getInterruptBefore(
-        currentOverrideConfig.authMode
-      );
-      const finalInterruptBefore =
-        currentOverrideConfig.interruptBefore ||
-        computedInterruptBefore ||
-        (hasTaskToolCall ? undefined : ["tools"]);
-      const finalInterruptAfter =
-        currentOverrideConfig.interruptAfter ||
-        (hasTaskToolCall ? ["tools"] : undefined);
 
       // Cache getFinalConfigurable result to avoid repeated calls
       const finalConfigurable = getFinalConfigurable();
 
       const assistantConfig = {
         ...(currentAssistantConfig ?? {}),
-        configurable: finalConfigurable,
+        configurable: {
+          ...finalConfigurable,
+          // Pass auth_mode to backend for interrupt policy
+          auth_mode: currentOverrideConfig.authMode ?? "ask",
+        },
       };
 
       stream.submit(undefined, {
@@ -448,16 +407,11 @@ export function useChat({
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
-        ...(finalInterruptBefore
-          ? { interruptBefore: finalInterruptBefore }
-          : {}),
-        ...(finalInterruptAfter ? { interruptAfter: finalInterruptAfter } : {}),
       });
     },
     [
       stream,
       getFinalConfigurable,
-      getInterruptBefore,
       overrideConfigRef,
       metadataRef,
       recursionLimitRef,
@@ -554,7 +508,11 @@ export function useChat({
 
       const assistantConfig = {
         ...(currentAssistantConfig ?? {}),
-        configurable: finalConfigurable,
+        configurable: {
+          ...finalConfigurable,
+          // Pass auth_mode to backend for interrupt policy
+          auth_mode: currentOverrideConfig.authMode ?? "ask",
+        },
       };
 
       stream.submit(undefined, {
@@ -567,12 +525,6 @@ export function useChat({
         streamMode: ["messages", "updates"],
         streamSubgraphs: true,
         streamResumable: true,
-        ...(currentOverrideConfig.interruptBefore
-          ? { interruptBefore: currentOverrideConfig.interruptBefore }
-          : {}),
-        ...(currentOverrideConfig.interruptAfter
-          ? { interruptAfter: currentOverrideConfig.interruptAfter }
-          : {}),
       });
     },
     [
@@ -626,7 +578,11 @@ export function useChat({
 
       const assistantConfig = {
         ...(currentAssistantConfig ?? {}),
-        configurable: finalConfigurable,
+        configurable: {
+          ...finalConfigurable,
+          // Pass auth_mode to backend for interrupt policy
+          auth_mode: currentOverrideConfig.authMode ?? "ask",
+        },
       };
 
       stream.submit(
@@ -641,12 +597,6 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-          ...(currentOverrideConfig.interruptBefore
-            ? { interruptBefore: currentOverrideConfig.interruptBefore }
-            : {}),
-          ...(currentOverrideConfig.interruptAfter
-            ? { interruptAfter: currentOverrideConfig.interruptAfter }
-            : {}),
         }
       );
     },

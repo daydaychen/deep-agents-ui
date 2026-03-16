@@ -32,8 +32,6 @@ export type OverrideConfig = {
   config_validator?: LLMOverrideConfig;
   databus_specialist?: LLMOverrideConfig;
   recursionLimit?: number;
-  interruptBefore?: string[];
-  interruptAfter?: string[];
   thinking?: boolean;
   authMode?: "ask" | "read" | "auto";
 };

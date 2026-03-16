@@ -65,8 +65,6 @@
     "default": "Default",
     "defaultModel": "Default Model",
     "recursionLimit": "Recursion Limit",
-    "interruptBeforeTools": "Interrupt Before Tools",
-    "interruptAfterTools": "Interrupt After Tools",
     "stopCore": "STOP RUN",
     "sendShortcut": "Send",
     "thinking": "Reasoning",

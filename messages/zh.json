@@ -65,8 +65,6 @@
     "default": "默认",
     "defaultModel": "默认模型",
     "recursionLimit": "递归限制",
-    "interruptBeforeTools": "在工具前中断",
-    "interruptAfterTools": "在工具后中断",
     "stopCore": "停止运行",
     "sendShortcut": "发送",
     "thinking": "推理",

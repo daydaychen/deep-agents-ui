@@ -35,7 +35,6 @@ topic: assistant-config-and-chat-input-toolbar-optimization
 
 ## 4. 待解决问题 (Open Questions)
 
-- **节点名称映射**: `interruptBefore` 需要的是 Graph 内部的节点 ID。我们需要确保前端能通过 SDK 获取到这些节点名，或者建立一套从工具名到节点名的可靠映射。
 - **多工具联动**: 如果一个节点同时调用了读和写工具，如何处理？(建议默认从严处理，即视为写节点)。
 
 ## 5. 后续步骤 (Next Steps)
