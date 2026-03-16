@@ -26,16 +26,6 @@ export const ChatInput = React.memo<ChatInputProps>(
 
     const { threadId } = useChatState();
 
-    // Auto-resize textarea based on content
-    React.useLayoutEffect(() => {
-      const textarea = textareaRef.current;
-      if (textarea) {
-        const scrollHeight = textarea.scrollHeight;
-        textarea.style.cssText =
-          scrollHeight > 0 ? `height: ${scrollHeight}px;` : "height: inherit;";
-      }
-    }, [input]);
-
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (submitDisabled) return;
@@ -46,6 +36,22 @@ export const ChatInput = React.memo<ChatInputProps>(
       },
       [onSubmit, submitDisabled]
     );
+
+    // Auto-resize textarea based on content
+    React.useLayoutEffect(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.style.height = "auto";
+        const scrollHeight = textarea.scrollHeight;
+        textarea.style.height = scrollHeight > 0 ? `${scrollHeight}px` : "auto";
+        
+        if (scrollHeight > 300) {
+          textarea.style.overflowY = "auto";
+        } else {
+          textarea.style.overflowY = "hidden";
+        }
+      }
+    }, [input]);
 
     // Auto-focus textarea on mount or when switching threads
     useEffect(() => {
@@ -61,9 +67,9 @@ export const ChatInput = React.memo<ChatInputProps>(
     }, [hasInput, onSubmit]);
 
     return (
-      <div className="px-1.5 pb-1">
-        <div className="relative flex flex-col gap-0 px-0.5">
-          <div className="relative flex flex-1 flex-col px-1.5 pt-0">
+      <div className="px-1.5 pb-1 w-full h-auto">
+        <div className="relative flex flex-col gap-0 px-0.5 w-full h-auto">
+          <div className="relative flex flex-col px-1.5 pt-0 w-full h-auto">
             <label
               htmlFor="chat-input"
               className="sr-only"
@@ -75,6 +81,11 @@ export const ChatInput = React.memo<ChatInputProps>(
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onInput={(e) => {
+                const target = e.currentTarget;
+                target.style.height = "auto";
+                target.style.height = `${target.scrollHeight}px`;
+              }}
               onKeyDown={handleKeyDown}
               onCompositionStart={() => {
                 isComposingRef.current = true;
@@ -88,13 +99,9 @@ export const ChatInput = React.memo<ChatInputProps>(
                   : t("inputPlaceholderDefault")
               }
               className={cn(
-                "flex-1 resize-none border-0 bg-transparent py-1.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 transition-[opacity,color,background-color] placeholder:text-muted-foreground/40",
-                "max-h-[300px] min-h-[40px] overflow-y-auto"
+                "w-full resize-none border-0 bg-transparent py-1.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40",
+                "max-h-[300px] min-h-[40px]"
               )}
-              style={{
-                fieldSizing: "content",
-              }}
-              rows={1}
             />
           </div>
 
