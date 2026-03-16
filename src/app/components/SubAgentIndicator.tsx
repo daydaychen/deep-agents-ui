@@ -169,11 +169,11 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                     </div>
                   )}
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
-                  {status === "active"
-                    ? "Sub-Process Active"
-                    : `Status: ${status}`}
-                </span>
+                {status === "active" && (
+                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
+                    Sub-Process Active
+                  </span>
+                )}
               </div>
             </div>
             <div

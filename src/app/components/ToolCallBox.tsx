@@ -259,7 +259,6 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           {/* Arguments Preview - CLI Style */}
           <div className="flex min-w-0 flex-1 items-center overflow-hidden px-2">
             <div className="inline-block max-w-full truncate font-mono text-[11px] leading-none text-muted-foreground/70">
-              <span className="text-[var(--color-success)]">⏺</span>{" "}
               <span className="text-foreground/80">{name}</span>
               <span className="text-muted-foreground/50">(</span>
               <span className="text-muted-foreground/60">
