@@ -16,10 +16,11 @@ import { useTranslations } from "next-intl";
 import React, { useState, useMemo } from "react";
 
 // Static icon components - hoisted outside to avoid recreation on every render
+// Using CSS variables for consistent theming across light/dark modes
 const CompletedIcon = (
   <CircleCheckBigIcon
     size={13}
-    className="text-emerald-500"
+    className="text-[var(--color-success)]"
   />
 );
 
@@ -34,7 +35,7 @@ const PendingIcon = (
   <div className="animate-spin">
     <Loader2
       size={13}
-      className="text-blue-500"
+      className="text-[var(--color-warning)]"
     />
   </div>
 );
@@ -42,7 +43,7 @@ const PendingIcon = (
 const InterruptedIcon = (
   <StopCircle
     size={13}
-    className="text-orange-500"
+    className="text-[var(--color-warning)]"
   />
 );
 
@@ -182,19 +183,53 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     };
     const statusIcon = getStatusIcon(status);
 
+    // Memoize status-based styles to prevent recalculation on every render
+    const statusStyles = useMemo(() => {
+      switch (status) {
+        case "completed":
+          return {
+            border: "border-[var(--color-success)]/20",
+            bg: "bg-[var(--color-success)]/[0.02]",
+            iconBg: "bg-[var(--color-success)]/10",
+            iconBorder: "border-[var(--color-success)]/20",
+          };
+        case "error":
+          return {
+            border: "border-destructive/20",
+            bg: "bg-destructive/[0.02]",
+            iconBg: "bg-destructive/10",
+            iconBorder: "border-destructive/20",
+          };
+        case "pending":
+          return {
+            border: "border-[var(--color-warning)]/20",
+            bg: "bg-[var(--color-warning)]/[0.02]",
+            iconBg: "bg-[var(--color-warning)]/10",
+            iconBorder: "border-[var(--color-warning)]/20",
+          };
+        case "interrupted":
+          return {
+            border: "border-[var(--color-warning)]/20",
+            bg: "bg-[var(--color-warning)]/[0.02]",
+            iconBg: "bg-[var(--color-warning)]/10",
+            iconBorder: "border-[var(--color-warning)]/20",
+          };
+        default:
+          return {
+            border: "border-border",
+            bg: "bg-card",
+            iconBg: "bg-muted",
+            iconBorder: "border-border",
+          };
+      }
+    }, [status]);
+
     return (
       <div
         className={cn(
           "w-full min-w-0 overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
-          status === "completed"
-            ? "border-emerald-500/20 bg-emerald-500/[0.02]"
-            : status === "error"
-            ? "border-destructive/20 bg-destructive/[0.02]"
-            : status === "pending"
-            ? "border-blue-500/20 bg-blue-500/[0.02]"
-            : status === "interrupted"
-            ? "border-orange-500/20 bg-orange-500/[0.02]"
-            : "border-border bg-card",
+          statusStyles.border,
+          statusStyles.bg,
           isExpanded && hasContent && "shadow-md ring-1 ring-border/40"
         )}
       >
@@ -213,28 +248,24 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             <div
               className={cn(
                 "flex h-6 w-6 items-center justify-center rounded-md border shadow-inner",
-                status === "completed"
-                  ? "border-emerald-500/20 bg-emerald-500/10"
-                  : status === "error"
-                  ? "border-destructive/20 bg-destructive/10"
-                  : status === "pending"
-                  ? "border-blue-500/20 bg-blue-500/10"
-                  : status === "interrupted"
-                  ? "border-orange-500/20 bg-orange-500/10"
-                  : "border-border bg-muted"
+                statusStyles.iconBorder,
+                statusStyles.iconBg
               )}
             >
               {statusIcon}
             </div>
-            <span className="truncate text-[13px] font-bold tracking-tight text-foreground/90">
-              {name}
-            </span>
           </div>
 
-          {/* Arguments Preview */}
+          {/* Arguments Preview - CLI Style */}
           <div className="flex min-w-0 flex-1 items-center overflow-hidden px-2">
-            <div className="inline-block max-w-full truncate rounded border border-border/10 bg-muted/20 px-1.5 py-1 font-mono text-[10px] leading-none text-muted-foreground/60">
-              {argsPreview || t("noArgs")}
+            <div className="inline-block max-w-full truncate font-mono text-[11px] leading-none text-muted-foreground/70">
+              <span className="text-[var(--color-success)]">⏺</span>{" "}
+              <span className="text-foreground/80">{name}</span>
+              <span className="text-muted-foreground/50">(</span>
+              <span className="text-muted-foreground/60">
+                {argsPreview || t("noArgs")}
+              </span>
+              <span className="text-muted-foreground/50">)</span>
             </div>
           </div>
 
@@ -340,14 +371,14 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                     <div className="flex items-center gap-2 px-1">
                       <CircleCheckBigIcon
                         size={10}
-                        className="text-emerald-500/50"
+                        className="text-[var(--color-success)]/50"
                       />
                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
                         {t("executionResult")}
                       </h4>
                     </div>
-                    <div className="overflow-x-auto rounded-lg border border-emerald-500/10 bg-muted/30 p-4 shadow-inner dark:bg-zinc-950">
-                      <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/80 selection:bg-emerald-500/20 dark:text-emerald-400/90">
+                    <div className="border-[var(--color-success)]/10 overflow-x-auto rounded-lg border bg-muted/30 p-4 shadow-inner dark:bg-zinc-950">
+                      <pre className="selection:bg-[var(--color-success)]/20 dark:text-[var(--color-success)]/90 m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/80">
                         {typeof toolCall.result === "string"
                           ? toolCall.result
                           : JSON.stringify(toolCall.result, null, 2)}
