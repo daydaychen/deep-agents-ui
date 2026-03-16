@@ -17,6 +17,7 @@ Some components may trigger unnecessary re-renders due to object reference chang
 - **Source:** Performance Oracle Agent
 - **Location:** Multiple components
 - **Evidence:**
+
   - Object literals in JSX props creating new references
   - Inline function handlers without useCallback
   - Context value objects without useMemo
@@ -27,18 +28,21 @@ Some components may trigger unnecessary re-renders due to object reference chang
 ## Proposed Solutions
 
 ### Option A: Add React.memo to frequently re-rendering components
+
 - **Pros:** Prevents unnecessary re-renders
 - **Cons:** Can hide underlying issues, adds complexity
 - **Effort:** Small
 - **Risk:** Low - but profile first
 
 ### Option B: Use useCallback/useMemo for handlers and context values
+
 - **Pros:** Stable references, idiomatic React
 - **Cons:** More code, need to understand dependency arrays
 - **Effort:** Small
 - **Risk:** Low - standard optimization
 
 ### Option C: Profile with React DevTools and address specific issues
+
 - **Pros:** Targeted optimization, avoids premature optimization
 - **Cons:** Requires performance testing setup
 - **Effort:** Medium
@@ -81,7 +85,7 @@ The codebase already had strong optimization practices in place. The main fix wa
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
-| 2026-03-09 | Identified during code review by Performance Oracle |
+| Date       | Action                                                 |
+| ---------- | ------------------------------------------------------ |
+| 2026-03-09 | Identified during code review by Performance Oracle    |
 | 2026-03-09 | Fixed updateOverride in ChatInput.tsx with useCallback |

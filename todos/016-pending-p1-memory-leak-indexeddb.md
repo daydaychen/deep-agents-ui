@@ -17,6 +17,7 @@ The `usePersistedMessages` hook opens IndexedDB connections but does not guarant
 - **Source:** Performance Oracle Agent
 - **Location:** `src/app/hooks/usePersistedMessages.ts` lines 82-117
 - **Evidence:**
+
   - Multiple code paths open connections without guaranteed closure
   - Error scenarios may leave connections open
   - No connection pooling or reuse strategy
@@ -27,18 +28,21 @@ The `usePersistedMessages` hook opens IndexedDB connections but does not guarant
 ## Proposed Solutions
 
 ### Option A: Wrap all IDB operations in try-finally with explicit close
+
 - **Pros:** Guarantees cleanup, minimal architecture change
 - **Cons:** Verbose, easy to miss new operations
 - **Effort:** Small
 - **Risk:** Low - standard resource management pattern
 
 ### Option B: Create a singleton IDB connection manager
+
 - **Pros:** Single connection reused, centralized management
 - **Cons:** More complex, singleton pattern has trade-offs
 - **Effort:** Medium
 - **Risk:** Medium - requires careful lifecycle management
 
 ### Option C: Use idb library with proper transaction handling
+
 - **Pros:** Library handles connection lifecycle, promise-based API
 - **Cons:** Adds dependency, migration effort
 - **Effort:** Medium
@@ -63,7 +67,7 @@ Option A for immediate fix, consider Option C for long-term maintainability.
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
-| 2026-03-09 | Identified during code review by Performance Oracle |
+| Date       | Action                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| 2026-03-09 | Identified during code review by Performance Oracle                                        |
 | 2026-03-09 | Implemented Option A: wrapped all IDB operations in try-finally blocks with explicit close |

@@ -1,10 +1,8 @@
 {
-"active_plan": "/Users/chentt/Github/deep-agents-ui/.sisyphus/plans/nextjs-i18n-implementation.md",
-"started_at": "2026-03-09T03:16:37.445Z",
-"session_ids": [
-"ses_32fa61b0dffe14QJZQzkIJTv5G"
-],
-"plan_name": "nextjs-i18n-implementation",
+  "active_plan": "/Users/chentt/Github/deep-agents-ui/.sisyphus/plans/nextjs-i18n-implementation.md",
+  "started_at": "2026-03-09T03:16:37.445Z",
+  "session_ids": ["ses_32fa61b0dffe14QJZQzkIJTv5G"],
+  "plan_name": "nextjs-i18n-implementation",
   "agent": "atlas",
   "worktree_path": "/Users/chentt/Github/deep-agents-ui"
 }

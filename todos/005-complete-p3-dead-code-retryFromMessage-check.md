@@ -27,6 +27,6 @@ In `getMessageBranchInfo` (line 333), `!!retryFromMessage` is always `true` beca
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                        |
+| ---------- | ----------------------------- |
 | 2026-03-01 | Identified during code review |

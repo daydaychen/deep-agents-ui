@@ -15,12 +15,14 @@ deepened: 2026-03-09
 **Sections enhanced:** 8
 
 ### Key Improvements from Research
+
 1. **WCAG 2.2 Compliance:** Identified SC 2.5.8 (24x24px touch targets) as new AA requirement - updated Phase 1
 2. **Performance Optimization:** Added `will-change` and GPU acceleration patterns for hover animations
 3. **Accessibility Pitfalls:** Discovered 7 critical React/Next.js chat interface accessibility bugs to prevent
 4. **Tailwind Patterns:** Found `--color-text-tertiary` fails WCAG AA in light mode (3.5:1 vs required 4.5:1)
 
 ### New Considerations Discovered
+
 - `:focus-visible` should use `box-shadow` + transparent `outline` for Windows High Contrast Mode compatibility
 - Live region container must never remount (common React bug that breaks screen readers)
 - `transition-all` should be avoided; explicit property lists are best practice
@@ -33,6 +35,7 @@ deepened: 2026-03-09
 Based on comprehensive UI/UX audit using ui-ux-pro-max skill, this plan addresses critical accessibility issues, interaction feedback gaps, and visual polish inconsistencies in the deep-agents-ui chat interface. The current implementation scores **B+ (82/100)** with solid architecture but needs refinement in cursor feedback, contrast ratios, hover states, and animation consistency.
 
 **Current State:**
+
 - ✅ Excellent accessibility foundation (ARIA labels, semantic HTML)
 - ✅ Performance optimizations (React.memo, useMemo, throttling)
 - ✅ Proper icon usage (Lucide React, no emojis)
@@ -43,6 +46,7 @@ Based on comprehensive UI/UX audit using ui-ux-pro-max skill, this plan addresse
 - ❌ No prefers-reduced-motion support
 
 **Target State:**
+
 - Professional-grade UI with WCAG AAA compliance
 - Consistent interaction feedback across all components
 - Smooth, accessible animations
@@ -64,12 +68,15 @@ These issues compound to create an "almost there" feeling that undermines user c
 Three-phase approach prioritized by impact and risk:
 
 ### Phase 1: Critical Fixes (Week 1)
+
 Fix accessibility blockers and interaction feedback gaps that affect all users.
 
 ### Phase 2: Consistency & Polish (Week 2)
+
 Standardize animations, transitions, and visual patterns across components.
 
 ### Phase 3: System-Level Improvements (Week 3)
+
 Establish design system foundations (z-index scale, skeleton patterns, border radius standards).
 
 ## Technical Approach
@@ -77,12 +84,14 @@ Establish design system foundations (z-index scale, skeleton patterns, border ra
 ### Architecture
 
 **Component-Level Changes:**
+
 - Modify existing components in-place (no new files needed)
 - Use CSS variable updates in `globals.css` for color contrast
 - Add utility classes in `tailwind.config.mjs` for motion preferences
 - Update individual component className strings for cursor/hover fixes
 
 **No Breaking Changes:**
+
 - All changes are CSS/className modifications
 - No prop signature changes
 - No state management changes
@@ -92,15 +101,16 @@ Establish design system foundations (z-index scale, skeleton patterns, border ra
 
 **CSS Performance Tiers (from Performance Oracle analysis):**
 
-| Tier | Properties | Cost |
-|---|---|---|
-| Compositing only (best) | `transform`, `opacity` | GPU-composited, no layout/paint |
-| Paint only (acceptable) | `background-color`, `color`, `box-shadow`, `border-color` | Repaint, no layout |
-| Layout-triggering (avoid) | `width`, `height`, `padding`, `margin`, `top`, `left` | Full layout recalculation |
+| Tier                      | Properties                                                | Cost                            |
+| ------------------------- | --------------------------------------------------------- | ------------------------------- |
+| Compositing only (best)   | `transform`, `opacity`                                    | GPU-composited, no layout/paint |
+| Paint only (acceptable)   | `background-color`, `color`, `box-shadow`, `border-color` | Repaint, no layout              |
+| Layout-triggering (avoid) | `width`, `height`, `padding`, `margin`, `top`, `left`     | Full layout recalculation       |
 
 **Recommendation:** Use `transition-[specific,properties]` pattern instead of `transition-all`. Your project already does this well in some places - extend it everywhere.
 
 **Performance Impact Estimate:**
+
 - Scale transform removal: ~16ms saved per hover (avoids layout + paint)
 - Standardized transitions: 30-40% fewer animated properties
 - Bundle size increase: ~250 bytes gzipped (negligible)
@@ -109,16 +119,16 @@ Establish design system foundations (z-index scale, skeleton patterns, border ra
 
 **Critical new requirements from WCAG 2.2 (adopted December 2023):**
 
-| Success Criterion | Level | Requirement |
-|---|---|---|
-| SC 1.4.3 Contrast (Minimum) | AA | 4.5:1 for normal text, 3:1 for large text |
-| SC 1.4.6 Contrast (Enhanced) | AAA | 7:1 for normal text, 4.5:1 for large text |
-| SC 1.4.11 Non-text Contrast | AA | 3:1 for UI components (borders, icons, focus indicators) |
-| SC 2.5.8 Target Size (Minimum) | **AA** | **24x24 CSS pixels** (NEW in WCAG 2.2) |
-| SC 2.5.5 Target Size (Enhanced) | AAA | 44x44 CSS pixels |
-| SC 2.3.3 Animation from Interactions | AAA | Respect prefers-reduced-motion |
-| SC 2.4.7 Focus Visible | AA | Visible focus indicators |
-| SC 2.4.13 Focus Appearance | AAA | Focus indicator size/contrast (new in 2.2) |
+| Success Criterion                    | Level  | Requirement                                              |
+| ------------------------------------ | ------ | -------------------------------------------------------- |
+| SC 1.4.3 Contrast (Minimum)          | AA     | 4.5:1 for normal text, 3:1 for large text                |
+| SC 1.4.6 Contrast (Enhanced)         | AAA    | 7:1 for normal text, 4.5:1 for large text                |
+| SC 1.4.11 Non-text Contrast          | AA     | 3:1 for UI components (borders, icons, focus indicators) |
+| SC 2.5.8 Target Size (Minimum)       | **AA** | **24x24 CSS pixels** (NEW in WCAG 2.2)                   |
+| SC 2.5.5 Target Size (Enhanced)      | AAA    | 44x44 CSS pixels                                         |
+| SC 2.3.3 Animation from Interactions | AAA    | Respect prefers-reduced-motion                           |
+| SC 2.4.7 Focus Visible               | AA     | Visible focus indicators                                 |
+| SC 2.4.13 Focus Appearance           | AAA    | Focus indicator size/contrast (new in 2.2)               |
 
 **Note:** SC 2.5.8 (24x24px minimum) is now AA-level, meaning it's required for basic compliance. This affects icon buttons in your project.
 
@@ -134,17 +144,19 @@ Update CSS variables to meet WCAG 4.5:1 minimum:
 /* src/app/globals.css:19-38 */
 :root {
   --color-text-secondary: #4b5563; /* Was #6b7280 - now 7.0:1 contrast */
-  --color-text-tertiary: #6b7280;  /* Was #9ca3af - now 4.6:1 contrast */
-  --color-border: #d1d5db;         /* Was #e5e7eb - improved visibility */
+  --color-text-tertiary: #6b7280; /* Was #9ca3af - now 4.6:1 contrast */
+  --color-border: #d1d5db; /* Was #e5e7eb - improved visibility */
 }
 ```
 
 **Research Insight:** The original `--color-text-tertiary: #9ca3af` on `#f9f9f9` background yields only ~3.5:1 contrast, failing WCAG AA for normal text. The new value `#6b7280` achieves 4.6:1.
 
 **Files affected:**
+
 - `src/app/globals.css:19-38`
 
 **Testing:**
+
 - Use WebAIM Contrast Checker on all text/background combinations
 - Verify in Chrome DevTools Lighthouse accessibility audit
 - Manual testing in light mode with various text sizes
@@ -181,11 +193,13 @@ Update CSS variables to meet WCAG 4.5:1 minimum:
 ```
 
 **Research Insight (Best Practices):**
+
 - `cursor: pointer` is a supplementary visual cue, never a primary one
 - Always pair with: semantic HTML (`<button>`, `<a>`), ARIA attributes, visible hover/focus states, sufficient touch target size
 - Do NOT use on non-clickable elements (misleads users)
 
 **Files affected:**
+
 - `src/app/components/ChatMessage.tsx:120`
 - `src/app/components/chat/ChatInput.tsx:580`
 - `src/app/components/message/SubAgentSection.tsx`
@@ -193,6 +207,7 @@ Update CSS variables to meet WCAG 4.5:1 minimum:
 - `src/app/components/ToolCallBox.tsx`
 
 **Testing:**
+
 - Hover over all interactive elements and verify cursor changes
 - Check that disabled states still show not-allowed cursor
 
@@ -205,10 +220,12 @@ Update CSS variables to meet WCAG 4.5:1 minimum:
 ```tsx
 /* src/app/components/chat/ChatInput.tsx:598-600 */
 // BEFORE:
-hasInput ? "... hover:scale-110 active:scale-90" : "..."
+hasInput ? "... hover:scale-110 active:scale-90" : "...";
 
 // AFTER:
-hasInput ? "... hover:shadow-xl hover:brightness-110 active:brightness-90 transition-[box-shadow,filter] duration-200" : "..."
+hasInput
+  ? "... hover:shadow-xl hover:brightness-110 active:brightness-90 transition-[box-shadow,filter] duration-200"
+  : "...";
 ```
 
 **Performance Optimization (from Performance Oracle):**
@@ -230,17 +247,21 @@ Add `will-change` for frequently hovered elements:
 ```css
 /* src/app/globals.css - add after existing styles */
 @media (hover: none) {
-  .hover\:brightness-110 { filter: none !important; }
+  .hover\:brightness-110 {
+    filter: none !important;
+  }
 }
 ```
 
 **Research Insight:** CSS filters (`brightness`) can be GPU-intensive on low-end devices. The `will-change` hint pre-allocates a GPU layer for smoother animations. However, only apply `will-change` to frequently-interacted elements - not to all hoverable elements.
 
 **Files affected:**
+
 - `src/app/components/chat/ChatInput.tsx:598`
 - `src/app/components/ChatMessage.tsx:122`
 
 **Testing:**
+
 - Verify no layout shift on hover (use Chrome DevTools Layout Shift regions)
 - Check hover feedback is still visually clear
 - Test on mobile (touch devices don't show hover)
@@ -266,9 +287,11 @@ Add `will-change` for frequently hovered elements:
 ```
 
 **Files affected:**
+
 - `src/app/components/chat/ChatInput.tsx:578`
 
 **Testing:**
+
 - Verify button is disabled when not loading
 - Check that button enables during streaming
 - Ensure disabled state has proper visual feedback (`cursor-not-allowed` + `opacity-50`)
@@ -296,6 +319,7 @@ Add `will-change` for frequently hovered elements:
 **The spacing exception:** Targets smaller than 24x24 can pass if there's at least 4px clear space on all sides from any adjacent target.
 
 **Files to audit:**
+
 - `src/app/components/chat/ChatInput.tsx` - All icon buttons
 - `src/app/components/ChatMessage.tsx` - Toolbar buttons
 - `src/app/components/thread/ThreadListItem.tsx` - Action buttons
@@ -312,28 +336,29 @@ Create consistent timing scale:
 /* Update all components with transitions */
 
 // Micro-interactions (hover, focus):
-"transition-colors duration-200"
+"transition-colors duration-200";
 // OR explicit properties:
-"transition-[background-color,color,border-color] duration-200"
+"transition-[background-color,color,border-color] duration-200";
 
 // State changes (expand/collapse):
-"transition-all duration-300"
+"transition-all duration-300";
 
 // Page transitions (route changes only):
-"transition-all duration-500"
+"transition-all duration-500";
 ```
 
 **Research Insight (Framework Docs):** Your project already uses `transition-[specific,properties]` pattern which is best practice. Extend this pattern everywhere:
 
 ```tsx
 // AVOID: transition-all (animates all changed properties)
-"transition-all duration-300"  // ❌ May animate layout properties
+"transition-all duration-300"; // ❌ May animate layout properties
 
 // PREFER: Explicit property list
-"transition-[background-color,border-color,box-shadow] duration-200"  // ✅ Only animates paint-safe properties
+"transition-[background-color,border-color,box-shadow] duration-200"; // ✅ Only animates paint-safe properties
 ```
 
 **Files to update:**
+
 - `src/app/components/ChatInterface.tsx:162` → `duration-200` + explicit properties
 - `src/app/components/chat/ChatInput.tsx:355` → `duration-200`
 - `src/app/components/chat/ChatInput.tsx:598` → `duration-200`
@@ -381,18 +406,18 @@ Create consistent timing scale:
 
 ```typescript
 // src/app/hooks/useReducedMotion.ts (new file)
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduced(mq.matches);
 
     const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   return reduced;
@@ -402,16 +427,16 @@ export function useReducedMotion(): boolean {
 **Tailwind variant usage:**
 
 ```tsx
-<div className="animate-fade-in motion-reduce:animate-none">
-  Content
-</div>
+<div className="animate-fade-in motion-reduce:animate-none">Content</div>
 ```
 
 **Files affected:**
+
 - `src/app/globals.css` (append to end)
 - `src/app/hooks/useReducedMotion.ts` (new file, optional)
 
 **Testing:**
+
 - Enable "Reduce motion" in macOS System Preferences > Accessibility
 - Verify all animations are instant
 - Check that functionality still works (no broken states)
@@ -455,7 +480,7 @@ a:focus-visible,
 **Tailwind pattern for components:**
 
 ```tsx
-<button className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none">
+<button className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
   Action
 </button>
 ```
@@ -480,6 +505,7 @@ Audit and fix inconsistent icon sizing:
 ```
 
 **Files affected:**
+
 - `src/app/components/chat/ChatInput.tsx:106-172`
 - Any other components with h-3.5 or mixed sizes
 
@@ -518,11 +544,13 @@ zIndex: {
 ```
 
 **Key rules:**
+
 - Never use arbitrary z-index values (`z-[999]`)
 - Understand stacking contexts - `z-50` inside `z-10` container never appears above sibling with `z-20`
 - shadcn/ui components use portals at document body, so their `z-50` values exist in root stacking context
 
 **Files affected:**
+
 - `tailwind.config.mjs`
 - `src/app/components/chat/ChatPage.tsx:110`
 - All modal/dialog/popover components
@@ -548,16 +576,17 @@ borderRadius: {
 
 **Consistency guidelines:**
 
-| Element type | Recommended radius | Tailwind class |
-|---|---|---|
-| Cards, dialogs, large containers | `rounded-lg` | Uses `--radius` |
-| Inputs, buttons, dropdowns | `rounded-md` | Uses `calc(--radius - 2px)` |
-| Small elements (badges, tags) | `rounded-sm` | Uses `calc(--radius - 4px)` |
-| Larger cards, panels | `rounded-xl` | Uses `calc(--radius + 4px)` |
-| Modals, major containers | `rounded-2xl` | Uses `calc(--radius + 8px)` |
-| Avatars, pills | `rounded-full` | `9999px` |
+| Element type                     | Recommended radius | Tailwind class              |
+| -------------------------------- | ------------------ | --------------------------- |
+| Cards, dialogs, large containers | `rounded-lg`       | Uses `--radius`             |
+| Inputs, buttons, dropdowns       | `rounded-md`       | Uses `calc(--radius - 2px)` |
+| Small elements (badges, tags)    | `rounded-sm`       | Uses `calc(--radius - 4px)` |
+| Larger cards, panels             | `rounded-xl`       | Uses `calc(--radius + 4px)` |
+| Modals, major containers         | `rounded-2xl`      | Uses `calc(--radius + 8px)` |
+| Avatars, pills                   | `rounded-full`     | `9999px`                    |
 
 **Files to update:**
+
 - `tailwind.config.mjs` - Add `xl` and `2xl` to borderRadius
 - `src/app/components/ChatInterface.tsx:239` → Verify `rounded-[26px]` or change to `rounded-2xl`
 - `src/app/components/ChatMessage.tsx:122` → Verify or change to `rounded-xl`
@@ -574,7 +603,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function MessageSkeleton() {
   return (
     <div className="flex gap-3 p-4">
-      <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+      <Skeleton className="h-8 w-8 flex-shrink-0 rounded-full" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-1/4" />
         <Skeleton className="h-4 w-full" />
@@ -606,9 +635,9 @@ export function ThreadSkeleton() {
 // AFTER:
 import { MessageSkeleton } from "@/components/ui/message-skeleton";
 
-{loadingSkeletons.map((i) => (
-  <MessageSkeleton key={i} />
-))}
+{
+  loadingSkeletons.map((i) => <MessageSkeleton key={i} />);
+}
 ```
 
 **Optional: Shimmer animation for polished feel:**
@@ -628,12 +657,13 @@ animation: {
 
 ```tsx
 /* Updated Skeleton with shimmer */
-<div className="rounded-md bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] animate-shimmer" />
+<div className="animate-shimmer rounded-md bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%]" />
 ```
 
 **Performance note:** `animate-pulse` (current) uses opacity animation which is GPU-composited. Shimmer uses `background-position` which triggers paint - acceptable for small numbers but avoid dozens simultaneously.
 
 **Files affected:**
+
 - `src/app/components/ui/message-skeleton.tsx` (new file)
 - `src/app/components/ChatInterface.tsx:166-180`
 - `src/app/components/ThreadList.tsx:36-45`
@@ -669,8 +699,15 @@ function Chat({ messages }: { messages: Message[] }) {
   return (
     <div>
       {messages.length > 0 && (
-        <div role="log" aria-live="polite">  {/* REMOUNTS when messages go 0 -> 1 */}
-          {messages.map(m => <p key={m.id}>{m.text}</p>)}
+        <div
+          role="log"
+          aria-live="polite"
+        >
+          {" "}
+          {/* REMOUNTS when messages go 0 -> 1 */}
+          {messages.map((m) => (
+            <p key={m.id}>{m.text}</p>
+          ))}
         </div>
       )}
     </div>
@@ -686,7 +723,9 @@ function Chat({ messages }: { messages: Message[] }) {
       aria-relevant="additions"
       aria-label="Chat messages"
     >
-      {messages.map(m => <p key={m.id}>{m.text}</p>)}
+      {messages.map((m) => (
+        <p key={m.id}>{m.text}</p>
+      ))}
     </div>
   );
 }
@@ -704,7 +743,7 @@ useEffect(() => {
 
 // GOOD: scroll without focus change
 useEffect(() => {
-  lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
+  lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
 }, [messages]);
 ```
 
@@ -712,7 +751,7 @@ useEffect(() => {
 
 ```tsx
 function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-  if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
+  if (e.key === "Enter" && !e.shiftKey && !isComposing) {
     e.preventDefault();
     handleSend();
   }
@@ -736,8 +775,12 @@ function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
 **Pitfall 5: Missing loading/streaming announcements**
 
 ```tsx
-<div aria-live="polite" aria-atomic="true" className="sr-only">
-  {isStreaming ? 'Agent is responding...' : ''}
+<div
+  aria-live="polite"
+  aria-atomic="true"
+  className="sr-only"
+>
+  {isStreaming ? "Agent is responding..." : ""}
 </div>
 ```
 
@@ -745,21 +788,22 @@ function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
 
 ```tsx
 <main aria-label="Chat">
-  <nav aria-label="Chat controls">
-    {/* thread selector, settings */}
-  </nav>
-  <section aria-label="Message history" role="log" aria-live="polite">
+  <nav aria-label="Chat controls">{/* thread selector, settings */}</nav>
+  <section
+    aria-label="Message history"
+    role="log"
+    aria-live="polite"
+  >
     {/* messages */}
   </section>
-  <form aria-label="Message input">
-    {/* textarea + send button */}
-  </form>
+  <form aria-label="Message input">{/* textarea + send button */}</form>
 </main>
 ```
 
 **Pitfall 7: No eslint-plugin-jsx-a11y**
 
 Add to `devDependencies`:
+
 ```bash
 npm install -D eslint-plugin-jsx-a11y
 ```
@@ -783,15 +827,19 @@ npm install -D eslint-plugin-jsx-a11y
 ## Alternative Approaches Considered
 
 ### Approach 1: Complete Design System Overhaul
+
 **Rejected:** Too risky and time-consuming. Current system is solid, just needs refinement.
 
 ### Approach 2: Use CSS-in-JS for Dynamic Theming
+
 **Rejected:** Adds bundle size and complexity. CSS variables already provide excellent theming.
 
 ### Approach 3: Implement Framer Motion for Animations
+
 **Rejected:** Overkill for simple transitions. Tailwind + CSS is sufficient and more performant.
 
 ### Approach 4: Create Separate Light/Dark Component Variants
+
 **Rejected:** Violates DRY principle. CSS variables handle this elegantly.
 
 ## System-Wide Impact
@@ -799,16 +847,19 @@ npm install -D eslint-plugin-jsx-a11y
 ### Interaction Graph
 
 **Color Variable Changes:**
+
 1. Update `globals.css` CSS variables
 2. Affects all components using `text-secondary`, `text-tertiary`, `border` classes
 3. No runtime impact (CSS only)
 
 **Cursor Pointer Additions:**
+
 1. Add `cursor-pointer` to className strings
 2. Browser applies cursor style on hover
 3. No JavaScript execution
 
 **Hover State Changes:**
+
 1. Replace `scale` with `shadow`/`brightness` in className
 2. Browser applies CSS transforms
 3. Prevents layout recalculation (performance win)
@@ -816,11 +867,13 @@ npm install -D eslint-plugin-jsx-a11y
 ### Error & Failure Propagation
 
 **CSS Variable Fallbacks:**
+
 - If CSS variable undefined, browser uses inherited value
 - No runtime errors possible
 - Worst case: incorrect color (visual only)
 
 **className Changes:**
+
 - Invalid Tailwind classes are ignored by browser
 - No JavaScript errors
 - Worst case: missing style (visual only)
@@ -828,6 +881,7 @@ npm install -D eslint-plugin-jsx-a11y
 ### State Lifecycle Risks
 
 **No State Changes:**
+
 - All modifications are presentational (CSS/className)
 - No React state, props, or context changes
 - Zero risk of state inconsistency
@@ -835,26 +889,31 @@ npm install -D eslint-plugin-jsx-a11y
 ### Integration Test Scenarios
 
 **Scenario 1: Light/Dark Mode Toggle**
+
 - **Action:** Toggle theme switcher
 - **Expected:** All text maintains 4.5:1 contrast in both modes
 - **Test:** Visual regression + automated contrast checker
 
 **Scenario 2: Keyboard Navigation**
+
 - **Action:** Tab through interactive elements
 - **Expected:** Visible focus ring, cursor changes to pointer on focus
 - **Test:** Manual keyboard-only navigation
 
 **Scenario 3: Reduced Motion Preference**
+
 - **Action:** Enable OS-level reduced motion
 - **Expected:** All animations instant, functionality intact
 - **Test:** macOS System Preferences + manual testing
 
 **Scenario 4: Hover State Stability**
+
 - **Action:** Hover over buttons/cards rapidly
 - **Expected:** No layout shift, smooth visual feedback
 - **Test:** Chrome DevTools Layout Shift regions
 
 **Scenario 5: Screen Reader Announcements**
+
 - **Action:** Navigate chat with VoiceOver/NVDA
 - **Expected:** New messages announced, live region intact
 - **Test:** VoiceOver on macOS, NVDA on Windows
@@ -893,12 +952,14 @@ npm install -D eslint-plugin-jsx-a11y
 ## Success Metrics
 
 **Quantitative:**
+
 - Lighthouse Accessibility Score: 95+ → 100
 - WCAG Contrast Ratio: 2.8:1 → 4.5:1+ (all text)
 - Cumulative Layout Shift: Current → 0 (on hover)
 - Animation Frame Rate: 60fps maintained
 
 **Qualitative:**
+
 - User feedback: "Feels more polished"
 - Developer feedback: "Easier to maintain consistent styles"
 - Design review: "Professional-grade UI"
@@ -911,17 +972,18 @@ npm install -D eslint-plugin-jsx-a11y
 
 ### Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Color contrast too high (readability issues) | Low | Medium | Test with multiple users, adjust if needed |
-| Hover states too subtle | Low | Low | A/B test with team, increase shadow if needed |
-| prefers-reduced-motion breaks animations | Low | Medium | Test thoroughly, ensure functionality intact |
-| Z-index conflicts with third-party modals | Low | High | Document z-index scale, test all overlays |
-| Brightness filter performance on mobile | Low | Medium | Add `@media (hover: none)` override |
+| Risk                                         | Likelihood | Impact | Mitigation                                    |
+| -------------------------------------------- | ---------- | ------ | --------------------------------------------- |
+| Color contrast too high (readability issues) | Low        | Medium | Test with multiple users, adjust if needed    |
+| Hover states too subtle                      | Low        | Low    | A/B test with team, increase shadow if needed |
+| prefers-reduced-motion breaks animations     | Low        | Medium | Test thoroughly, ensure functionality intact  |
+| Z-index conflicts with third-party modals    | Low        | High   | Document z-index scale, test all overlays     |
+| Brightness filter performance on mobile      | Low        | Medium | Add `@media (hover: none)` override           |
 
 ### Rollback Plan
 
 **All changes are CSS/className only:**
+
 1. Revert specific commits (no data migration needed)
 2. No database changes to rollback
 3. No API version changes
@@ -930,11 +992,13 @@ npm install -D eslint-plugin-jsx-a11y
 ## Resource Requirements
 
 **Team:**
+
 - 1 Frontend Developer (full-time, 9 days)
 - 1 Designer (review, 2 hours)
 - 1 QA Engineer (testing, 4 hours)
 
 **Time:**
+
 - Phase 1: 3 days
 - Phase 2: 3 days
 - Phase 3: 3 days
@@ -965,14 +1029,17 @@ npm install -D eslint-plugin-jsx-a11y
 ### Internal References
 
 **Audit Report:**
+
 - UI/UX Pro Max audit conducted 2026-03-09
 - Overall grade: B+ (82/100)
 - Key findings: cursor feedback, contrast, hover states, animations
 
 **Institutional Learning:**
+
 - [docs/solutions/performance-issues/optimizing-chat-streaming-performance-and-stability.md](../../solutions/performance-issues/optimizing-chat-streaming-performance-and-stability.md) - Throttling patterns, error boundaries
 
 **Component Files:**
+
 - `src/app/globals.css:19-121` - Color variables
 - `src/app/components/ChatMessage.tsx:114-134` - Avatar interactions
 - `src/app/components/chat/ChatInput.tsx:352-357` - Send button
@@ -982,16 +1049,19 @@ npm install -D eslint-plugin-jsx-a11y
 ### External References
 
 **WCAG Guidelines:**
+
 - [WCAG 2.2 Level AA](https://www.w3.org/WAI/WCAG22/quickref/) - Updated requirements including SC 2.5.8
 - [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) - Testing tool
 - [W3C Technique C39: prefers-reduced-motion](https://www.w3.org/WAI/WCAG21/Techniques/css/C39)
 
 **Best Practices:**
+
 - [Web.dev Accessibility](https://web.dev/accessibility/) - Google's a11y guide
 - [MDN prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion)
 - [Core Web Vitals](https://web.dev/vitals/) - CLS guidelines
 
 **Tailwind & shadcn/ui:**
+
 - [Tailwind CSS Transitions](https://tailwindcss.com/docs/transition-property)
 - [shadcn/ui Theming](https://ui.shadcn.com/docs/theming)
 - [shadcn/ui Dark Mode](https://ui.shadcn.com/docs/dark-mode)
@@ -1025,17 +1095,20 @@ Before marking this plan complete, verify:
 ## Implementation Notes
 
 **Priority Order:**
+
 1. Phase 1 (Critical) - Blocks accessibility compliance
 2. Phase 2 (High) - Improves consistency and UX
 3. Phase 3 (Medium) - Establishes long-term maintainability
 
 **Testing Strategy:**
+
 - Automated: Lighthouse, axe-core, contrast checkers
 - Manual: Keyboard navigation, screen readers, visual inspection
 - Cross-browser: Chrome, Firefox, Safari, Edge
 - Cross-device: Desktop, tablet, mobile (iOS/Android)
 
 **Rollout Strategy:**
+
 - Feature flag: Not needed (CSS-only changes)
 - Gradual rollout: Not needed (low risk)
 - Monitoring: Track Lighthouse scores, user feedback

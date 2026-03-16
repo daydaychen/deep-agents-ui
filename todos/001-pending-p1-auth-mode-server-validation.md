@@ -19,24 +19,27 @@ dependencies: []
 **文件位置:** `/Users/chentt/Github/deep-agents-ui/src/app/components/ConfigDialog.tsx` 第 285-318 行
 
 **证据:**
+
 ```typescript
 const handleSave = async () => {
   // ... 无权限验证逻辑
   await client.assistants.update(selectedAssistant.assistant_id, {
     config,
-    metadata,  // authMode 直接存储在 metadata 中
+    metadata, // authMode 直接存储在 metadata 中
   });
   // 无审计日志
-}
+};
 ```
 
 **风险分析:**
+
 1. **无权限验证**: 用户可以修改任何助手的 `authMode` 配置（包括从 `ask` 改为 `auto`）
 2. **客户端信任边界**: `authMode` 直接存储在助手的 `metadata` 中，客户端可完全控制
 3. **安全绕过风险**: 攻击者可将 `authMode` 从 `ask`（严格模式）改为 `auto`（自动模式）
 4. **无审计日志**: 配置更改没有记录审计日志
 
 **影响:**
+
 - 恶意用户可以授权 AI 代理自动执行危险操作
 - 如果后端没有额外验证，可能导致严重的安全绕过
 
@@ -45,12 +48,16 @@ const handleSave = async () => {
 ### 方案 A: 服务端权限验证（推荐）
 
 **实现:**
+
 ```typescript
 const handleSave = async () => {
   const { config, metadata } = mapFromForm(formValues);
-  
+
   // 验证 authMode 更改是否被允许
-  if (metadata.authMode && metadata.authMode !== selectedAssistant.metadata?.authMode) {
+  if (
+    metadata.authMode &&
+    metadata.authMode !== selectedAssistant.metadata?.authMode
+  ) {
     const hasPermission = await checkAuthModeChangePermission(
       selectedAssistant.assistant_id,
       metadata.authMode
@@ -60,7 +67,7 @@ const handleSave = async () => {
       return;
     }
   }
-  
+
   // 记录审计日志
   await logAuditEvent({
     action: "assistant_config_update",
@@ -73,11 +80,13 @@ const handleSave = async () => {
 ```
 
 **Pros:**
+
 - 从根本上防止未授权的配置更改
 - 审计日志提供可追溯性
 - 符合安全最佳实践
 
 **Cons:**
+
 - 需要后端 API 支持权限检查和审计日志
 - 增加实现复杂度
 
@@ -90,6 +99,7 @@ const handleSave = async () => {
 ### 方案 B: 客户端警告 + 后端最终验证
 
 **实现:**
+
 ```typescript
 const handleSave = async () => {
   if (metadata.authMode === "auto") {
@@ -103,10 +113,12 @@ const handleSave = async () => {
 ```
 
 **Pros:**
+
 - 实现简单
 - 提供用户确认步骤
 
 **Cons:**
+
 - 仅依赖后端验证仍有风险
 - 无法防止恶意用户直接调用 API
 
@@ -119,14 +131,17 @@ const handleSave = async () => {
 ### 方案 C: 移除 Auto 模式或限制使用范围
 
 **实现:**
+
 - 仅允许特定角色（管理员）使用 Auto 模式
 - 或在 UI 中隐藏 Auto 模式选项
 
 **Pros:**
+
 - 简单直接
 - 减少误用风险
 
 **Cons:**
+
 - 降低功能灵活性
 - 影响正常用户体验
 
@@ -141,6 +156,7 @@ const handleSave = async () => {
 **推荐方案 A** - 实现服务端权限验证和审计日志。这是唯一能从根本上防止安全绕过的方案。
 
 **实施步骤:**
+
 1. 后端添加权限检查 API
 2. 后端添加审计日志记录
 3. 前端在保存前调用权限检查
@@ -161,11 +177,13 @@ const handleSave = async () => {
 ## Technical Details
 
 **Affected Files:**
+
 - `/Users/chentt/Github/deep-agents-ui/src/app/components/ConfigDialog.tsx`
 - 后端权限检查 API（待创建）
 - 后端审计日志系统（待创建）
 
 **Related Components:**
+
 - `useChat.ts` - authMode 到 interruptBefore 的映射逻辑
 - `chat-context.ts` - OverrideConfig 类型定义
 
@@ -178,11 +196,13 @@ const handleSave = async () => {
 **By:** security-sentinel agent
 
 **Actions:**
+
 - 审查 ConfigDialog.tsx 的 handleSave 函数
 - 识别 authMode 配置的安全风险
 - 生成详细的安全审计报告
 
 **Learnings:**
+
 - Auth Mode 是完全由客户端控制的黑盒
 - 需要服务端验证来建立安全边界
 

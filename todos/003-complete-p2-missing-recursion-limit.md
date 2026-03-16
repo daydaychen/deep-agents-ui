@@ -18,23 +18,25 @@ dependencies: []
 - **Location:** `src/app/hooks/useChat.ts:250-260` (retry), `289-301` (edit)
 - **Evidence:**
 
-| Callback | Has `recursion_limit` |
-|----------|----------------------|
-| `sendMessage` (line 114) | Yes |
-| `continueStream` (line 189) | Yes |
-| `retryFromMessage` (line 252) | No |
-| `editMessage` (line 293) | No |
-| `runSingleStep` (line 143) | No |
+| Callback                      | Has `recursion_limit` |
+| ----------------------------- | --------------------- |
+| `sendMessage` (line 114)      | Yes                   |
+| `continueStream` (line 189)   | Yes                   |
+| `retryFromMessage` (line 252) | No                    |
+| `editMessage` (line 293)      | No                    |
+| `runSingleStep` (line 143)    | No                    |
 
 ## Proposed Solutions
 
 ### Option A: Add recursion_limit to retry/edit config (Recommended)
+
 ```typescript
 config: {
   ...(activeAssistant?.config ?? {}),
   recursion_limit: recursionLimit,
 },
 ```
+
 - **Pros:** Consistent with `sendMessage` and `continueStream`
 - **Cons:** None
 - **Effort:** Small (2 lines changed)
@@ -47,6 +49,6 @@ config: {
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                        |
+| ---------- | ----------------------------- |
 | 2026-03-01 | Identified during code review |

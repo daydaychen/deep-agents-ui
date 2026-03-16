@@ -220,31 +220,38 @@ Max Concurrent: 10 (Wave 4)
 - [x] 1. Install next-intl & configure package.json
 
   **What to do**:
+
   - Install `next-intl` v4: `yarn add next-intl`
   - Verify package.json 更新成功
 
   **Must NOT do**:
+
   - 不要安装其他不必要的 i18n 库
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: []
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 1 (with Tasks 2-6)
   - **Blocks**: Tasks 7-26
   - **Blocked By**: None
 
   **References**:
+
   - `package.json` - 添加 next-intl 依赖
   - next-intl docs: https://next-intl.dev/docs/getting-started/app-router
 
   **Acceptance Criteria**:
+
   - [ ] `yarn add next-intl` 执行成功
   - [ ] package.json 包含 `"next-intl": "^4.x.x"`
 
   **QA Scenarios**:
+
   ```
   Scenario: Package installation verification
     Tool: Bash
@@ -256,40 +263,48 @@ Max Concurrent: 10 (Wave 4)
   ```
 
   **Commit**: YES
+
   - Message: `feat(i18n): install next-intl dependency`
   - Files: `package.json`, `yarn.lock`
 
 - [x] 2. Create i18n routing configuration
 
   **What to do**:
+
   - Create `src/i18n/routing.ts` with routing configuration
   - Define locales: `['zh', 'en']`
   - Define defaultLocale: `'zh'`
   - Define localePrefix: `'always'`
 
   **Must NOT do**:
+
   - 不要使用过时的 createSharedPathnamesNavigation
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 1 (with Tasks 1, 3-6)
   - **Blocks**: Tasks 7-26
   - **Blocked By**: None
 
   **References**:
+
   - next-intl v4 routing docs: https://next-intl.dev/docs/routing
 
   **Acceptance Criteria**:
+
   - [ ] File `src/i18n/routing.ts` 存在
   - [ ] 导出 `routing` 对象
   - [ ] 包含 zh 和 en 两个 locale
   - [ ] defaultLocale 为 'zh'
 
   **QA Scenarios**:
+
   ```
   Scenario: Routing config verification
     Tool: Bash
@@ -307,32 +322,39 @@ Max Concurrent: 10 (Wave 4)
 - [x] 3. Create i18n request configuration
 
   **What to do**:
+
   - Create `src/i18n/request.ts`
   - 实现 `getRequestConfig` 导出
   - 动态导入对应 locale 的 messages
 
   **Must NOT do**:
+
   - 不要同步导入所有 messages（影响性能）
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 1 (with Tasks 1-2, 4-6)
   - **Blocks**: Tasks 7-26
   - **Blocked By**: None
 
   **References**:
+
   - next-intl request config: https://next-intl.dev/docs/configuration
 
   **Acceptance Criteria**:
+
   - [ ] File `src/i18n/request.ts` 存在
   - [ ] 导出 `getRequestConfig`
   - [ ] 使用动态 import 加载 messages
 
   **QA Scenarios**:
+
   ```
   Scenario: Request config verification
     Tool: Bash
@@ -349,30 +371,37 @@ Max Concurrent: 10 (Wave 4)
 - [x] 4. Create i18n navigation helpers
 
   **What to do**:
+
   - Create `src/i18n/navigation.ts`
   - 导出 `Link`, `redirect`, `usePathname`, `useRouter` 的本地化版本
 
   **Must NOT do**:
+
   - 不要直接使用 next/navigation 的原始导出
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 1 (with Tasks 1-3, 5-6)
   - **Blocks**: Tasks 7-26
   - **Blocked By**: None
 
   **References**:
+
   - next-intl navigation: https://next-intl.dev/docs/routing/navigation
 
   **Acceptance Criteria**:
+
   - [ ] File `src/i18n/navigation.ts` 存在
   - [ ] 导出 Link, redirect, usePathname, useRouter
 
   **QA Scenarios**:
+
   ```
   Scenario: Navigation helpers verification
     Tool: Bash
@@ -389,32 +418,39 @@ Max Concurrent: 10 (Wave 4)
 - [x] 5. Create proxy middleware for locale detection
 
   **What to do**:
+
   - Create `src/proxy.ts` (middleware)
   - 使用 `createMiddleware` 处理 locale 前缀
   - 配置 matcher 排除静态资源、API 路由
 
   **Must NOT do**:
+
   - 不要影响 API 路由和静态文件
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 1 (with Tasks 1-4, 6)
   - **Blocks**: Tasks 7-26
   - **Blocked By**: None
 
   **References**:
+
   - next-intl middleware: https://next-intl.dev/docs/routing/middleware
 
   **Acceptance Criteria**:
+
   - [ ] File `src/proxy.ts` 存在
   - [ ] 使用 createMiddleware
   - [ ] 配置正确的 matcher
 
   **QA Scenarios**:
+
   ```
   Scenario: Middleware verification
     Tool: Bash
@@ -431,31 +467,38 @@ Max Concurrent: 10 (Wave 4)
 - [x] 6. Create TypeScript types augmentation
 
   **What to do**:
+
   - Create `src/types/i18n.d.ts`
   - 声明 next-intl 模块类型
   - 定义 Messages 类型
 
   **Must NOT do**:
+
   - 不要破坏现有类型
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 1 (with Tasks 1-5)
   - **Blocks**: Tasks 11-26 (组件使用翻译)
   - **Blocked By**: None
 
   **References**:
+
   - next-intl TypeScript: https://next-intl.dev/docs/workflows/typescript
 
   **Acceptance Criteria**:
+
   - [ ] File `src/types/i18n.d.ts` 存在
   - [ ] 声明 next-intl 类型增强
 
   **QA Scenarios**:
+
   ```
   Scenario: TypeScript augmentation verification
     Tool: Bash
@@ -467,8 +510,6 @@ Max Concurrent: 10 (Wave 4)
   ```
 
   **Commit**: YES (与 Task 1 一起)
-
-
 
 ## Final Verification Wave
 
@@ -601,32 +642,39 @@ yarn dev
 - [x] 7. Update next.config.ts for i18n plugin
 
   **What to do**:
+
   - 修改 `next.config.ts`
   - 使用 `createNextIntlPlugin` 包装配置
   - 确保 Turbopack 配置不受影响
 
   **Must NOT do**:
+
   - 不要破坏现有的 turbopack 配置
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 2 (with Tasks 8-11)
   - **Blocks**: Tasks 12-26
   - **Blocked By**: Tasks 1-6
 
   **References**:
+
   - `next.config.ts` - 现有配置
   - next-intl config: https://next-intl.dev/docs/getting-started/app-router
 
   **Acceptance Criteria**:
+
   - [ ] next.config.ts 使用 createNextIntlPlugin
   - [ ] Turbopack 配置保留
 
   **QA Scenarios**:
+
   ```
   Scenario: Next.js config verification
     Tool: Bash
@@ -643,32 +691,39 @@ yarn dev
 - [x] 8. Create Chinese translations file (zh.json)
 
   **What to do**:
+
   - Create `messages/zh.json`
   - 包含所有中文翻译内容
   - 按 namespace 组织: common, page, chat, config, memory, thread, error, toast
 
   **Must NOT do**:
+
   - 不要遗漏草稿中列出的任何硬编码文本
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: []
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 2 (with Tasks 7, 9-11)
   - **Blocks**: Tasks 12-26
   - **Blocked By**: Tasks 1-6
 
   **References**:
+
   - `.sisyphus/drafts/i18n-implementation.md` - 硬编码文本清单
 
   **Acceptance Criteria**:
+
   - [ ] messages/zh.json 存在
   - [ ] 包含所有 namespaces
   - [ ] JSON 格式有效
 
   **QA Scenarios**:
+
   ```
   Scenario: Chinese translations verification
     Tool: Bash
@@ -682,37 +737,45 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `feat(i18n): add Chinese translations`
 
 - [x] 9. Create English translations file (en.json)
 
   **What to do**:
+
   - Create `messages/en.json`
   - 与 zh.json 结构一致
   - 包含所有英文翻译
 
   **Must NOT do**:
+
   - 不要改变 zh.json 的结构
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: []
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 2 (with Tasks 7-8, 10-11)
   - **Blocks**: Tasks 12-26
   - **Blocked By**: Tasks 1-6
 
   **References**:
+
   - `messages/zh.json` - 参考结构
 
   **Acceptance Criteria**:
+
   - [ ] messages/en.json 存在
   - [ ] 结构与 zh.json 一致
   - [ ] JSON 格式有效
 
   **QA Scenarios**:
+
   ```
   Scenario: English translations verification
     Tool: Bash
@@ -728,32 +791,39 @@ yarn dev
 - [x] 10. Move layout.tsx to [locale] dynamic segment
 
   **What to do**:
+
   - 创建 `src/app/[locale]/layout.tsx`
   - 从原 `src/app/layout.tsx` 迁移内容
   - 添加 `generateStaticParams` 导出
 
   **Must NOT do**:
+
   - 不要删除原 layout.tsx 直到新布局验证通过
 
   **Recommended Agent Profile**:
+
   - **Category**: `visual-engineering`
   - **Skills**: [`next-best-practices`, `vercel-react-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 2 (with Tasks 7-9, 11)
   - **Blocks**: Tasks 12-26
   - **Blocked By**: Tasks 1-6
 
   **References**:
+
   - `src/app/layout.tsx` - 现有布局
 
   **Acceptance Criteria**:
+
   - [ ] src/app/[locale]/layout.tsx 存在
   - [ ] 包含 generateStaticParams
   - [ ] 原 layout.tsx 保留（暂不删除）
 
   **QA Scenarios**:
+
   ```
   Scenario: Locale layout verification
     Tool: Bash
@@ -766,39 +836,47 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `feat(i18n): add locale-aware layout`
 
 - [x] 11. Create LanguageSwitcher component
 
   **What to do**:
+
   - Create `src/components/LanguageSwitcher.tsx`
   - 使用 i18n/navigation 的 Link 组件
   - 设计：按钮/下拉菜单形式，显示当前语言
   - 图标使用 lucide-react (Globe)
 
   **Must NOT do**:
+
   - 不要丢失 URL state（threadId, sidebar）
 
   **Recommended Agent Profile**:
+
   - **Category**: `visual-engineering`
   - **Skills**: [`frontend-ui-ux`, `ui-ux-pro-max`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 2 (with Tasks 7-10)
   - **Blocks**: Tasks 12-26
   - **Blocked By**: Tasks 1-6
 
   **References**:
+
   - `src/i18n/navigation.ts` - 使用本地化的 Link
   - shadcn/ui Select 组件用于语言选择
 
   **Acceptance Criteria**:
+
   - [ ] LanguageSwitcher 组件存在
   - [ ] 使用本地化的 navigation
   - [ ] 视觉风格与现有 UI 一致
 
   **QA Scenarios**:
+
   ```
   Scenario: LanguageSwitcher component
     Tool: Playwright
@@ -814,41 +892,47 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `feat(i18n): add LanguageSwitcher component`
-
-
 
 ### Wave 3: 页面迁移与核心组件 (After Wave 2)
 
 - [x] 12. Move page.tsx to [locale] dynamic segment
 
   **What to do**:
+
   - 移动 `src/app/page.tsx` → `src/app/[locale]/page.tsx`
-  - 更新导入路径（确保 @/* 别名仍然有效）
+  - 更新导入路径（确保 @/\* 别名仍然有效）
   - 添加 `setRequestLocale` 调用
 
   **Must NOT do**:
+
   - 不要改变组件逻辑，只迁移位置
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: NO (依赖 Task 10)
   - **Parallel Group**: Wave 3 (顺序执行)
   - **Blocks**: Tasks 13-26
   - **Blocked By**: Task 10
 
   **References**:
+
   - `src/app/page.tsx` - 原页面文件
 
   **Acceptance Criteria**:
+
   - [ ] 文件移动到 src/app/[locale]/page.tsx
   - [ ] 原文件删除或重命名
   - [ ] setRequestLocale 调用添加
 
   **QA Scenarios**:
+
   ```
   Scenario: Page migration verification
     Tool: Bash
@@ -861,37 +945,45 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `feat(i18n): move page to locale route`
 
 - [x] 13. Add LanguageSwitcher to header
 
   **What to do**:
+
   - 修改 `src/app/[locale]/page.tsx`
   - 在 header 区域添加 LanguageSwitcher 组件
   - 与 Settings 按钮并列
 
   **Must NOT do**:
+
   - 不要影响现有按钮布局
 
   **Recommended Agent Profile**:
+
   - **Category**: `visual-engineering`
   - **Skills**: [`frontend-ui-ux`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: NO (依赖 Task 11, 12)
   - **Parallel Group**: Wave 3
   - **Blocks**: Tasks 14-26
   - **Blocked By**: Tasks 11, 12
 
   **References**:
+
   - `src/components/LanguageSwitcher.tsx` - 语言切换器
   - Header 布局参考 page.tsx:147-169
 
   **Acceptance Criteria**:
+
   - [ ] LanguageSwitcher 在 header 中可见
   - [ ] 布局美观，不拥挤
 
   **QA Scenarios**:
+
   ```
   Scenario: LanguageSwitcher in header
     Tool: Playwright
@@ -905,36 +997,41 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `feat(i18n): integrate LanguageSwitcher in header`
-
-
 
 ### Wave 4: 组件国际化 (After Wave 3)
 
 - [x] 14. i18n: ConfigDialog.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/ConfigDialog.tsx` 使用翻译
   - 替换所有硬编码文本：标签、placeholder、toast 消息、按钮
 
   **Must NOT do**:
+
   - 不要改变组件逻辑
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`frontend-ui-ux`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES (with 15-26)
   - **Parallel Group**: Wave 4
   - **Blocks**: None
   - **Blocked By**: Task 12
 
   **Acceptance Criteria**:
+
   - [ ] 所有硬编码文本使用 t() 函数
   - [ ] TypeScript 无错误
 
   **QA Scenarios**:
+
   ```
   Scenario: ConfigDialog translations
     Tool: Bash
@@ -949,16 +1046,19 @@ yarn dev
 - [x] 15. i18n: ChatInput.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/chat/ChatInput.tsx`
   - 翻译：placeholder、labels、按钮、tabs、dropdown
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`frontend-ui-ux`]
 
   **Parallelization**: Wave 4
 
   **Acceptance Criteria**:
+
   - [ ] 所有 UI 文本使用翻译
   - [ ] 模型名称保持原样（技术标识符）
 
@@ -967,6 +1067,7 @@ yarn dev
 - [x] 16. i18n: Memory.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/Memory.tsx`
   - 翻译：placeholder、toast 消息、按钮
 
@@ -977,6 +1078,7 @@ yarn dev
 - [x] 17. i18n: MemoryItemDialog.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/MemoryItemDialog.tsx`
   - 翻译：toast 消息、placeholder、按钮
   - 将现有中文提取到翻译文件
@@ -988,6 +1090,7 @@ yarn dev
 - [x] 18. i18n: EditMessage.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/EditMessage.tsx`
   - 翻译：placeholder、按钮 title
 
@@ -998,6 +1101,7 @@ yarn dev
 - [x] 19. i18n: RejectionMessageInput.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/approval/RejectionMessageInput.tsx`
   - 翻译：placeholder、label
 
@@ -1008,6 +1112,7 @@ yarn dev
 - [x] 20. i18n: ThreadStatusFilter.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/thread/ThreadStatusFilter.tsx`
   - 翻译：Idle、Busy、Interrupted、Error 状态标签
 
@@ -1018,6 +1123,7 @@ yarn dev
 - [x] 21. i18n: TasksSection.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/chat/TasksSection.tsx`
   - 翻译：状态标签 (Pending、In Progress、Completed)
 
@@ -1028,6 +1134,7 @@ yarn dev
 - [x] 22. i18n: TasksFilesSidebar.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/TasksFilesSidebar.tsx`
   - 翻译：状态标签、按钮
 
@@ -1038,6 +1145,7 @@ yarn dev
 - [x] 23. i18n: FileViewDialog.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/FileViewDialog.tsx`
   - 翻译：placeholder、toast 消息、标题
 
@@ -1048,6 +1156,7 @@ yarn dev
 - [x] 24. i18n: ModeToggle.tsx translations
 
   **What to do**:
+
   - 更新 `src/components/ui/mode-toggle.tsx`
   - 翻译：tooltip 文本 (Switch to dark mode, etc.)
 
@@ -1058,6 +1167,7 @@ yarn dev
 - [x] 25. i18n: ThreadList.tsx translations
 
   **What to do**:
+
   - 更新 `src/app/components/ThreadList.tsx`
   - 翻译：按钮 aria-label、toast 消息
 
@@ -1068,6 +1178,7 @@ yarn dev
 - [x] 26. i18n: Approval components translations
 
   **What to do**:
+
   - 更新 approval 目录下的组件
   - ApprovalActions.tsx、ToolInfoCard.tsx、ArgumentEditor.tsx
   - 翻译：按钮、标签、提示
@@ -1076,35 +1187,39 @@ yarn dev
   **Parallelization**: Wave 4
   **Commit**: YES (Wave 4 批量提交)
 
-
-
 ### Wave 5: Polish & QA (After Wave 4)
 
 - [ ] 27. Update metadata for localization
 
   **What to do**:
+
   - 更新 `src/app/[locale]/layout.tsx`
   - 使 metadata (title, description) 支持本地化
   - 使用 `getTranslations` 获取翻译
 
   **Must NOT do**:
+
   - 不要破坏现有的 SEO 设置
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: [`next-best-practices`]
 
   **Parallelization**:
+
   - **Can Run In Parallel**: NO (依赖 Task 10)
   - **Parallel Group**: Wave 5
   - **Blocks**: Task F3
   - **Blocked By**: Task 10
 
   **Acceptance Criteria**:
+
   - [ ] metadata 使用翻译
   - [ ] 中英文页面有不同的 title
 
   **QA Scenarios**:
+
   ```
   Scenario: Localized metadata
     Tool: Bash
@@ -1115,34 +1230,41 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `feat(i18n): localize metadata`
 
 - [ ] 28. Clean up original app/layout.tsx and app/page.tsx
 
   **What to do**:
+
   - 删除 `src/app/layout.tsx`（已迁移到 [locale]/layout.tsx）
   - 删除 `src/app/page.tsx`（已迁移到 [locale]/page.tsx）
   - 确保没有重复文件
 
   **Must NOT do**:
+
   - 不要误删 [locale] 目录下的文件
 
   **Recommended Agent Profile**:
+
   - **Category**: `quick`
   - **Skills**: []
 
   **Parallelization**:
+
   - **Can Run In Parallel**: NO
   - **Parallel Group**: Wave 5
   - **Blocks**: Task 29
   - **Blocked By**: Task 12
 
   **Acceptance Criteria**:
+
   - [ ] src/app/layout.tsx 已删除
   - [ ] src/app/page.tsx 已删除
-  - [ ] src/app/[locale]/* 文件完好
+  - [ ] src/app/[locale]/\* 文件完好
 
   **QA Scenarios**:
+
   ```
   Scenario: File cleanup verification
     Tool: Bash
@@ -1155,30 +1277,36 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `chore(i18n): clean up original layout and page files`
 
 - [ ] 29. Create i18n usage documentation
 
   **What to do**:
+
   - 创建 `docs/i18n.md` 或更新 README
   - 说明：如何添加新翻译、命名约定、最佳实践
 
   **Recommended Agent Profile**:
+
   - **Category**: `writing`
   - **Skills**: []
 
   **Parallelization**:
+
   - **Can Run In Parallel**: YES
   - **Parallel Group**: Wave 5
   - **Blocks**: None
   - **Blocked By**: Tasks 7-9
 
   **Acceptance Criteria**:
+
   - [ ] 文档包含翻译文件结构
   - [ ] 包含添加新翻译的步骤
   - [ ] 包含命名约定
 
   **QA Scenarios**:
+
   ```
   Scenario: Documentation verification
     Tool: Bash
@@ -1188,23 +1316,25 @@ yarn dev
   ```
 
   **Commit**: YES
+
   - Message: `docs(i18n): add i18n usage documentation`
 
 ---
 
 ## Final Verification Wave
 
-> **4 review agents run in PARALLEL after ALL implementation tasks complete**
-> **ALL must APPROVE. Rejection → fix → re-run.**
+> **4 review agents run in PARALLEL after ALL implementation tasks complete** > **ALL must APPROVE. Rejection → fix → re-run.**
 
 - [ ] F1. **Plan Compliance Audit** — `oracle`
-  
+
   **What to verify**:
+
   - All "Must Have" items are implemented
   - All "Must NOT Have" items are absent
   - All TODOs have corresponding evidence files
-  
+
   **QA Scenarios**:
+
   ```
   Scenario: Compliance check
     Tool: Bash
@@ -1216,16 +1346,19 @@ yarn dev
     Expected Result: All critical files exist, >20 components use translations
     Output: Must Have [8/8] | Must NOT Have [5/5] | Tasks [29/29] | VERDICT
   ```
+
   **Evidence**: `.sisyphus/evidence/f1-compliance.txt`
 
 - [ ] F2. **Code Quality Review** — `unspecified-high`
-  
+
   **What to verify**:
+
   - TypeScript compiles without errors
   - Next.js builds successfully
   - No console.log in production code (except allowed ones)
-  
+
   **QA Scenarios**:
+
   ```
   Scenario: Build verification
     Tool: Bash
@@ -1235,18 +1368,21 @@ yarn dev
     Expected Result: tsc 无错误，build 成功
     Output: Build [PASS] | TypeCheck [PASS] | Files [Clean] | VERDICT
   ```
+
   **Evidence**: `.sisyphus/evidence/f2-quality.txt`
 
 - [ ] F3. **Full QA Test - Both Locales** — `unspecified-high` (with `playwright` skill)
-  
+
   **What to verify**:
+
   - `/zh` loads Chinese UI
   - `/en` loads English UI
   - `/` redirects to `/zh` (default locale)
   - LanguageSwitcher works
   - Key user flows work in both languages
-  
+
   **QA Scenarios**:
+
   ```
   Scenario: Locale routing E2E
     Tool: Playwright
@@ -1261,16 +1397,19 @@ yarn dev
     Expected Result: All routes work, switching works
     Output: Routes [3/3] | Components [26/26] | Switching [PASS] | VERDICT
   ```
+
   **Evidence**: `.sisyphus/evidence/f3-locale-test.png`
 
 - [ ] F4. **Scope Fidelity Check** — `deep`
-  
+
   **What to verify**:
+
   - Each task in plan has corresponding implementation
   - No scope creep (extra features not in plan)
   - No missing features from plan
-  
+
   **QA Scenarios**:
+
   ```
   Scenario: Fidelity check
     Tool: git diff --stat
@@ -1280,6 +1419,7 @@ yarn dev
     Expected Result: All planned files changed, no unexpected files
     Output: Tasks [29/29 compliant] | Scope [CLEAN] | VERDICT
   ```
+
   **Evidence**: `.sisyphus/evidence/f4-fidelity.txt`
 
 ---
@@ -1287,19 +1427,24 @@ yarn dev
 ## Commit Strategy
 
 **Wave 1**: `feat(i18n): setup next-intl infrastructure`
+
 - Files: `src/i18n/*`, `src/proxy.ts`, `next.config.ts`, `package.json`, `yarn.lock`, `src/types/i18n.d.ts`
 - Pre-commit: `yarn install && npx tsc --noEmit`
 
 **Wave 2**: `feat(i18n): add translations and LanguageSwitcher`
+
 - Files: `messages/zh.json`, `messages/en.json`, `src/components/LanguageSwitcher.tsx`, `src/app/[locale]/layout.tsx`
 
 **Wave 3**: `feat(i18n): migrate page to locale route`
+
 - Files: `src/app/[locale]/page.tsx`, `src/app/[locale]/layout.tsx` (updated)
 
 **Wave 4**: `feat(i18n): localize all components`
+
 - Files: `src/app/components/*.tsx`, `src/components/ui/*.tsx` (批量)
 
 **Wave 5**: `feat(i18n): polish and documentation`
+
 - Files: `docs/i18n.md`, cleanup files
 
 ---
@@ -1307,6 +1452,7 @@ yarn dev
 ## Success Criteria
 
 ### Verification Commands
+
 ```bash
 # 1. 路由验证
 curl -s http://localhost:3000/zh | grep -c "Databus Pilot" || echo "Chinese content found"
@@ -1329,6 +1475,7 @@ ls -la src/app/[locale]/
 ```
 
 ### Final Checklist
+
 - [ ] `/zh` 路由显示中文界面
 - [ ] `/en` 路由显示英文界面
 - [ ] `/` 重定向到 `/zh`
@@ -1347,4 +1494,3 @@ ls -la src/app/[locale]/
 3. **Monitor progress**: 使用 Sisyphus 跟踪任务状态
 
 **Plan saved to**: `.sisyphus/plans/nextjs-i18n-implementation.md`
-

@@ -21,21 +21,24 @@ dependencies: []
 ## Proposed Solutions
 
 ### Option A: Create typed wrapper/extension interface
+
 ```typescript
 interface DeepAgentStreamOptions extends UseStreamOptions<StateType> {
   filterSubagentMessages?: boolean;
   streamSubgraphs?: boolean;
 }
 ```
+
 - **Effort:** Small
 - **Risk:** Low — but may need updating when SDK types change
 
 ### Option B: Leave as-is until SDK exports proper types
+
 - **Effort:** None
 - **Risk:** None
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                                       |
+| ---------- | -------------------------------------------- |
 | 2026-03-01 | Identified during code review (pre-existing) |

@@ -17,6 +17,7 @@ The Next.js configuration lacks Content Security Policy (CSP) headers, exposing 
 - **Source:** Security Sentinel Agent
 - **Location:** `next.config.ts`
 - **Evidence:**
+
   - No `headers` configuration in next.config.ts
   - No CSP meta tags in layout
   - Application loads external resources without restrictions
@@ -27,18 +28,21 @@ The Next.js configuration lacks Content Security Policy (CSP) headers, exposing 
 ## Proposed Solutions
 
 ### Option A: Add CSP headers in next.config.ts
+
 - **Pros:** Applied at server level, covers all responses
 - **Cons:** Requires careful configuration to not break functionality
 - **Effort:** Medium
 - **Risk:** Medium - may break external resources if misconfigured
 
 ### Option B: Use Next.js middleware for dynamic CSP
+
 - **Pros:** Can generate nonce for inline scripts, flexible
 - **Cons:** More complex, middleware overhead
 - **Effort:** Medium
 - **Risk:** Medium - requires testing
 
 ### Option C: Add CSP meta tag in layout
+
 - **Pros:** Simple, works with static hosting
 - **Cons:** Less secure than headers (some directives ignored)
 - **Effort:** Small
@@ -66,7 +70,7 @@ Option A with carefully crafted policy, use nonces for inline scripts if needed.
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
-| 2026-03-09 | Identified during code review by Security Sentinel |
+| Date       | Action                                               |
+| ---------- | ---------------------------------------------------- |
+| 2026-03-09 | Identified during code review by Security Sentinel   |
 | 2026-03-09 | Implemented CSP headers in next.config.ts (Option A) |

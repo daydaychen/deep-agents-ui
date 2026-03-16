@@ -21,19 +21,22 @@ dependencies: []
 ## Proposed Solutions
 
 ### Option A: Destructure stable properties from `stream`
+
 ```typescript
 const { messages, isLoading, values, ... } = stream;
 // Use individual properties in useMemo deps
 ```
+
 - **Effort:** Medium — many properties to destructure
 - **Risk:** Low
 
 ### Option B: Leave as-is
+
 - The SDK may stabilize the reference in a future version
 - Performance impact is minimal (useMemo body is cheap)
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                                       |
+| ---------- | -------------------------------------------- |
 | 2026-03-01 | Identified during code review (pre-existing) |

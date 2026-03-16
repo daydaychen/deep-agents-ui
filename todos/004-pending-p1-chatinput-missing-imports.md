@@ -34,6 +34,7 @@ import {
 ```
 
 **影响:**
+
 - 组件无法渲染
 - 应用崩溃
 - 用户无法使用聊天功能
@@ -45,20 +46,23 @@ import {
 ### 方案 A: 添加缺失的导入（推荐）
 
 **实现:**
+
 ```typescript
 // src/app/components/chat/ChatInput.tsx
 import {
   ArrowUp,
-  Command,    // ✅ 添加
-  Square,       // ✅ 添加
+  Command, // ✅ 添加
+  Square, // ✅ 添加
 } from "lucide-react";
 ```
 
 **Pros:**
+
 - 简单快速
 - 立即修复问题
 
 **Cons:**
+
 - 无
 
 **Effort:** Small (5 分钟)
@@ -71,14 +75,17 @@ import {
 
 **实现:**
 如果 `Command` 和 `Square` 不再需要，移除相关代码：
+
 ```typescript
 // 移除使用 Command 和 Square 的代码块
 ```
 
 **Pros:**
+
 - 减少 bundle size
 
 **Cons:**
+
 - 可能移除功能
 - 需要确认是否真的不需要
 
@@ -93,6 +100,7 @@ import {
 **推荐方案 A** - 添加缺失的导入。这是最简单且安全的修复方式。
 
 **实施步骤:**
+
 1. 修改 `ChatInput.tsx` 导入语句
 2. 运行 `yarn dev` 验证修复
 3. 测试聊天界面正常渲染
@@ -111,9 +119,11 @@ import {
 ## Technical Details
 
 **Affected Files:**
+
 - `/Users/chentt/Github/deep-agents-ui/src/app/components/chat/ChatInput.tsx`
 
 **Related Components:**
+
 - 无
 
 ---
@@ -125,11 +135,13 @@ import {
 **By:** performance-oracle agent
 
 **Actions:**
+
 - 审查 ChatInput.tsx 的导入语句
 - 发现缺失的 Command 和 Square 导入
 - 生成性能审计报告
 
 **Learnings:**
+
 - 导入语句需要与使用保持一致
 - 重构时应检查所有导入
 

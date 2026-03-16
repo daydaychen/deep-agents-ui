@@ -17,6 +17,7 @@ Multiple locations use `findIndex` and array traversal for message lookup, resul
 - **Source:** Performance Oracle Agent
 - **Location:** `src/app/hooks/useChat.ts` and related files
 - **Evidence:**
+
   - Line 131: `findIndex` called on messages array for resolution
   - Multiple `filter` operations for thread filtering
   - No message ID index or Map structure
@@ -27,18 +28,21 @@ Multiple locations use `findIndex` and array traversal for message lookup, resul
 ## Proposed Solutions
 
 ### Option A: Add Map-based index for message lookup by ID
+
 - **Pros:** O(1) lookup, maintains current array for order
 - **Cons:** Requires index maintenance on add/remove
 - **Effort:** Medium
 - **Risk:** Low - standard optimization pattern
 
 ### Option B: Use SWR/React Query built-in caching with proper keys
+
 - **Pros:** Leverages existing tools, automatic cache management
 - **Cons:** May not help with local message operations
 - **Effort:** Medium
 - **Risk:** Low - well-supported approach
 
 ### Option C: Pre-compute indices in useMemo
+
 - **Pros:** Simple, React idiomatic
 - **Cons:** Still recomputes on every message change
 - **Effort:** Small
@@ -63,7 +67,7 @@ Option A for best performance, Option C for quick improvement.
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
-| 2026-03-09 | Identified during code review by Performance Oracle |
+| Date       | Action                                                                                               |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| 2026-03-09 | Identified during code review by Performance Oracle                                                  |
 | 2026-03-09 | Implemented Map-based index for O(1) message lookup in resolveMessageIndex function (commit 3e74297) |

@@ -19,6 +19,7 @@ dependencies: []
 **文件位置:** `/Users/chentt/Github/deep-agents-ui/src/app/hooks/useChat.ts` 第 84-95 行
 
 **问题代码:**
+
 ```typescript
 useEffect(() => {
   if (activeAssistant) {
@@ -26,7 +27,7 @@ useEffect(() => {
     const assistantMetadata = activeAssistant.metadata || {};
 
     setOverrideConfig((prev) => ({
-      ...prev,  // ❌ 问题：保留所有之前的覆盖配置
+      ...prev, // ❌ 问题：保留所有之前的覆盖配置
       thinking: assistantConfig.thinking ?? assistantMetadata.thinking ?? false,
       authMode: assistantMetadata.authMode || "ask",
       // Keep existing model overrides if any
@@ -36,11 +37,13 @@ useEffect(() => {
 ```
 
 **问题场景:**
+
 1. 用户在助手 A 中开启了 `thinking: true`
 2. 用户切换到助手 B（默认 `thinking: false`）
 3. 由于 `...prev` 展开，助手 B 继承了 `thinking: true`
 
 **违反的原则:**
+
 - **状态一致性原则**: 切换助手时应完全重置为新助手的默认配置
 - **计划文档规范**: 计划文件明确要求重置为默认值
 
@@ -49,6 +52,7 @@ useEffect(() => {
 ### 方案 A: 显式重置所有字段（推荐）
 
 **实现:**
+
 ```typescript
 useEffect(() => {
   if (activeAssistant) {
@@ -74,11 +78,13 @@ useEffect(() => {
 ```
 
 **Pros:**
+
 - 明确重置所有字段
 - 符合计划文档要求
 - 避免状态污染
 
 **Cons:**
+
 - 需要手动列出所有字段
 - 如果 OverrideConfig 增加新字段，需要更新此处
 
@@ -91,6 +97,7 @@ useEffect(() => {
 ### 方案 B: 使用助手默认值作为基础
 
 **实现:**
+
 ```typescript
 useEffect(() => {
   if (activeAssistant) {
@@ -113,10 +120,12 @@ useEffect(() => {
 ```
 
 **Pros:**
+
 - 更简洁
 - 只设置需要的字段
 
 **Cons:**
+
 - 未显式设置的字段会丢失
 - TypeScript 可能报错缺少字段
 
@@ -129,6 +138,7 @@ useEffect(() => {
 ### 方案 C: 添加配置重置函数
 
 **实现:**
+
 ```typescript
 // 在 chat-context.ts 中
 const resetOverrideConfig = useCallback((assistant: Assistant) => {
@@ -158,11 +168,13 @@ useEffect(() => {
 ```
 
 **Pros:**
+
 - 逻辑集中，易维护
 - 可复用
 - 易测试
 
 **Cons:**
+
 - 需要重构代码
 - 增加新的 hook 函数
 
@@ -177,6 +189,7 @@ useEffect(() => {
 **推荐方案 A** - 显式重置所有字段。这是最简单且直接的修复方式。
 
 **实施步骤:**
+
 1. 修改 `useChat.ts` 中的 `useEffect`
 2. 显式设置所有 OverrideConfig 字段
 3. 测试切换助手时配置正确重置
@@ -197,9 +210,11 @@ useEffect(() => {
 ## Technical Details
 
 **Affected Files:**
+
 - `/Users/chentt/Github/deep-agents-ui/src/app/hooks/useChat.ts`
 
 **Related Components:**
+
 - `chat-context.ts` - OverrideConfig 类型定义
 - `DockToolbar.tsx` - 显示配置状态
 
@@ -212,11 +227,13 @@ useEffect(() => {
 **By:** architecture-strategist agent
 
 **Actions:**
+
 - 审查状态同步逻辑
 - 发现竞态条件问题
 - 生成架构审查报告
 
 **Learnings:**
+
 - 使用 `...prev` 展开可能导致状态污染
 - 切换上下文时应显式重置所有字段
 

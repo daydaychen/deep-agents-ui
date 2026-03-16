@@ -24,6 +24,6 @@ dependencies: []
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                                       |
+| ---------- | -------------------------------------------- |
 | 2026-03-01 | Identified during code review (pre-existing) |

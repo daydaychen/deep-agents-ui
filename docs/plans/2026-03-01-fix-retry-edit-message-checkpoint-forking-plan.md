@@ -14,12 +14,14 @@ deepened: 2026-03-01
 **Review agents used:** TypeScript Reviewer, Frontend Races Reviewer, Performance Oracle, Architecture Strategist, Code Simplicity Reviewer, Pattern Recognition Specialist, Best Practices Researcher, Context7, LangChain Docs
 
 ### Key Improvements from Deepening
+
 1. **History limit revised from 100 → 50** — Performance analysis revealed O(n²) payload growth; 50 is the optimal balance
 2. **Double-fire guard added** — Race condition review found retry/edit can fire multiple times if clicked rapidly
 3. **`optimisticValues` removed from editMessage** — Fork operations have no honest optimistic state; simplifies code and prevents flash-of-wrong-content on error
 4. **Changes split into essential fixes vs optional cleanup** — Only 4 changes needed for the bug fix itself; others deferred
 
 ### New Considerations Discovered
+
 - Each `ThreadState` contains ALL messages up to that point — payload grows quadratically with history limit
 - `streamResumable: false` causes run **cancellation** on disconnect (not just non-resumability)
 - Branch switcher is NOT disabled during loading — user can switch branches during a fork operation
@@ -34,6 +36,7 @@ deepened: 2026-03-01
 ## Problem Statement
 
 When a user clicks "Retry" on an AI message or "Edit" on a human message, the operation often silently fails with:
+
 ```
 No parent checkpoint found for message <id>
 ```
@@ -45,6 +48,7 @@ Even when it doesn't fail, the forked branch may behave incorrectly due to messa
 ### Bug 1: History Limit Too Low (Critical)
 
 **File:** `node_modules/@langchain/langgraph-sdk/dist/react/stream.lgp.js:26`
+
 ```javascript
 const limit = typeof options?.limit === "number" ? options.limit : 10;
 return client.threads.getHistory(threadId, { limit });
@@ -55,6 +59,7 @@ The `useStream` hook's `fetchStateHistory: true` defaults to fetching only **10 
 **Impact:** Retry and edit silently fail for any message beyond the 10 most recent states. The `console.warn` fires but the user gets no feedback.
 
 **Current code** (`useChat.ts:88`):
+
 ```typescript
 fetchStateHistory: true,  // defaults to limit: 10
 ```
@@ -62,6 +67,7 @@ fetchStateHistory: true,  // defaults to limit: 10
 ### Bug 2: Incorrect Message Construction in editMessage (High)
 
 **File:** `useChat.ts:279`
+
 ```typescript
 const newMessage = { ...message, id: uuidv4() };
 ```
@@ -69,6 +75,7 @@ const newMessage = { ...message, id: uuidv4() };
 The spread operator copies **all** original message properties (`additional_kwargs`, `response_metadata`, `name`, etc.) into the new message. The LangGraph server's message reducer may not handle these extra fields correctly when processing a fork.
 
 **Official pattern** (from `agent-chat-ui` and [LangChain branching docs](https://docs.langchain.com/oss/javascript/langchain/streaming/frontend)):
+
 ```typescript
 const newMessage: Message = { type: "human", content: value };
 ```
@@ -78,6 +85,7 @@ The official reference creates a **minimal message** with only `type` and `conte
 ### Bug 3: `streamResumable: false` on Fork Operations (Medium)
 
 **File:** `useChat.ts:257,293`
+
 ```typescript
 streamResumable: false,
 ```
@@ -103,18 +111,18 @@ Neither the current code nor the proposed changes include any guard inside the c
 
 ### Priority Classification
 
-| Change | Priority | Classification |
-|--------|----------|---------------|
-| `fetchStateHistory: { limit: 50 }` | **P0** | Root cause fix |
-| Minimal message construction | **P0** | Root cause fix |
-| `streamResumable: true` | **P0** | Behavioral fix |
-| Toast error for missing checkpoint | **P0** | UX fix for silent failure |
-| Double-fire guard | **P1** | Race condition prevention |
-| Remove `async` keyword | **P2** | Cleanup (optional, same PR) |
-| `null` → `undefined` | **P2** | Convention alignment (optional) |
-| Remove `threadId` from options | **P2** | Cleanup (optional) |
-| Add `recursion_limit` | **P2** | Consistency (optional, defer OK) |
-| `optimisticValues` in editMessage | **Dropped** | See rationale below |
+| Change                             | Priority    | Classification                   |
+| ---------------------------------- | ----------- | -------------------------------- |
+| `fetchStateHistory: { limit: 50 }` | **P0**      | Root cause fix                   |
+| Minimal message construction       | **P0**      | Root cause fix                   |
+| `streamResumable: true`            | **P0**      | Behavioral fix                   |
+| Toast error for missing checkpoint | **P0**      | UX fix for silent failure        |
+| Double-fire guard                  | **P1**      | Race condition prevention        |
+| Remove `async` keyword             | **P2**      | Cleanup (optional, same PR)      |
+| `null` → `undefined`               | **P2**      | Convention alignment (optional)  |
+| Remove `threadId` from options     | **P2**      | Cleanup (optional)               |
+| Add `recursion_limit`              | **P2**      | Consistency (optional, defer OK) |
+| `optimisticValues` in editMessage  | **Dropped** | See rationale below              |
 
 ### Fix 1: Increase History Limit (Revised: 50, not 100)
 
@@ -127,11 +135,11 @@ fetchStateHistory: { limit: 50 },
 
 **Performance analysis** revealed that each `ThreadState` contains ALL messages accumulated up to that point. The payload grows **quadratically**:
 
-| History Limit | 50-msg Conversation Payload | 100-msg Conversation Payload |
-|---|---|---|
-| 10 (current) | ~0.7 MB | ~1.4 MB |
-| 50 (proposed) | ~1.9 MB | ~5.6 MB |
-| 100 (original) | ~1.9 MB | ~7.6 MB |
+| History Limit  | 50-msg Conversation Payload | 100-msg Conversation Payload |
+| -------------- | --------------------------- | ---------------------------- |
+| 10 (current)   | ~0.7 MB                     | ~1.4 MB                      |
+| 50 (proposed)  | ~1.9 MB                     | ~5.6 MB                      |
+| 100 (original) | ~1.9 MB                     | ~7.6 MB                      |
 
 The SDK's `getMessagesMetadata` computation is `O(M × H × avg)` per render where M = messages, H = history limit. With limit=100, this is a **5.3x CPU increase** over limit=10, paid after every stream completion.
 
@@ -148,7 +156,7 @@ The SDK's `getMessagesMetadata` computation is `O(M × H × avg)` per render whe
 // useChat.ts:232-261
 const retryFromMessage = useCallback(
   (message: Message, index: number) => {
-    if (stream.isLoading) return;                      // double-fire guard
+    if (stream.isLoading) return; // double-fire guard
 
     const actualIndex = stream.messages.findIndex(
       (msg) => msg.id === message.id
@@ -181,12 +189,14 @@ const retryFromMessage = useCallback(
 ```
 
 **Changes (essential only):**
+
 - Add `if (stream.isLoading) return` double-fire guard
 - Remove `async` keyword (function does not await anything)
 - `streamResumable: false` → `true`
 - Add toast error for missing checkpoint
 
 **Deferred (optional cleanup):**
+
 - `null` → `undefined` first argument — SDK treats both identically, but `undefined` matches the convention used by `runSingleStep` and `continueStream` in the same file. Include if desired.
 - Remove `threadId` — harmless but unnecessary. Include if desired.
 - Add `recursion_limit` — consistency improvement, not a bug fix. Defer to cleanup PR.
@@ -197,7 +207,7 @@ const retryFromMessage = useCallback(
 // useChat.ts:263-298
 const editMessage = useCallback(
   (message: Message, index: number) => {
-    if (stream.isLoading) return;                      // double-fire guard
+    if (stream.isLoading) return; // double-fire guard
 
     const actualIndex = stream.messages.findIndex(
       (msg) => msg.id === message.id
@@ -239,6 +249,7 @@ const editMessage = useCallback(
 ```
 
 **Changes (essential only):**
+
 - Add `if (stream.isLoading) return` double-fire guard
 - Remove `async` keyword
 - Minimal message `{ type: "human", content }` instead of `{ ...message, id: uuidv4() }`
@@ -287,11 +298,11 @@ If optimistic edits are desired later, use the simpler pattern from `sendMessage
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/app/hooks/useChat.ts:88` | Change `fetchStateHistory: true` → `fetchStateHistory: { limit: 50 }` |
-| `src/app/hooks/useChat.ts:232-261` | Rewrite `retryFromMessage` per Fix 2 |
-| `src/app/hooks/useChat.ts:263-298` | Rewrite `editMessage` per Fix 3 |
+| File                               | Changes                                                               |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| `src/app/hooks/useChat.ts:88`      | Change `fetchStateHistory: true` → `fetchStateHistory: { limit: 50 }` |
+| `src/app/hooks/useChat.ts:232-261` | Rewrite `retryFromMessage` per Fix 2                                  |
+| `src/app/hooks/useChat.ts:263-298` | Rewrite `editMessage` per Fix 3                                       |
 
 ## Follow-up Improvements (Separate PR)
 

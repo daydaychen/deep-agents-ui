@@ -55,9 +55,11 @@ Currently, the `ConfigDialog` component in `src/app/components/ConfigDialog.tsx`
 ## MVP Implementation Plan
 
 ### `src/app/components/ui/key-value-form.tsx` (New)
+
 A simple helper to manage dynamic key-value pairs.
 
 ### `src/app/components/ConfigDialog.tsx` (Update)
+
 - Replace `assistantConfig` and `assistantMetadata` state.
 - Use `KeyValueForm` for `configurable` and `metadata`.
 - Add `tags` input.

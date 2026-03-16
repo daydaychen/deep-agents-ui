@@ -17,6 +17,7 @@ Similar code patterns are duplicated across components and hooks, violating DRY 
 - **Source:** Pattern Recognition Specialist
 - **Location:** Multiple files
 - **Evidence:**
+
   - Similar error handling patterns repeated
   - Message transformation logic duplicated
   - Dialog state management patterns copied
@@ -27,18 +28,21 @@ Similar code patterns are duplicated across components and hooks, violating DRY 
 ## Proposed Solutions
 
 ### Option A: Extract common utilities to shared files
+
 - **Pros:** Single location for updates, testable
 - **Cons:** May create over-abstraction
 - **Effort:** Medium
 - **Risk:** Low - standard refactoring
 
 ### Option B: Create custom hooks for repeated patterns
+
 - **Pros:** React-idiomatic, encapsulates stateful logic
 - **Cons:** Hook composition can get complex
 - **Effort:** Medium
 - **Risk:** Low - good React pattern
 
 ### Option C: Document duplication and accept as-is
+
 - **Pros:** No refactoring risk
 - **Cons:** Doesn't improve codebase
 - **Effort:** Small
@@ -65,8 +69,8 @@ Option A for utilities, Option B for stateful patterns.
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
-| 2026-03-09 | Identified during code review by Pattern Recognition Specialist |
+| Date       | Action                                                                                    |
+| ---------- | ----------------------------------------------------------------------------------------- |
+| 2026-03-09 | Identified during code review by Pattern Recognition Specialist                           |
 | 2026-03-09 | Extracted common utilities: id-utils.ts, toast-utils.ts, async-utils.ts, loading-utils.ts |
-| 2026-03-09 | Updated useChat.ts to use generateId from id-utils |
+| 2026-03-09 | Updated useChat.ts to use generateId from id-utils                                        |

@@ -20,6 +20,7 @@ The `findIndex` + fallback-to-index pattern appears 3 times in `useChat.ts`. Cou
   - `editMessage` (lines 269-272)
   - `getMessageBranchInfo` (lines 311-314)
 - **Pattern:**
+
 ```typescript
 const actualIndex = stream.messages.findIndex((msg) => msg.id === message.id);
 const indexToUse = actualIndex !== -1 ? actualIndex : index;
@@ -28,6 +29,7 @@ const indexToUse = actualIndex !== -1 ? actualIndex : index;
 ## Proposed Solutions
 
 ### Option A: Extract helper function
+
 ```typescript
 const resolveMessageIndex = useCallback(
   (message: Message, fallbackIndex: number) => {
@@ -37,10 +39,12 @@ const resolveMessageIndex = useCallback(
   [stream.messages]
 );
 ```
+
 - **Effort:** Small
 - **Risk:** None
 
 ### Option B: Leave as-is
+
 - 3 occurrences is borderline for extraction. Each is 2 lines and self-explanatory.
 
 ## Acceptance Criteria
@@ -50,6 +54,6 @@ const resolveMessageIndex = useCallback(
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                        |
+| ---------- | ----------------------------- |
 | 2026-03-01 | Identified during code review |

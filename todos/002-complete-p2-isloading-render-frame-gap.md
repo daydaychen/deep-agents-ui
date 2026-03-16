@@ -22,6 +22,7 @@ The `if (stream.isLoading) return` guard in `retryFromMessage` and `editMessage`
 ## Proposed Solutions
 
 ### Option A: Ref-based guard (Recommended)
+
 ```typescript
 const isSubmittingRef = useRef(false);
 
@@ -32,12 +33,14 @@ const retryFromMessage = useCallback((message, index) => {
   // Reset in onFinish/onError or after submit returns
 }, [...]);
 ```
+
 - **Pros:** Synchronous check, no render-frame gap
 - **Cons:** Must manage ref lifecycle (reset on completion)
 - **Effort:** Small
 - **Risk:** Low
 
 ### Option B: Disable buttons at UI layer
+
 - **Pros:** Prevents the event entirely
 - **Cons:** `MessageToolbar` already hides buttons when `isLoading`, but there's a render gap there too
 - **Effort:** Small
@@ -50,6 +53,6 @@ const retryFromMessage = useCallback((message, index) => {
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                        |
+| ---------- | ----------------------------- |
 | 2026-03-01 | Identified during code review |

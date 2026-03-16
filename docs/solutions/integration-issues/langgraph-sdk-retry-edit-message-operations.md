@@ -75,7 +75,8 @@ The LangGraph server's message reducer does not handle extra fields correctly wh
 
 ```javascript
 // SDK internals
-onDisconnect: submitOptions?.onDisconnect ?? (streamResumable ? "continue" : "cancel")
+onDisconnect: submitOptions?.onDisconnect ??
+  (streamResumable ? "continue" : "cancel");
 ```
 
 With `streamResumable: false`, if the browser disconnects during a fork operation, **the run is cancelled on the server**. This is semantically different from "non-resumable" — it actively destroys the run.
@@ -98,11 +99,11 @@ fetchStateHistory: { limit: 100 },
 
 **Performance note:** Each `ThreadState` contains ALL messages up to that point, so payload grows quadratically:
 
-| History Limit | 50-msg Payload | 100-msg Payload |
-|---|---|---|
-| 10 (original) | ~0.7 MB | ~1.4 MB |
-| 50 (recommended) | ~1.9 MB | ~5.6 MB |
-| 100 (implemented) | ~1.9 MB | ~7.6 MB |
+| History Limit     | 50-msg Payload | 100-msg Payload |
+| ----------------- | -------------- | --------------- |
+| 10 (original)     | ~0.7 MB        | ~1.4 MB         |
+| 50 (recommended)  | ~1.9 MB        | ~5.6 MB         |
+| 100 (implemented) | ~1.9 MB        | ~7.6 MB         |
 
 ### Fix 2: Minimal Message Construction
 
@@ -130,7 +131,7 @@ stream.submit(undefined, {
   },
   streamMode: ["messages", "updates"],
   streamSubgraphs: true,
-  streamResumable: true,  // NOT false
+  streamResumable: true, // NOT false
 });
 ```
 
@@ -167,33 +168,37 @@ const resolveMessageIndex = useCallback(
 
 ## Key SDK Internals Discovered
 
-| Finding | Detail |
-|---------|--------|
-| `fetchStateHistory` default | `limit: 10` when `true` is passed |
-| `ThreadState` payload | Contains ALL messages up to that point — O(n²) growth |
-| `streamResumable` mapping | `true` → `onDisconnect: "continue"`, `false` → `"cancel"` |
-| `getMessagesMetadata` | Uses `findLast` from newest→oldest to find earliest state containing a message |
+| Finding                       | Detail                                                                                                                       |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `fetchStateHistory` default   | `limit: 10` when `true` is passed                                                                                            |
+| `ThreadState` payload         | Contains ALL messages up to that point — O(n²) growth                                                                        |
+| `streamResumable` mapping     | `true` → `onDisconnect: "continue"`, `false` → `"cancel"`                                                                    |
+| `getMessagesMetadata`         | Uses `findLast` from newest→oldest to find earliest state containing a message                                               |
 | `LoadExternalComponent` Proxy | Forwards ALL property accesses to stream object; accessing `toolProgress` permanently tracks `"tools"` mode in `stream_mode` |
 
 ## Prevention Strategies
 
 ### SDK Configuration
+
 - **Always verify SDK defaults** — don't assume `true` means "everything works"
 - Set explicit `fetchStateHistory` limit based on expected conversation length
 - Always set `streamResumable: true` unless intentionally wanting run cancellation
 - Include `recursion_limit` in ALL submit configs consistently
 
 ### Message Construction
+
 - Use **minimal message objects** for fork operations: only `type` and `content`
 - Never spread original message properties into fork messages
 - Let the server assign IDs for forked messages
 
 ### Concurrency
+
 - Add ref-based guards on checkpoint-forking operations (not just React state guards)
 - React state guards (`isLoading`) have a render-frame gap
 - Reset guards in both success and error paths
 
 ### Code Review Checklist
+
 - [ ] All `submit()` callbacks have consistent `recursion_limit`
 - [ ] All fork operations specify `streamResumable: true`
 - [ ] `fetchStateHistory` is explicitly set (not relying on defaults)
@@ -214,14 +219,17 @@ const resolveMessageIndex = useCallback(
 ## Related References
 
 ### Internal
+
 - **Plan document:** `docs/plans/2026-03-01-fix-retry-edit-message-checkpoint-forking-plan.md`
 - **Implementation:** `src/app/hooks/useChat.ts`
 
 ### External
+
 - [LangChain Branching Docs](https://docs.langchain.com/oss/javascript/langchain/streaming/frontend) — canonical `useStream` branching example
 - [LangChain Time Travel Docs](https://docs.langchain.com/oss/javascript/langgraph/use-time-travel) — checkpoint forking concepts
 - [agent-chat-ui](https://github.com/langchain-ai/agent-chat-ui) — official reference implementation
 
 ### Known SDK Issues
+
 - [#4987](https://github.com/langchain-ai/langgraph/issues/4987) — Forked checkpoints may reuse IDs, breaking history traversal
 - [#4825](https://github.com/langchain-ai/langgraph/issues/4825) — Stale history during `joinStream` execution

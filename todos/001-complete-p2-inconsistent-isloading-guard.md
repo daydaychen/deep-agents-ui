@@ -18,25 +18,27 @@ Only `retryFromMessage` and `editMessage` have `if (stream.isLoading) return` gu
 - **Location:** `src/app/hooks/useChat.ts` — all `stream.submit()` call sites
 - **Evidence:** 7 callbacks call `stream.submit()`, only 2 have the guard
 
-| Callback | Has Guard |
-|----------|-----------|
-| `sendMessage` (line 101) | No |
-| `runSingleStep` (line 127) | No |
-| `continueStream` (line 180) | No |
-| `markCurrentThreadAsResolved` (line 202) | No |
-| `resumeInterrupt` (line 212) | No |
-| `retryFromMessage` (line 232) | Yes |
-| `editMessage` (line 265) | Yes |
+| Callback                                 | Has Guard |
+| ---------------------------------------- | --------- |
+| `sendMessage` (line 101)                 | No        |
+| `runSingleStep` (line 127)               | No        |
+| `continueStream` (line 180)              | No        |
+| `markCurrentThreadAsResolved` (line 202) | No        |
+| `resumeInterrupt` (line 212)             | No        |
+| `retryFromMessage` (line 232)            | Yes       |
+| `editMessage` (line 265)                 | Yes       |
 
 ## Proposed Solutions
 
 ### Option A: Add `isLoading` guard to all submit callbacks
+
 - **Pros:** Simple, consistent pattern
 - **Cons:** Some callbacks (e.g., `sendMessage`) may intentionally allow queuing
 - **Effort:** Small
 - **Risk:** Low — may need to exclude `sendMessage` if queuing is desired
 
 ### Option B: Use `multitaskStrategy: "interrupt"` on `useStream`
+
 - **Pros:** SDK handles concurrency automatically, no per-callback guards needed
 - **Cons:** Interrupts in-progress runs rather than blocking new ones
 - **Effort:** Small
@@ -50,6 +52,6 @@ Only `retryFromMessage` and `editMessage` have `if (stream.isLoading) return` gu
 
 ## Work Log
 
-| Date | Action |
-|------|--------|
+| Date       | Action                        |
+| ---------- | ----------------------------- |
 | 2026-03-01 | Identified during code review |
