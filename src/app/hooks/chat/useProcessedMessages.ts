@@ -32,6 +32,7 @@ export function useProcessedMessages(
   return useMemo(() => {
     // Single-pass processing: build processed messages array directly
     const toolCallLookup = new Map<string, ToolCall>();
+    const subAgentLookup = new Map<string, SubAgent>();
     let lastMessageInGroup: Message | null = null;
 
     const processedArray = mainMessages.reduce<ProcessedMessage[]>(
@@ -41,9 +42,18 @@ export function useProcessedMessages(
           const toolCallId = message.tool_call_id;
           if (toolCallId) {
             const tc = toolCallLookup.get(toolCallId);
+            const sa = subAgentLookup.get(toolCallId);
+
+            const result = extractStringFromMessageContent(message);
+
             if (tc) {
               tc.status = "completed" as const;
-              tc.result = extractStringFromMessageContent(message);
+              tc.result = result;
+            }
+
+            if (sa) {
+              sa.status = "completed";
+              sa.output = { result };
             }
           }
           return acc;
@@ -139,6 +149,12 @@ export function useProcessedMessages(
             toolCallsWithStatus,
             subagentMessagesMap
           );
+
+          subAgents.forEach((sa) => {
+            if (sa.id) {
+              subAgentLookup.set(sa.id, sa);
+            }
+          });
         }
 
         acc.push({
