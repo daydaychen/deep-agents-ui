@@ -73,6 +73,7 @@
     "thinkingOn": "Reasoning: ON",
     "thinkingOff": "Reasoning: OFF",
     "reasoningProcess": "Reasoning Process",
+    "agentThinking": "Agent is thinking...",
     "authMode": {
       "ask": "Ask Mode (Strict)",
       "read": "Read Mode (Safe)",

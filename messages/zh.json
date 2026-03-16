@@ -73,6 +73,7 @@
     "thinkingOn": "推理：开启",
     "thinkingOff": "推理：关闭",
     "reasoningProcess": "思考过程",
+    "agentThinking": "智能体正在思考...",
     "authMode": {
       "ask": "询问模式 (严格)",
       "read": "只读模式 (安全)",

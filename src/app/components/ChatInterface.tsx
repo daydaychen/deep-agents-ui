@@ -1,5 +1,6 @@
 "use client";
 
+import { AgentThinkingIndicator } from "@/app/components/AgentThinkingIndicator";
 import { ChatMessage } from "@/app/components/ChatMessage";
 import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import { ChatInput } from "@/app/components/chat/ChatInput";
@@ -289,6 +290,10 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
         {/* Input Container */}
         <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent px-3 pb-4 pt-8 sm:px-4">
+          {/* Agent Thinking Indicator - Centralized loading signal */}
+          <div className="mx-auto mb-2 flex max-w-[800px] justify-center">
+            <AgentThinkingIndicator isActive={isLoading} />
+          </div>
           <div className="focus-within:border-primary/30 mx-auto flex max-w-[800px] flex-col overflow-hidden rounded-[26px] border border-border bg-background shadow-2xl shadow-primary/5 transition-[border-color,box-shadow] duration-200 focus-within:shadow-primary/10">
             <TasksSection
               todos={todos}
