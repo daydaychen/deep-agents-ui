@@ -31,7 +31,7 @@ function FileListItem({
   t,
 }: {
   filePath: string;
-  rawContent: any;
+  rawContent: unknown;
   onClick: (content: string) => void;
   t: (key: string) => string;
 }) {

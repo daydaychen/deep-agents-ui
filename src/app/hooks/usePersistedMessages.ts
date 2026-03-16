@@ -21,7 +21,7 @@ interface PersistedSubagentMessage {
 
 export function usePersistedMessages(
   threadId: string | null,
-  subagents: Map<string, SubagentStreamInterface<any, any, any>>,
+  subagents: Map<string, SubagentStreamInterface<unknown, unknown, string>>,
   isLoading: boolean
 ) {
   const dbRef = useRef<IDBDatabase | null>(null);
@@ -54,7 +54,7 @@ export function usePersistedMessages(
         lastCached?.id !== lastIncoming?.id ||
         lastCached?.content !== lastIncoming?.content
       ) {
-        messagesCacheRef.current.set(toolCallId, [...incoming]);
+        messagesCacheRef.current.set(toolCallId, [...incoming] as Message[]);
         hasChanges = true;
       }
     });

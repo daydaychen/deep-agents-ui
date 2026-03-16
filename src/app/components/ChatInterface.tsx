@@ -8,7 +8,7 @@ import { SubAgentPanel } from "@/app/components/message/SubAgentPanel";
 import { MessageSkeleton } from "@/app/components/ui/message-skeleton";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { useThrottledValue } from "@/app/hooks/useThrottledValue";
-import type { ActionRequest, ReviewConfig } from "@/app/types/types";
+import type { ActionRequest, ReviewConfig, ToolApprovalInterruptData, UiComponent } from "@/app/types/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { useChatActions, useChatState } from "@/providers/chat-context";
@@ -92,16 +92,16 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
   // Parse out any action requests or review configs from the interrupt
   const actionRequestsMap: Map<string, ActionRequest> | null = useMemo(() => {
-    const actionRequests =
-      interrupt?.value && (interrupt.value as any)["action_requests"];
-    if (!actionRequests) return new Map<string, ActionRequest>();
+    const value = interrupt?.value as ToolApprovalInterruptData | undefined;
+    const actionRequests = value?.action_requests;
+    if (!actionRequests || !Array.isArray(actionRequests)) return new Map<string, ActionRequest>();
     return new Map(actionRequests.map((ar: ActionRequest) => [ar.name, ar]));
   }, [interrupt]);
 
   const reviewConfigsMap: Map<string, ReviewConfig> | null = useMemo(() => {
-    const reviewConfigs =
-      interrupt?.value && (interrupt.value as any)["review_configs"];
-    if (!reviewConfigs) return new Map<string, ReviewConfig>();
+    const value = interrupt?.value as ToolApprovalInterruptData | undefined;
+    const reviewConfigs = value?.review_configs;
+    if (!reviewConfigs || !Array.isArray(reviewConfigs)) return new Map<string, ReviewConfig>();
     return new Map(
       reviewConfigs.map((rc: ReviewConfig) => [rc.action_name, rc])
     );
@@ -109,13 +109,13 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
   // Memoize UI components by message ID for O(1) lookup instead of O(n) filter per message
   const uiByMessageId = useMemo(() => {
-    if (!ui) return new Map<string, any[]>();
+    if (!ui) return new Map<string, UiComponent[]>();
     
     // Type guard: check if ui is an array
-    if (!Array.isArray(ui)) return new Map<string, any[]>();
+    if (!Array.isArray(ui)) return new Map<string, UiComponent[]>();
     
-    const map = new Map<string, any[]>();
-    for (const u of ui) {
+    const map = new Map<string, UiComponent[]>();
+    for (const u of (ui as UiComponent[])) {
       const messageId = u.metadata?.message_id;
       if (messageId) {
         const existing = map.get(messageId) || [];

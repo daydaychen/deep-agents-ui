@@ -23,6 +23,7 @@ interface ProcessedMessage {
 export function useProcessedMessages(
   mainMessages: Message[],
   subagentMessagesMap?: Map<string, Message[]>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interrupt?: any
 ): ProcessedMessage[] {
   return useMemo(() => {

@@ -1,10 +1,13 @@
+import type { Message } from "@langchain/langgraph-sdk";
+import type { UIMessage } from "@langchain/langgraph-sdk/react-ui";
+
 export interface ToolCall {
   id: string;
   name: string;
   args: Record<string, unknown>;
   result?: string;
   status: "pending" | "completed" | "error" | "interrupted";
-  subAgentMessages?: any[]; // Messages from subagents (for task tool calls)
+  subAgentMessages?: Message[]; // Messages from subagents (for task tool calls)
 }
 
 export interface SubAgent {
@@ -15,7 +18,7 @@ export interface SubAgent {
   input: Record<string, unknown>;
   output?: Record<string, unknown>;
   status: "pending" | "active" | "completed" | "error" | "interrupted";
-  messages?: any[]; // Messages from the subagent execution
+  messages?: Message[]; // Messages from the subagent execution
 }
 
 export interface FileItem {
@@ -38,7 +41,8 @@ export interface Thread {
 }
 
 export interface InterruptData {
-  value: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value?: any;
   ns?: string[];
   scope?: string;
 }
@@ -65,4 +69,13 @@ export interface MemoryItem {
   value: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface UiComponent extends UIMessage {
+  id: string;
+  metadata?: {
+    message_id?: string;
+    tool_call_id?: string;
+    [key: string]: unknown;
+  };
 }

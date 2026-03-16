@@ -11,7 +11,7 @@ interface OrphanedApproval {
 
 interface OrphanedApprovalsProps {
   orphanedApprovals: OrphanedApproval[];
-  onResumeInterrupt: (value: any) => void;
+  onResumeInterrupt: (value: unknown) => void;
   isLoading?: boolean;
 }
 

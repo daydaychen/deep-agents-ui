@@ -7,12 +7,12 @@ import { MessageToolbar } from "@/app/components/MessageToolbar";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useOrphanedActionRequests } from "@/app/hooks/message/useOrphanedActionRequests";
 import type { StateType } from "@/app/hooks/useChat";
-import type { ActionRequest, ReviewConfig, SubAgent, ToolCall } from "@/app/types/types";
+import type { ActionRequest, ReviewConfig, SubAgent, ToolCall, UiComponent } from "@/app/types/types";
 import { extractStringFromMessageContent, formatDate } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
 import { useChatState } from "@/providers/chat-context";
 import { Message } from "@langchain/langgraph-sdk";
-import type { MessageMetadata } from "@langchain/langgraph-sdk/react";
+import type { MessageMetadata, BaseStream } from "@langchain/langgraph-sdk/react";
 import { Bot, Clock, GitFork, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { useMemo } from "react";
@@ -26,9 +26,9 @@ interface ChatMessageProps {
   isStreaming?: boolean;
   actionRequestsMap?: Map<string, ActionRequest>;
   reviewConfigsMap?: Map<string, ReviewConfig>;
-  ui?: any[];
-  stream?: any;
-  onResumeInterrupt?: (value: any) => void;
+  ui?: UiComponent[];
+  stream?: BaseStream<StateType>;
+  onResumeInterrupt?: (value: unknown) => void;
   onRetry?: (message: Message, index: number) => void;
   onEdit?: (editedMessage: Message, index: number) => void;
   getMessagesMetadata?: (
@@ -85,8 +85,8 @@ export const ChatMessage = React.memo<ChatMessageProps>(
 
     // Memoize UI lookup map for O(1) access instead of .find() per tool call
     const uiByToolCallId = useMemo(() => {
-      if (!ui) return new Map<string, any>();
-      const map = new Map<string, any>();
+      if (!ui) return new Map<string, UiComponent>();
+      const map = new Map<string, UiComponent>();
       for (const u of ui) {
         const toolCallId = u.metadata?.tool_call_id;
         if (toolCallId) {

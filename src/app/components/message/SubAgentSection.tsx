@@ -11,7 +11,7 @@ interface SubAgentSectionProps {
   setActiveSubAgentId?: (id: string | null) => void;
   actionRequestsMap?: Map<string, ActionRequest>;
   reviewConfigsMap?: Map<string, ReviewConfig>;
-  onResumeInterrupt?: (value: any) => void;
+  onResumeInterrupt?: (value: unknown) => void;
   isLoading?: boolean;
   messageId?: string; // Optional identifier to trigger resets
 }

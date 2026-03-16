@@ -41,7 +41,7 @@ interface UseStreamOptionsWithDeepAgentExtensions
 
 // Extended stream type that includes subagents property
 type ExtendedStream = BaseStream<StateType> & {
-  subagents: Map<string, SubagentStreamInterface<any, any, any>>;
+  subagents: Map<string, SubagentStreamInterface<StateType, unknown, string>>;
   activeSubagents: { id: string }[];
 };
 
@@ -175,8 +175,8 @@ export function useChat({
   }, [stream.isLoading]);
 
   // Helper to map overrides to configurable with prefixes
-  const getFinalConfigurable = useCallback((): Record<string, any> => {
-    const finalConfigurable: Record<string, any> = {
+  const getFinalConfigurable = useCallback((): Record<string, unknown> => {
+    const finalConfigurable: Record<string, unknown> = {
       ...(activeAssistant?.config?.configurable ?? {}),
       thinking: overrideConfig.thinking ?? false,
     };
@@ -432,7 +432,7 @@ export function useChat({
   }, [stream, metadata]);
 
   const resumeInterrupt = useCallback(
-    (value: any) => {
+    (value: unknown) => {
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       // Keep activeSubAgentId if any

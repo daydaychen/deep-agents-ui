@@ -35,8 +35,10 @@ export function useSubAgents(
         if (messages.length > 0) {
           // Check the first few messages for the actual agent name from metadata
           for (const msg of messages) {
-            if (msg.metadata?.lc_agent_name) {
-              agentName = msg.metadata.lc_agent_name;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const msgAny = msg as any;
+            if (msgAny.metadata?.lc_agent_name) {
+              agentName = msgAny.metadata.lc_agent_name;
               break;
             }
           }
@@ -49,7 +51,7 @@ export function useSubAgents(
           agentName: agentName,
           input: toolCall.args,
           output: toolCall.result ? { result: toolCall.result } : undefined,
-          status: toolCall.status,
+          status: toolCall.status as SubAgent["status"],
           messages: messages,
         } as SubAgent;
       });

@@ -569,7 +569,7 @@ export function ConfigDialog({
                                   selectedAssistant.name ||
                                     selectedAssistant.graph_id
                                 ),
-                                strong: (chunks: any) => (
+                                strong: (chunks: React.ReactNode) => (
                                   <strong className="font-semibold text-foreground">
                                     {chunks}
                                   </strong>
@@ -696,7 +696,7 @@ export function ConfigDialog({
                       </Label>
                       <Select
                         value={watch("authMode")}
-                        onValueChange={(val) => setValue("authMode", val as any)}
+                        onValueChange={(val) => setValue("authMode", val as "ask" | "read" | "auto")}
                       >
                         <SelectTrigger className="h-9">
                           <SelectValue placeholder="Select mode" />

@@ -60,7 +60,7 @@ export const MemoryItemDialog = React.memo<{
 
       const newValue: Record<string, unknown> = {
         content: contentArray,
-        created_at: (item?.value as any)?.created_at || now,
+        created_at: (item?.value as Record<string, unknown>)?.created_at || now,
         modified_at: now,
       };
 
@@ -78,14 +78,14 @@ export const MemoryItemDialog = React.memo<{
       const ns = item.namespace;
       if (ns.length >= 2) {
         setNamespaceId(ns[0]);
-        setNamespaceType((ns[1] as any) === "reports" ? "reports" : "memories");
+        setNamespaceType(ns[1] === "reports" ? "reports" : "memories");
       } else if (ns.length === 1) {
         setNamespaceId(ns[0]);
       }
 
       setItemKey(item.key);
 
-      const val = item.value as any;
+      const val = item.value as Record<string, unknown>;
       if (val && Array.isArray(val.content)) {
         setContent(val.content.join("\n"));
       } else if (val && typeof val === "object") {
@@ -134,10 +134,10 @@ export const MemoryItemDialog = React.memo<{
       const ns = item.namespace;
       if (ns.length >= 2) {
         setNamespaceId(ns[0]);
-        setNamespaceType((ns[1] as any) === "reports" ? "reports" : "memories");
+        setNamespaceType(ns[1] === "reports" ? "reports" : "memories");
       }
       setItemKey(item.key);
-      const val = item.value as any;
+      const val = item.value as Record<string, unknown>;
       if (val && Array.isArray(val.content)) {
         setContent(val.content.join("\n"));
       }

@@ -1,9 +1,10 @@
 import { getConfig } from "@/lib/config";
 import { THREAD_TITLE_MAX_LENGTH, DEFAULT_THREAD_LIMIT } from "@/lib/constants";
-import type { Thread } from "@langchain/langgraph-sdk";
+import type { Message, Thread } from "@langchain/langgraph-sdk";
 import { Client } from "@langchain/langgraph-sdk";
 import useSWRInfinite from "swr/infinite";
 import { deleteThreadData } from "@/app/utils/db";
+import type { StateType } from "@/providers/chat-context";
 
 export interface ThreadItem {
   id: string;
@@ -87,30 +88,32 @@ export function useThreads(props: {
 
         try {
           if (thread.values && typeof thread.values === "object") {
-            const values = thread.values as any;
+            const values = thread.values as unknown as StateType;
             // Count messages
             if (Array.isArray(values.messages)) {
               messageCount = values.messages.length;
             }
 
             const firstHumanMessage = values.messages.find(
-              (m: any) => m.type === "human"
+              (m: Message) => m.type === "human"
             );
             if (firstHumanMessage?.content) {
               const content =
                 typeof firstHumanMessage.content === "string"
                   ? firstHumanMessage.content
-                  : firstHumanMessage.content[0]?.text || "";
+                  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (firstHumanMessage.content[0] as any)?.text || "";
               title = content.slice(0, THREAD_TITLE_MAX_LENGTH) + (content.length > THREAD_TITLE_MAX_LENGTH ? "…" : "");
             }
             const firstAiMessage = values.messages.find(
-              (m: any) => m.type === "ai"
+              (m: Message) => m.type === "ai"
             );
             if (firstAiMessage?.content) {
               const content =
                 typeof firstAiMessage.content === "string"
                   ? firstAiMessage.content
-                  : firstAiMessage.content[0]?.text || "";
+                  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (firstAiMessage.content[0] as any)?.text || "";
               description = content.slice(0, DEFAULT_THREAD_LIMIT);
             }
           }

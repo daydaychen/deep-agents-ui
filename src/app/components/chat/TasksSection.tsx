@@ -13,6 +13,7 @@ interface TasksSectionProps {
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
   isLoading: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interrupt: any;
   metaOpen: "tasks" | "files" | null;
   setMetaOpen: React.Dispatch<React.SetStateAction<"tasks" | "files" | null>>;

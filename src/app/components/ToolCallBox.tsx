@@ -1,7 +1,7 @@
 "use client";
 
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
-import { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
+import { ActionRequest, ReviewConfig, ToolCall, UiComponent } from "@/app/types/types";
 import { cn } from "@/lib/utils";
 import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
 import {
@@ -17,12 +17,13 @@ import React, { useMemo, useState } from "react";
 
 interface ToolCallBoxProps {
   toolCall: ToolCall;
-  uiComponent?: any;
+  uiComponent?: UiComponent;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stream?: any;
   graphId?: string;
   actionRequest?: ActionRequest;
   reviewConfig?: ReviewConfig;
-  onResume?: (value: any) => void;
+  onResume?: (value: unknown) => void;
   isLoading?: boolean;
   messageId?: string;
 }
@@ -70,7 +71,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
 
     // Deep Arg Extraction
     const finalArgs = useMemo(() => {
-      const raw = (toolCall.args as any) ?? (toolCall as any).input ?? (toolCall as any).function?.arguments ?? (toolCall as any).arguments;
+      const toolCallAny = toolCall as unknown as Record<string, unknown>;
+      const raw = toolCall.args ?? toolCallAny.input ?? (toolCallAny.function as Record<string, unknown>)?.arguments ?? toolCallAny.arguments;
       if (!raw) return {};
       if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
       if (typeof raw === 'string' && (raw as string).trim() !== "") {
@@ -184,7 +186,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 <LoadExternalComponent
                   key={uiComponent.id}
                   stream={stream}
-                  message={uiComponent}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  message={uiComponent as any}
                   namespace={graphId}
                   meta={{ status, args: finalArgs, result: toolCall.result ?? t("noResult") }}
                 />

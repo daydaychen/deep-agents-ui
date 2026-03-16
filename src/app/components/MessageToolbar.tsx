@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { COPY_SUCCESS_DURATION_MS } from "@/lib/constants";
-import { AIMessage } from "@langchain/langgraph-sdk";
+import { AIMessage, Message } from "@langchain/langgraph-sdk";
 import { Check, Copy, Cpu, RotateCcw, Zap } from "lucide-react";
 import React, { useCallback, useState } from "react";
 
@@ -30,7 +30,7 @@ interface MessageToolbarProps {
   onCopy?: () => void;
 
   // Edit functionality
-  onEdit?: (message: any) => void;
+  onEdit?: (message: Message) => void;
   showEdit?: boolean;
 
   // Retry functionality
@@ -46,7 +46,7 @@ interface MessageToolbarProps {
   // UI customization
   className?: string;
   // For EditMessage component
-  message?: any;
+  message?: Message;
 }
 
 export const MessageToolbar = React.memo<MessageToolbarProps>(

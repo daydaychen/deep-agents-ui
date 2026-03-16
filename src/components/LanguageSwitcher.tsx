@@ -27,7 +27,7 @@ export function LanguageSwitcher() {
     if (newLocale === locale) return;
     
     // Use the localized router to replace the path
-    router.replace(pathname, { locale: newLocale as any });
+    router.replace(pathname, { locale: newLocale as "en" | "zh" });
     
     // Force a full page reload after a short delay to ensure UI updates
     // in complex App Router scenarios with persistent client-side state

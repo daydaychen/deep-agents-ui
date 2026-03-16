@@ -11,7 +11,7 @@ interface SubAgentDetailsProps {
   subAgent: SubAgent;
   taskActionRequest?: ActionRequest;
   taskReviewConfig?: ReviewConfig;
-  onResumeInterrupt?: (value: any) => void;
+  onResumeInterrupt?: (value: unknown) => void;
   isLoading?: boolean;
 }
 

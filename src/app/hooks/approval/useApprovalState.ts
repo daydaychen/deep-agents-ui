@@ -25,7 +25,7 @@ export interface ApprovalActions {
  */
 export function useApprovalState(
   actionRequest: ActionRequest,
-  onResume: (value: any) => void
+  onResume: (value: unknown) => void
 ): ApprovalState & ApprovalActions {
   const [rejectionMessage, setRejectionMessage] = useState("");
   const [isEditing, setIsEditing] = useState(false);

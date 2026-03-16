@@ -40,8 +40,10 @@ export function extractSubAgents(
       if (messages.length > 0) {
         // Check the first few messages for the actual agent name from metadata
         for (const msg of messages) {
-          if (msg.metadata?.lc_agent_name) {
-            agentName = msg.metadata.lc_agent_name;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const msgAny = msg as any;
+          if (msgAny.metadata?.lc_agent_name) {
+            agentName = msgAny.metadata.lc_agent_name;
             break;
           }
         }
@@ -159,11 +161,11 @@ export function formatMessageForLLM(message: Message): string {
   } else if (Array.isArray(message.content)) {
     const textParts: string[] = [];
 
-    message.content.forEach((part: any) => {
+    message.content.forEach((part: unknown) => {
       if (typeof part === "string") {
         textParts.push(part);
-      } else if (part && typeof part === "object" && part.type === "text") {
-        textParts.push(part.text || "");
+      } else if (part && typeof part === "object" && "type" in part && part.type === "text") {
+        textParts.push((part as { text?: string }).text || "");
       }
       // Ignore other types like tool_use in content - we handle tool calls separately
     });
@@ -173,11 +175,12 @@ export function formatMessageForLLM(message: Message): string {
 
   // For tool messages, include additional tool metadata
   if (message.type === "tool") {
-    const toolName = (message as any).name || "unknown_tool";
-    const toolCallId = (message as any).tool_call_id || "";
-    role = `Tool Result [${toolName}]`;
+    const messageAny = message as unknown as Record<string, unknown>;
+    const toolName = messageAny.name || "unknown_tool";
+    const toolCallId = messageAny.tool_call_id || "";
+    role = `Tool Result [${String(toolName)}]`;
     if (toolCallId) {
-      role += ` (call_id: ${toolCallId.slice(0, 8)})`;
+      role += ` (call_id: ${String(toolCallId).slice(0, 8)})`;
     }
   }
 
@@ -189,10 +192,11 @@ export function formatMessageForLLM(message: Message): string {
     Array.isArray(message.tool_calls) &&
     message.tool_calls.length > 0
   ) {
-    message.tool_calls.forEach((call: any) => {
-      const toolName = call.name || "unknown_tool";
-      const toolArgs = call.args ? JSON.stringify(call.args, null, 2) : "{}";
-      toolCallsText.push(`[Tool Call: ${toolName}]\nArguments: ${toolArgs}`);
+    message.tool_calls.forEach((call: unknown) => {
+      const callObj = call as Record<string, unknown>;
+      const toolName = callObj.name || "unknown_tool";
+      const toolArgs = callObj.args ? JSON.stringify(callObj.args, null, 2) : "{}";
+      toolCallsText.push(`[Tool Call: ${String(toolName)}]\nArguments: ${toolArgs}`);
     });
   }
 

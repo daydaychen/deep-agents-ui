@@ -10,7 +10,7 @@ import { AlertCircle } from "lucide-react";
 interface ToolApprovalInterruptProps {
   actionRequest: ActionRequest;
   reviewConfig?: ReviewConfig;
-  onResume: (value: any) => void;
+  onResume: (value: unknown) => void;
   isLoading?: boolean;
 }
 

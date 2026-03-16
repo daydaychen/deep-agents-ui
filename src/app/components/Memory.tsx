@@ -330,7 +330,7 @@ export const Memory = React.memo<{
             <DialogDescription className="pt-2 break-words">
               {t.rich("deleteConfirm", {
                 key: itemToDelete?.key ?? "",
-                code: (chunks: any) => (
+                code: (chunks: React.ReactNode) => (
                   <code className="break-all whitespace-pre-wrap">{chunks}</code>
                 ),
               })}
