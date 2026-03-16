@@ -68,9 +68,9 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <div
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-all",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-[0.5px] shadow-sm transition-all !dark:border-transparent",
                 status === "active"
-                  ? "bg-primary/5 border-primary/20 text-primary motion-safe:animate-pulse"
+                  ? "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_93%)] border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)] text-[var(--color-primary)] motion-safe:animate-pulse"
                   : "border-border bg-muted/50 text-muted-foreground"
               )}
             >
@@ -83,7 +83,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="mb-1.5 truncate text-sm font-bold uppercase leading-none tracking-[0.2em] text-foreground/80">
+              <h3 className="mb-1 text-sm font-bold uppercase leading-none tracking-[0.2em] text-foreground/80">
                 {name}
               </h3>
               <div className="flex items-center gap-2">
@@ -91,15 +91,15 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
                   className={cn(
                     "h-1.5 w-1.5 shrink-0 rounded-full",
                     status === "active"
-                      ? "animate-pulse bg-blue-500"
+                      ? "animate-pulse bg-[var(--color-primary)]"
                       : status === "completed"
-                      ? "bg-green-500"
+                      ? "bg-[var(--color-success)]"
                       : status === "error"
                       ? "bg-destructive"
                       : "bg-muted-foreground/30"
                   )}
                 />
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60 transition-colors">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 transition-colors">
                   {status === "active" ? "Processing…" : status}
                 </span>
               </div>

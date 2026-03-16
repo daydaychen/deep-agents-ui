@@ -32,11 +32,8 @@ const ErrorIcon = (
 );
 
 const PendingIcon = (
-  <div className="animate-spin">
-    <Loader2
-      size={13}
-      className="text-[var(--color-warning)]"
-    />
+  <div className="animate-spin text-[var(--color-primary)]">
+    <Loader2 size={13} />
   </div>
 );
 
@@ -188,38 +185,48 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       switch (status) {
         case "completed":
           return {
-            border: "border-[var(--color-success)]/20",
-            bg: "bg-[var(--color-success)]/[0.02]",
-            iconBg: "bg-[var(--color-success)]/10",
-            iconBorder: "border-[var(--color-success)]/20",
+            border: "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-success),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-success),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-success),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-success),transparent_95%)]",
           };
         case "error":
           return {
-            border: "border-destructive/20",
-            bg: "bg-destructive/[0.02]",
-            iconBg: "bg-destructive/10",
-            iconBorder: "border-destructive/20",
+            border: "border-[color:color-mix(in_srgb,var(--color-error),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-error),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-error),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-error),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-error),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-error),transparent_95%)]",
           };
         case "pending":
           return {
-            border: "border-[var(--color-warning)]/20",
-            bg: "bg-[var(--color-warning)]/[0.02]",
-            iconBg: "bg-[var(--color-warning)]/10",
-            iconBorder: "border-[var(--color-warning)]/20",
+            border: "border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-primary),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-primary),transparent_95%)]",
           };
         case "interrupted":
           return {
-            border: "border-[var(--color-warning)]/20",
-            bg: "bg-[var(--color-warning)]/[0.02]",
-            iconBg: "bg-[var(--color-warning)]/10",
-            iconBorder: "border-[var(--color-warning)]/20",
+            border: "border-[color:color-mix(in_srgb,var(--color-warning),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-warning),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-warning),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-warning),transparent_95%)]",
           };
         default:
           return {
-            border: "border-border",
-            bg: "bg-card",
-            iconBg: "bg-muted",
-            iconBorder: "border-border",
+            border: "border-border/30",
+            bg: "bg-muted/30",
+            hoverBg: "hover:bg-muted/50",
+            iconBg: "bg-muted/40",
+            iconBorder: "border-border/50",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
           };
       }
     }, [status]);
@@ -227,10 +234,12 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     return (
       <div
         className={cn(
-          "w-full min-w-0 overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
+          "w-full min-w-0 overflow-hidden rounded-xl border-[0.5px] shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
           statusStyles.border,
           statusStyles.bg,
-          isExpanded && hasContent && "shadow-md ring-1 ring-border/40"
+          statusStyles.hoverBg,
+          statusStyles.darkBorder, // 5% border in dark mode instead of total suppression
+          isExpanded && hasContent && "shadow-md ring-1 ring-border/20 dark:ring-white/[0.01]"
         )}
       >
         {/* Header */}
@@ -239,7 +248,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           disabled={!hasContent}
           aria-expanded={isExpanded}
           className={cn(
-            "grid w-full min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2.5 text-left transition-colors",
+            "grid w-full min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 text-left transition-colors",
             hasContent ? "cursor-pointer hover:bg-muted/30" : "cursor-default"
           )}
         >
@@ -259,8 +268,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           {/* Arguments Preview - CLI Style */}
           <div className="flex min-w-0 flex-1 items-center overflow-hidden px-2">
             <div className="inline-block max-w-full truncate font-mono text-[11px] leading-none text-muted-foreground/70">
-              <span className="text-foreground/80">{name}</span>
-              <span className="text-muted-foreground/50">(</span>
+              <span className="text-foreground font-bold">{name}</span>
+              <span className="text-muted-foreground/50 ml-1.5">(</span>
               <span className="text-muted-foreground/60">
                 {argsPreview || t("noArgs")}
               </span>

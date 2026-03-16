@@ -102,7 +102,7 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
     if (subAgents.length === 0) return null;
 
     return (
-      <div className="mt-6 flex w-full max-w-full flex-col gap-3">
+      <div className="mt-2 flex w-full max-w-full flex-col gap-2">
         {subAgents.map((subAgent) => {
           const isExpanded = expandedIds.has(subAgent.id);
           const isActiveInSidebar = activeSubAgentId === subAgent.id;

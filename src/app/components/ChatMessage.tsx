@@ -191,7 +191,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             <div
               className={cn(
                 "relative min-w-0 overflow-hidden",
-                "ml-0.5 w-full border-l-2 border-muted/30 pl-2 text-left"
+                "ml-0.5 w-full border-l-2 border-muted/30 pl-2 text-left !dark:border-white/5"
               )}
             >
               <MessageContent
@@ -213,7 +213,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               className={cn(
                 "flex w-full min-w-0 flex-col gap-2",
                 hasContent ? "mt-2" : "mt-0.5",
-                !isUser && "ml-0.5 border-l-2 border-muted/30 pl-2"
+                !isUser && "ml-0.5 border-l-2 border-muted/30 pl-2 !dark:border-white/5"
               )}
             >
               {!isUser && (
@@ -251,16 +251,23 @@ export const ChatMessage = React.memo<ChatMessageProps>(
 
           {/* 3. SubAgent Section */}
           {!isUser && (
-            <SubAgentSection
-              subAgents={subAgents}
-              activeSubAgentId={activeSubAgentId}
-              setActiveSubAgentId={setActiveSubAgentId}
-              actionRequestsMap={actionRequestsMap}
-              reviewConfigsMap={reviewConfigsMap}
-              onResumeInterrupt={onResumeInterrupt}
-              isLoading={isLoading}
-              messageId={message.id}
-            />
+            <div
+              className={cn(
+                "flex w-full min-w-0 flex-col",
+                "ml-0.5 border-l-2 border-muted/30 pl-2 !dark:border-white/5"
+              )}
+            >
+              <SubAgentSection
+                subAgents={subAgents}
+                activeSubAgentId={activeSubAgentId}
+                setActiveSubAgentId={setActiveSubAgentId}
+                actionRequestsMap={actionRequestsMap}
+                reviewConfigsMap={reviewConfigsMap}
+                onResumeInterrupt={onResumeInterrupt}
+                isLoading={isLoading}
+                messageId={message.id}
+              />
+            </div>
           )}
 
           {/* 4. Orphaned Approvals */}

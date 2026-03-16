@@ -24,19 +24,19 @@ interface SubAgentIndicatorProps {
 // Static icon components - hoisted outside to avoid recreation on every render
 const CompletedStatusIcon = (
   <CheckCircle2
-    size={16}
-    className="text-green-600"
+    size={13}
+    className="text-[var(--color-success)]"
   />
 );
 const ErrorStatusIcon = (
   <AlertCircle
-    size={16}
+    size={13}
     className="text-destructive"
   />
 );
 const DefaultStatusIcon = (
   <Bot
-    size={16}
+    size={13}
     className="text-muted-foreground"
   />
 );
@@ -45,8 +45,8 @@ const DefaultStatusIcon = (
 const PendingActiveStatusIcon = (
   <div className="animate-spin">
     <Loader2
-      size={16}
-      className="text-blue-600"
+      size={13}
+      className="text-[var(--color-primary)]"
     />
   </div>
 );
@@ -112,82 +112,133 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
       }
     }, [subAgent.input]);
 
+    const statusStyles = useMemo(() => {
+      switch (status) {
+        case "completed":
+          return {
+            border: "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-success),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-success),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-success),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-success),transparent_95%)]",
+          };
+        case "error":
+          return {
+            border: "border-[color:color-mix(in_srgb,var(--color-error),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-error),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-error),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-error),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-error),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-error),transparent_95%)]",
+          };
+        case "active":
+          return {
+            border: "border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-primary),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-primary),transparent_95%)]",
+          };
+        case "pending":
+          return {
+            border: "border-border/30",
+            bg: "bg-muted/30",
+            hoverBg: "hover:bg-muted/50",
+            iconBg: "bg-muted/40",
+            iconBorder: "border-border/50",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
+          };
+        case "interrupted":
+          return {
+            border: "border-[color:color-mix(in_srgb,var(--color-warning),transparent_70%)]",
+            bg: "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_93%)]",
+            hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-warning),transparent_88%)]",
+            iconBg: "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_85%)]",
+            iconBorder: "border-[color:color-mix(in_srgb,var(--color-warning),transparent_70%)]",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-warning),transparent_95%)]",
+          };
+        default:
+          return {
+            border: "border-border/30",
+            bg: "bg-muted/30",
+            hoverBg: "hover:bg-muted/50",
+            iconBg: "bg-muted/40",
+            iconBorder: "border-border/50",
+            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
+          };
+      }
+    }, [status]);
+
     return (
       <div
         className={cn(
-          "w-full overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
-          status === "completed"
-            ? "border-emerald-500/20 bg-emerald-500/[0.02]"
-            : status === "error"
-            ? "border-destructive/20 bg-destructive/[0.02]"
-            : status === "active"
-            ? "border-blue-500/20 bg-blue-500/[0.02] ring-1 ring-blue-500/10"
-            : status === "interrupted"
-            ? "border-orange-500/20 bg-orange-500/[0.02]"
-            : "border-border bg-card",
+          "w-full overflow-hidden rounded-xl border-[0.5px] shadow-sm transition-[background-color,border-color,box-shadow,opacity,transform] duration-300",
+          statusStyles.border,
+          statusStyles.bg,
+          statusStyles.hoverBg,
+          statusStyles.darkBorder, // 5% border in dark mode instead of total suppression
           isActiveInSidebar &&
-            "border-primary/30 bg-primary/[0.03] shadow-md shadow-primary/5 ring-2 ring-primary/20"
+            "border-primary/40 bg-primary/20 shadow-md shadow-primary/5 ring-1 ring-primary/20 dark:ring-primary/40"
         )}
       >
         <div className="flex items-center gap-1 pr-1.5">
-          {/* Main Click Area */}
+          {/* Main Click Area - Unified Layout */}
           <button
             type="button"
             onClick={onToggleExpand}
             className={cn(
-              "flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-200",
+              "grid w-full min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 text-left transition-colors duration-200",
               "hover:bg-muted/30 active:bg-muted/50"
             )}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-4">
+            {/* Tool Status & Name */}
+            <div className="flex min-w-0 shrink-0 items-center gap-2.5">
               <div
                 className={cn(
-                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border shadow-inner transition-transform duration-500",
-                  status === "completed"
-                    ? "border-emerald-500/20 bg-emerald-500/10"
-                    : status === "error"
-                    ? "border-destructive/20 bg-destructive/10"
-                    : status === "active"
-                    ? "scale-105 border-blue-500/20 bg-blue-500/10"
-                    : status === "interrupted"
-                    ? "border-orange-500/20 bg-orange-500/10"
-                    : "border-border bg-muted"
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border shadow-inner transition-transform duration-500",
+                  statusStyles.iconBorder,
+                  statusStyles.iconBg,
+                  "dark:border-white/5",
+                  status === "active" && "scale-105"
                 )}
               >
                 {getStatusIcon(status)}
               </div>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="mb-0.5 flex min-w-0 items-center gap-2">
-                  <span className="shrink-0 text-[13px] font-bold tracking-tight text-foreground/90">
-                    {name}
-                  </span>
-                  {argsPreview && (
-                    <div className="flex min-w-0 flex-1 items-center">
-                      <div className="truncate rounded border border-border/10 bg-muted/20 px-1.5 py-1 font-mono text-[9px] leading-none text-muted-foreground/50">
-                        {argsPreview}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {status === "active" && (
-                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
-                    Sub-Process Active
-                  </span>
+            </div>
+
+            {/* Arguments Preview - CLI Style parity */}
+            <div className="flex min-w-0 flex-1 items-center overflow-hidden px-2">
+              <div className="inline-block max-w-full truncate font-mono text-[11px] leading-none text-muted-foreground/70">
+                <span className="text-foreground font-bold">{name}</span>
+                {argsPreview && (
+                  <>
+                    <span className="text-muted-foreground/50 ml-1.5">(</span>
+                    <span className="text-muted-foreground/60">
+                      {argsPreview}
+                    </span>
+                    <span className="text-muted-foreground/50">)</span>
+                  </>
                 )}
               </div>
             </div>
-            <div
-              className={cn(
-                "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
-                isExpanded && "rotate-180"
-              )}
-            >
-              <ChevronDown size={12} />
+
+            {/* Expand Icon */}
+            <div className="shrink-0">
+              <div
+                className={cn(
+                  "flex h-5 w-5 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
+                  isExpanded && "rotate-180"
+                )}
+              >
+                <ChevronDown size={12} />
+              </div>
             </div>
           </button>
 
-          {/* Logs Button */}
-          <div className="flex shrink-0 items-center border-l border-border/20 py-1 pl-1">
+          {/* Logs Button - Subtle Polish */}
+          <div className="flex shrink-0 items-center border-l border-border/20 dark:border-white/5 py-1 pl-1">
             <Button
               variant="ghost"
               size="icon"
@@ -196,15 +247,15 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                 onShowLogs();
               }}
               className={cn(
-                "h-9 w-9 cursor-pointer rounded-xl transition-[background-color,border-color,color,opacity] duration-200",
+                "h-8 w-8 cursor-pointer rounded-xl transition-[background-color,border-color,color,opacity] duration-200",
                 isActiveInSidebar
-                  ? "text-primary-foreground hover:bg-primary/90 bg-primary shadow-lg shadow-primary/20 hover:shadow-xl"
-                  : "text-muted-foreground hover:bg-muted hover:text-primary"
+                  ? "text-primary-foreground hover:bg-primary/90 bg-primary shadow-lg shadow-primary/20"
+                  : "text-muted-foreground hover:bg-muted hover:text-primary dark:hover:bg-white/5"
               )}
               title="View Internal Core Trace"
             >
               <ScrollText
-                size={16}
+                size={14}
                 className={cn(isActiveInSidebar && "animate-pulse")}
               />
             </Button>
