@@ -61,9 +61,9 @@ export const ChatInput = React.memo<ChatInputProps>(
     }, [hasInput, onSubmit]);
 
     return (
-      <div className="px-2 pb-3">
-        <div className="relative flex flex-col gap-0.5 px-1">
-          <div className="relative flex flex-1 flex-col px-2 pt-0.5">
+      <div className="px-1.5 pb-1">
+        <div className="relative flex flex-col gap-0 px-0.5">
+          <div className="relative flex flex-1 flex-col px-1.5 pt-0">
             <label
               htmlFor="chat-input"
               className="sr-only"
@@ -88,7 +88,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                   : t("inputPlaceholderDefault")
               }
               className={cn(
-                "flex-1 resize-none border-0 bg-transparent py-2.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 transition-[opacity,color,background-color] placeholder:text-muted-foreground/40",
+                "flex-1 resize-none border-0 bg-transparent py-1.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 transition-[opacity,color,background-color] placeholder:text-muted-foreground/40",
                 "max-h-[300px] min-h-[40px] overflow-y-auto"
               )}
               style={{
@@ -98,24 +98,19 @@ export const ChatInput = React.memo<ChatInputProps>(
             />
           </div>
 
-          <div className="flex items-center justify-between px-2 pb-2">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between px-1.5 pb-1">
+            <div className="flex items-center gap-1">
               <DockToolbar />
-
-              <div className="h-3 w-[1px] bg-border/20" />
-
-              <div className="flex items-center gap-4 text-muted-foreground/20">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest">
-                  <div className="flex scale-90 items-center gap-0.5 rounded border border-border/30 bg-muted/20 px-1 py-0.5 font-mono text-2xs">
-                    <Command size={8} />
-                    <span>Enter</span>
-                  </div>
-                  <span>{t("sendShortcut")}</span>
-                </div>
-              </div>
             </div>
 
-            <div className="flex flex-shrink-0 items-center gap-2">
+            <div className="flex flex-shrink-0 items-center gap-2.5 pr-1">
+              <div className="flex items-center gap-1 text-muted-foreground/30 transition-opacity hover:opacity-100">
+                <div className="flex scale-[0.75] items-center gap-1 rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 font-mono text-3xs font-bold ring-1 ring-border/5">
+                  <Command size={10} strokeWidth={2.5} />
+                  <span className="leading-none">ENTER</span>
+                </div>
+              </div>
+
               {isLoading ? (
                 <Button
                   type="button"
@@ -123,7 +118,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                   variant="ghost"
                   onClick={onStop}
                   disabled={!isLoading}
-                  className="h-7 cursor-pointer gap-2 rounded-lg border-destructive/10 bg-destructive/5 text-2xs font-bold text-destructive transition-[background-color,color,opacity,transform] hover:bg-destructive/10"
+                  className="h-8 min-w-[70px] cursor-pointer gap-2 rounded-full border border-destructive/20 bg-destructive/5 text-[11px] font-bold text-destructive transition-all hover:bg-destructive/10 active:scale-95"
                 >
                   <Square
                     size={10}
@@ -134,18 +129,18 @@ export const ChatInput = React.memo<ChatInputProps>(
               ) : (
                 <Button
                   onClick={handleSubmitClick}
-                  size="icon-sm"
+                  size="icon"
                   disabled={submitDisabled || !hasInput}
                   className={cn(
-                    "cursor-pointer rounded-xl transition-[background-color,border-color,color,box-shadow,filter,opacity] duration-200 will-change-[box-shadow,filter]",
+                    "h-9 w-9 cursor-pointer rounded-full transition-all duration-300 active:scale-90",
                     hasInput
-                      ? "text-primary-foreground bg-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:brightness-110 active:brightness-90"
-                      : "bg-muted text-muted-foreground/20 opacity-30"
+                      ? "text-primary-foreground bg-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 hover:brightness-110"
+                      : "bg-muted text-muted-foreground/20 opacity-40"
                   )}
                 >
                   <ArrowUp
-                    size={16}
-                    strokeWidth={3}
+                    size={18}
+                    strokeWidth={2.5}
                   />
                   <span className="sr-only">{t("send")}</span>
                 </Button>
