@@ -3,7 +3,7 @@
 import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
 import { SubAgentDetails } from "@/app/components/message/SubAgentDetails";
 import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 
 interface SubAgentSectionProps {
   subAgents: SubAgent[];
@@ -48,8 +48,9 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
           const prevStatus = prevSa?.status;
           const currentStatus = sa.status;
 
-          // Transition to ACTIVE: Auto-expand
-          if (currentStatus === "active" && prevStatus !== "active") {
+          // Transition to ACTIVE or INTERRUPTED: Auto-expand
+          if ((currentStatus === "active" && prevStatus !== "active") ||
+              currentStatus === "interrupted") {
             if (!next.has(sa.id)) {
               next.add(sa.id);
               changed = true;
