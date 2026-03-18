@@ -66,6 +66,13 @@ export const ChatInput = React.memo<ChatInputProps>(
       }
     }, [hasInput, onSubmit]);
 
+    const handleDockAction = useCallback(() => {
+      // Use setTimeout to ensure focus happens after DropdownMenu finishes its closing focus management
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+    }, []);
+
     return (
       <div className="px-1.5 pb-1 w-full h-auto">
         <div className="relative flex flex-col gap-0 px-0.5 w-full h-auto">
@@ -107,7 +114,7 @@ export const ChatInput = React.memo<ChatInputProps>(
 
           <div className="flex items-center justify-between px-1.5 pb-1">
             <div className="flex items-center gap-1">
-              <DockToolbar />
+              <DockToolbar onAction={handleDockAction} />
             </div>
 
             <div className="flex flex-shrink-0 items-center gap-2.5 pr-1">
