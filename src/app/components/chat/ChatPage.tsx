@@ -130,7 +130,7 @@ function HomePageInner({
         currentDeploymentUrl={config.deploymentUrl}
       />
       <div className="flex h-screen flex-col">
-        <header className="sticky left-4 right-4 top-4 z-sticky mx-4 flex h-16 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 shadow-lg backdrop-blur-md sm:px-4 md:px-6">
+        <header className="sticky left-4 right-4 top-4 z-sticky mx-4 flex h-11 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 shadow-lg backdrop-blur-md sm:px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <h1 className="truncate text-base font-semibold sm:text-xl">
               {tCommon("appName")}
