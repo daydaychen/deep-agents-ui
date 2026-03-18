@@ -106,7 +106,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             size="sm"
             onClick={onReject}
             disabled={isLoading}
-            className="min-h-[44px] min-w-[44px] text-destructive hover:bg-destructive/10"
+            className="min-h-[18px] min-w-[44px] text-destructive hover:bg-destructive/10"
           >
             <X size={14} />
             {t("reject")}
@@ -118,7 +118,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             size="sm"
             onClick={onStartEdit}
             disabled={isLoading}
-            className="min-h-[44px] min-w-[44px]"
+            className="min-h-[18px] min-w-[44px]"
           >
             <Pencil size={14} />
             {t("edit")}
@@ -130,7 +130,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             onClick={onApprove}
             disabled={isLoading}
             className={cn(
-              "min-h-[44px] min-w-[44px] bg-green-600 text-white hover:bg-green-700",
+              "min-h-[18px] min-w-[44px] bg-green-600 text-white hover:bg-green-700",
               "dark:bg-green-600 dark:hover:bg-green-700"
             )}
           >
