@@ -224,7 +224,7 @@ function HomePageInner({
         {/* Thread overlay panel */}
         <div
           className={cn(
-            "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex overflow-hidden transition-all duration-300 ease-out",
+            "pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] flex overflow-hidden transition-all duration-300 ease-out",
             sidebar ? "z-sidebar" : "z-sticky"
           )}
         >
@@ -272,7 +272,7 @@ function HomePageInner({
         {/* Memory overlay panel */}
         <div
           className={cn(
-            "pointer-events-none fixed bottom-4 left-4 right-4 top-[5.5rem] flex overflow-hidden transition-all duration-300 ease-out",
+            "pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] flex overflow-hidden transition-all duration-300 ease-out",
             memorySidebar ? "z-sidebar" : "z-sticky"
           )}
         >
