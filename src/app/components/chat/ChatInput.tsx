@@ -86,6 +86,7 @@ export const ChatInput = React.memo<ChatInputProps>(
             <textarea
               id="chat-input"
               ref={textareaRef}
+              rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onInput={(e) => {
@@ -107,7 +108,7 @@ export const ChatInput = React.memo<ChatInputProps>(
               }
               className={cn(
                 "w-full resize-none border-0 bg-transparent py-1.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40",
-                "max-h-[300px] min-h-[40px]"
+                "max-h-[300px]"
               )}
             />
           </div>
