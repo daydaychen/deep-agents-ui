@@ -758,13 +758,18 @@ export function useChat({
       // Only auto-activate if it's a NEW subagent we haven't activated yet
       if (lastActive.id !== lastAutoActivatedIdRef.current) {
         lastAutoActivatedIdRef.current = lastActive.id;
-        setActiveSubAgentId(lastActive.id);
+        
+        // Don't auto-activate if there's an interrupt (HITL approval pending)
+        // The interrupt indicates the subagent is waiting for human input
+        if (!stream.interrupt) {
+          setActiveSubAgentId(lastActive.id);
+        }
       }
     } else if (!stream.isLoading && lastAutoActivatedIdRef.current) {
       // Clear the ref when streaming stops so we can re-activate if needed next time
       lastAutoActivatedIdRef.current = null;
     }
-  }, [stream, stream.isLoading]);
+  }, [stream, stream.isLoading, stream.interrupt]);
 
   // Stable return object to prevent downstream infinite loops in providers/consumers
   return useMemo(

@@ -94,11 +94,21 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
     // Reset expanded states when component unmounts or context changes 
     // (though local state handles most thread-switch cases automatically)
     const handleShowLogs = useCallback((id: string) => {
-      if (setActiveSubAgentId) {
-        // Toggle logic: if already active, close it
-        setActiveSubAgentId(activeSubAgentId === id ? null : id);
+      if (!setActiveSubAgentId) return;
+      
+      // Don't open SubAgentPanel if subagent is in interrupted state
+      const subAgent = subAgents.find(sa => sa.id === id);
+      if (subAgent?.status === "interrupted") {
+        // Close panel if this interrupted subagent is currently active
+        if (activeSubAgentId === id) {
+          setActiveSubAgentId(null);
+        }
+        return;
       }
-    }, [activeSubAgentId, setActiveSubAgentId]);
+      
+      // Toggle logic: if already active, close it
+      setActiveSubAgentId(activeSubAgentId === id ? null : id);
+    }, [activeSubAgentId, setActiveSubAgentId, subAgents]);
 
     if (subAgents.length === 0) return null;
 
