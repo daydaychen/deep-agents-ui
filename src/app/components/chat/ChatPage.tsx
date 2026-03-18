@@ -23,10 +23,7 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getConfig, saveConfig, StandaloneConfig } from "@/lib/config";
@@ -136,46 +133,36 @@ function HomePageInner({
               {tCommon("appName")}
             </h1>
             {!sidebar && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      setSidebar("1");
-                      setMemorySidebar(null);
-                    }}
-                    className="relative"
-                  >
-                    <MessagesSquare className="h-4 w-4" />
-                    {interruptCount > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-                        {interruptCount}
-                      </span>
-                    )}
-                    <span className="sr-only">{t("threads")}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("threads")}</TooltipContent>
-              </Tooltip>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setSidebar("1");
+                  setMemorySidebar(null);
+                }}
+                className="relative"
+              >
+                <MessagesSquare className="h-4 w-4" />
+                {interruptCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                    {interruptCount}
+                  </span>
+                )}
+                <span className="sr-only">{t("threads")}</span>
+              </Button>
             )}
             {!memorySidebar && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      setMemorySidebar("1");
-                      setSidebar(null);
-                    }}
-                  >
-                    <Database className="h-4 w-4" />
-                    <span className="sr-only">{t("memory")}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("memory")}</TooltipContent>
-              </Tooltip>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setMemorySidebar("1");
+                  setSidebar(null);
+                }}
+              >
+                <Database className="h-4 w-4" />
+                <span className="sr-only">{t("memory")}</span>
+              </Button>
             )}
           </div>
           <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
@@ -209,7 +196,7 @@ function HomePageInner({
             </Button>
             {/* New Thread button: icon-only on mobile, text on sm+ */}
             <Button
-              variant="default"
+              variant="outline"
               size="icon"
               className="sm:hidden"
               onClick={() => setThreadId(null)}
@@ -219,7 +206,7 @@ function HomePageInner({
               <SquarePen className="h-4 w-4" />
             </Button>
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
               className="hidden sm:inline-flex"
               onClick={() => setThreadId(null)}

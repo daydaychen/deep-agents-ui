@@ -1,11 +1,6 @@
 "use client";
 
 import { useConnectionStatus } from "@/app/hooks/useConnectionStatus";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { Activity } from "lucide-react";
@@ -48,26 +43,19 @@ export function ConnectionStatusIndicator() {
   const current = statusMap[status] || statusMap.disconnected;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex cursor-default items-center gap-2 px-2 py-1">
-          <div className="relative">
-            {current.icon}
-            <span
-              className={cn(
-                "absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background",
-                current.color
-              )}
-            />
-          </div>
-          <span className="hidden text-xs font-medium text-muted-foreground md:inline-block">
-            {current.text}
-          </span>
-        </div>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{current.text}</p>
-      </TooltipContent>
-    </Tooltip>
+    <div className="flex cursor-default items-center gap-2 px-2 py-1">
+      <div className="relative">
+        {current.icon}
+        <span
+          className={cn(
+            "absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background",
+            current.color
+          )}
+        />
+      </div>
+      <span className="hidden text-xs font-medium text-muted-foreground md:inline-block">
+        {current.text}
+      </span>
+    </div>
   );
 }
