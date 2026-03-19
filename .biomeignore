@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Coverage
+coverage
+.nyc_output
+
+# Lock files
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Minified files
+*.min.js
+*.min.css
+
+# Cache
+*.tsbuildinfo
+.eslintcache
+.prettiercache
+
+# Misc
+*.log
+.DS_Store

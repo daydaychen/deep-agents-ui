@@ -1,0 +1,33 @@
+{
+  "recommendations": [
+    // Core - Biome replaces ESLint + Prettier
+    "biomejs.biome",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+
+    // Next.js & React
+    "vercel.next-vscode",
+    "formulahendry.auto-rename-tag",
+
+    // Git
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // Editor Enhancement
+    "streetsidesoftware.code-spell-checker",
+    "EditorConfig.EditorConfig",
+    "yoavbls.pretty-ts-errors",
+
+    // Productivity
+    "usernamehw.errorlens",
+    "aaron-bond.better-comments",
+    "wayou.vscode-todo-highlight"
+  ],
+  "unwantedRecommendations": [
+    // Using Biome instead
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "hookyqr.beautify",
+    "dbaeumer.jshint"
+  ]
+}

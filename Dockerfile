@@ -1,16 +1,15 @@
 # 使用 Node 20 Alpine 作为基础镜像
 FROM node:20-alpine AS base
 
-# 安装必要的系统依赖（例如用于某些npm包）
+# 安装必要的系统依赖
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # 设置生产环境变量
 ENV NODE_ENV=production
 
-# 安装 pnpm（如果使用）或直接使用 npm/yarn
-# 这里使用 yarn（根据 package.json 中的 packageManager）
-# 如果需要，可以安装 yarn（但 node:20-alpine 自带 npm）
+# 安装 pnpm
+RUN npm install -g pnpm
 
 # 为开发阶段设置环境变量
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -24,9 +23,9 @@ FROM base AS deps
 WORKDIR /app
 
 # 复制包管理文件
-COPY package.json yarn.lock* ./
-# 使用 yarn 安装依赖（生产环境，不安装 devDependencies）
-RUN yarn install --frozen-lockfile --production=false
+COPY package.json pnpm-lock.yaml* ./
+# 使用 pnpm 安装依赖
+RUN pnpm install --frozen-lockfile
 
 # 第二阶段：构建
 FROM base AS builder
@@ -41,7 +40,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # 构建应用
-RUN yarn build
+RUN pnpm build
 
 # 第三阶段：运行
 FROM base AS runner

@@ -1,0 +1,26 @@
+# Check commit message format
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(head -n1 "$COMMIT_MSG_FILE")
+
+# Pattern: type(scope): description or type: description
+# Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+PATTERN="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|release)(\(.+\))?: .+"
+
+if ! echo "$COMMIT_MSG" | grep -qE "$PATTERN"; then
+  echo "❌ Invalid commit message format!"
+  echo ""
+  echo "Commit message must follow the pattern:"
+  echo "  type(scope): description"
+  echo ""
+  echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, release"
+  echo ""
+  echo "Examples:"
+  echo "  feat: add user authentication"
+  echo "  fix(auth): resolve login redirect issue"
+  echo "  docs: update README with setup instructions"
+  echo ""
+  echo "Your commit message: $COMMIT_MSG"
+  exit 1
+fi
+
+echo "✅ Commit message format is valid!"

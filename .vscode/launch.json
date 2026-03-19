@@ -8,13 +8,21 @@
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "node",
       "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
-      "args": ["dev", "-p", "3003"],
-      "runtimeArgs": ["--inspect"],
+      "args": [
+        "dev",
+        "-p",
+        "3003"
+      ],
+      "runtimeArgs": [
+        "--inspect"
+      ],
       "skipFiles": [
         "<node_internals>/**",
         "${workspaceFolder}/node_modules/**"
       ],
-      "outFiles": ["${workspaceFolder}/.next/**/*.js"]
+      "outFiles": [
+        "${workspaceFolder}/.next/**/*.js"
+      ]
       // server-side 仅调试 Node 进程，不自动附加浏览器
     },
     {
@@ -29,7 +37,7 @@
       "name": "Next.js: debug full stack",
       "type": "node-terminal",
       "request": "launch",
-      "command": "yarn dev --port 3003",
+      "command": "pnpm dev --port 3003",
       "serverReadyAction": {
         "action": "debugWithEdge",
         "killOnServerStop": true,

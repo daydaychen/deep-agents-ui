@@ -75,13 +75,16 @@ deep-agents-ui/
 
 ```bash
 # Development
-yarn dev               # Port 3003 with Turbopack
-yarn build             # Standalone output mode
-yarn start             # Production server
+pnpm dev               # Port 3003 with Turbopack
+pnpm build             # Standalone output mode
+pnpm start             # Production server
 
-# Code quality
-yarn lint              # ESLint with custom rules
-yarn format            # Prettier + Tailwind class sorting
+# Code quality (Biome)
+pnpm lint              # Biome lint check
+pnpm lint:fix          # Auto-fix lint issues
+pnpm format            # Biome format
+pnpm check             # Full check (lint + format + imports)
+pnpm check:fix         # Auto-fix all issues
 
 # Docker
 docker build -t deep-agents-ui .

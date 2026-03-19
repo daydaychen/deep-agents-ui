@@ -9,8 +9,8 @@
 ```bash
 $ git clone https://github.com/langchain-ai/deep-agents-ui.git
 $ cd deep-agents-ui
-$ yarn install
-$ yarn dev
+$ pnpm install
+$ pnpm dev
 ```
 
 **Connect to your LangGraph deployment**

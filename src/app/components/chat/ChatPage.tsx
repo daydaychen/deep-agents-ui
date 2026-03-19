@@ -1,47 +1,38 @@
 "use client";
 
+import { Assistant } from "@langchain/langgraph-sdk";
+import { Database, MessagesSquare, Settings, SquarePen, X } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
+import { useQueryState } from "nuqs";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import useSWR from "swr";
 import { ChatInterface } from "@/app/components/ChatInterface";
-
 import { ConnectionStatusIndicator } from "@/app/components/ConnectionStatusIndicator";
-
-const ConfigDialog = dynamic(
-  () => import("@/app/components/ConfigDialog").then((m) => m.ConfigDialog),
-  { ssr: false, loading: () => <div>Loading...</div> }
-);
-
-const Memory = dynamic(
-  () => import("@/app/components/Memory").then((m) => m.Memory),
-  { ssr: false }
-);
-
-const ThreadList = dynamic(
-  () => import("@/app/components/ThreadList").then((m) => m.ThreadList),
-  { ssr: false }
-);
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import {
-  TooltipProvider,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { getConfig, saveConfig, StandaloneConfig } from "@/lib/config";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { getConfig, StandaloneConfig, saveConfig } from "@/lib/config";
 import { DEFAULT_MESSAGE_LIMIT } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { ChatProvider } from "@/providers/ChatProvider";
 import { ClientProvider } from "@/providers/ClientProvider";
 import { useClient } from "@/providers/client-context";
-import { Assistant } from "@langchain/langgraph-sdk";
-import { Database, MessagesSquare, Settings, SquarePen, X } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useState, Suspense, useRef } from "react";
-import useSWR from "swr";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
+
+const ConfigDialog = dynamic(
+  () => import("@/app/components/ConfigDialog").then((m) => m.ConfigDialog),
+  { ssr: false, loading: () => <div>Loading...</div> },
+);
+
+const Memory = dynamic(() => import("@/app/components/Memory").then((m) => m.Memory), {
+  ssr: false,
+});
+
+const ThreadList = dynamic(() => import("@/app/components/ThreadList").then((m) => m.ThreadList), {
+  ssr: false,
+});
 
 interface HomePageInnerProps {
   config: StandaloneConfig;
@@ -51,13 +42,9 @@ interface HomePageInnerProps {
 }
 
 // Hoisted RegExp for UUID validation (avoids re-creation on each function call)
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const fetchAssistant = async (
-  [, id]: [string, string],
-  client: ReturnType<typeof useClient>
-) => {
+const fetchAssistant = async ([, id]: [string, string], client: ReturnType<typeof useClient>) => {
   if (!client) throw new Error("Client not available");
   const isUUID = UUID_REGEX.test(id);
 
@@ -69,14 +56,11 @@ const fetchAssistant = async (
         graphId: id,
         limit: DEFAULT_MESSAGE_LIMIT,
       });
-      const defaultAssistant = assistants.find(
-        (a) => a.metadata?.["created_by"] === "system"
-      );
+      const defaultAssistant = assistants.find((a) => a.metadata?.["created_by"] === "system");
       if (!defaultAssistant) throw new Error("No default assistant found");
       return defaultAssistant;
     }
-  } catch (error) {
-    console.error("Failed to fetch assistant, using fallback:", error);
+  } catch (_error) {
     return {
       assistant_id: id,
       graph_id: id,
@@ -114,7 +98,7 @@ function HomePageInner({
     {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
-    }
+    },
   );
 
   return (
@@ -129,9 +113,7 @@ function HomePageInner({
       <div className="flex h-screen flex-col">
         <header className="sticky left-4 right-4 top-4 z-sticky mx-4 flex h-11 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 shadow-lg backdrop-blur-md sm:px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-            <h1 className="truncate text-base font-semibold sm:text-xl">
-              {tCommon("appName")}
-            </h1>
+            <h1 className="truncate text-base font-semibold sm:text-xl">{tCommon("appName")}</h1>
             {!sidebar && (
               <Button
                 variant="outline"
@@ -225,10 +207,13 @@ function HomePageInner({
         <div
           className={cn(
             "pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] flex overflow-hidden transition-all duration-300 ease-out",
-            sidebar ? "z-sidebar" : "z-sticky"
+            sidebar ? "z-sidebar" : "z-sticky",
           )}
         >
-          <ResizablePanelGroup direction="horizontal" id="thread-panel-group">
+          <ResizablePanelGroup
+            direction="horizontal"
+            id="thread-panel-group"
+          >
             <ResizablePanel
               defaultSize={20}
               minSize={15}
@@ -237,7 +222,7 @@ function HomePageInner({
                 "transition-[transform,opacity] duration-300 ease-out",
                 sidebar
                   ? "pointer-events-auto translate-x-0 opacity-100"
-                  : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0"
+                  : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0",
               )}
             >
               <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
@@ -258,7 +243,7 @@ function HomePageInner({
                 "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
                 sidebar
                   ? "pointer-events-auto z-50 -ml-1 cursor-col-resize opacity-100"
-                  : "pointer-events-none opacity-0"
+                  : "pointer-events-none opacity-0",
               )}
             />
 
@@ -273,10 +258,13 @@ function HomePageInner({
         <div
           className={cn(
             "pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] flex overflow-hidden transition-all duration-300 ease-out",
-            memorySidebar ? "z-sidebar" : "z-sticky"
+            memorySidebar ? "z-sidebar" : "z-sticky",
           )}
         >
-          <ResizablePanelGroup direction="horizontal" id="memory-panel-group">
+          <ResizablePanelGroup
+            direction="horizontal"
+            id="memory-panel-group"
+          >
             <ResizablePanel
               defaultSize={20}
               minSize={15}
@@ -285,7 +273,7 @@ function HomePageInner({
                 "transition-[transform,opacity] duration-300 ease-out",
                 memorySidebar
                   ? "pointer-events-auto translate-x-0 opacity-100"
-                  : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0"
+                  : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0",
               )}
             >
               <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
@@ -321,7 +309,7 @@ function HomePageInner({
                 "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
                 memorySidebar
                   ? "pointer-events-auto z-50 -ml-1 cursor-col-resize opacity-100"
-                  : "pointer-events-none opacity-0"
+                  : "pointer-events-none opacity-0",
               )}
             />
 
@@ -336,9 +324,7 @@ function HomePageInner({
         <div className="mt-5 flex flex-1 flex-col overflow-hidden">
           <Suspense
             fallback={
-              <div className="flex flex-1 items-center justify-center">
-                Loading chat...
-              </div>
+              <div className="flex flex-1 items-center justify-center">Loading chat...</div>
             }
           >
             <ChatProvider
@@ -381,8 +367,7 @@ export default function ChatPage() {
       setConfigDialogOpen(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  }, [assistantId, setAssistantId]);
   const handleSaveConfig = useCallback(
     (newConfig: StandaloneConfig) => {
       saveConfig(newConfig);
@@ -392,7 +377,7 @@ export default function ChatPage() {
         setAssistantId(newConfig.assistantId);
       }
     },
-    [assistantId, setAssistantId]
+    [assistantId, setAssistantId],
   );
 
   if (!config) {
