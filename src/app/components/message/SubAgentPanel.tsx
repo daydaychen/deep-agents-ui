@@ -118,7 +118,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
 
         {/* Content Stream - Scrollable Area */}
         <div className="relative min-h-0 w-full flex-1 overflow-hidden">
-          <ScrollArea className="h-full w-full">
+          <ScrollArea className="h-full w-full rounded-[inherit]">
             <div className="flex w-full min-w-0 flex-col gap-8 overflow-hidden p-4 pb-20 md:p-6">
               {processedMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center px-4 py-20 text-center opacity-40">

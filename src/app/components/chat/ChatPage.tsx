@@ -240,7 +240,7 @@ function HomePageInner({
                   : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0"
               )}
             >
-              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-xl">
+              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
                 <ThreadList
                   onThreadSelect={async (id) => {
                     await setThreadId(id);
@@ -288,7 +288,7 @@ function HomePageInner({
                   : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0"
               )}
             >
-              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-xl">
+              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
                 <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
                   <div className="flex items-center gap-2">
                     <Database className="h-4 w-4 text-primary" />

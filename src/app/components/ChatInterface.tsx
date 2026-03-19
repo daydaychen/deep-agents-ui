@@ -192,7 +192,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                 : "pointer-events-none translate-x-[calc(100%+1rem)] opacity-0"
             )}
           >
-            <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-2xl">
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
               <SubAgentPanel
                 subAgentId={activeSubAgentId || lastActiveSubAgentId}
                 subAgents={allSubAgents}
