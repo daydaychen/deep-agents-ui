@@ -5,7 +5,7 @@ import { Database, MessagesSquare, Settings, SquarePen, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import useSWR from "swr";
 import { ChatInterface } from "@/app/components/ChatInterface";
 import { ConnectionStatusIndicator } from "@/app/components/ConnectionStatusIndicator";
@@ -23,7 +23,10 @@ import { useClient } from "@/providers/client-context";
 
 const ConfigDialog = dynamic(
   () => import("@/app/components/ConfigDialog").then((m) => m.ConfigDialog),
-  { ssr: false, loading: () => <div>Loading...</div> },
+  {
+    ssr: false,
+    loading: () => null,
+  },
 );
 
 const Memory = dynamic(() => import("@/app/components/Memory").then((m) => m.Memory), {
@@ -39,6 +42,7 @@ interface HomePageInnerProps {
   configDialogOpen: boolean;
   setConfigDialogOpen: (open: boolean) => void;
   handleSaveConfig: (config: StandaloneConfig) => void;
+  isConfigChecked: boolean;
 }
 
 // Hoisted RegExp for UUID validation (avoids re-creation on each function call)
@@ -80,6 +84,7 @@ function HomePageInner({
   configDialogOpen,
   setConfigDialogOpen,
   handleSaveConfig,
+  isConfigChecked,
 }: HomePageInnerProps) {
   const client = useClient();
   const t = useTranslations("header");
@@ -103,13 +108,15 @@ function HomePageInner({
 
   return (
     <TooltipProvider>
-      <ConfigDialog
-        open={configDialogOpen}
-        onOpenChange={setConfigDialogOpen}
-        onSave={handleSaveConfig}
-        initialConfig={config}
-        currentDeploymentUrl={config.deploymentUrl}
-      />
+      {isConfigChecked && configDialogOpen && (
+        <ConfigDialog
+          open={configDialogOpen}
+          onOpenChange={setConfigDialogOpen}
+          onSave={handleSaveConfig}
+          initialConfig={config}
+          currentDeploymentUrl={config.deploymentUrl}
+        />
+      )}
       <div className="flex h-screen flex-col">
         <header className="sticky left-4 right-4 top-4 z-sticky mx-4 flex h-11 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 shadow-lg backdrop-blur-md sm:px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
@@ -347,15 +354,12 @@ export default function ChatPage() {
   const t = useTranslations("page.welcome");
   const [config, setConfig] = useState<StandaloneConfig | null>(null);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [isConfigChecked, setIsConfigChecked] = useState(false);
   const [assistantId, setAssistantId] = useQueryState("assistantId");
-  // Use ref to track initialization instead of module-level variable
-  // This avoids HMR issues and ensures proper cleanup on component unmount
-  const didInitConfigRef = useRef(false);
 
   // On mount, check for saved config, otherwise show config dialog
   useEffect(() => {
-    if (didInitConfigRef.current) return;
-    didInitConfigRef.current = true;
+    if (isConfigChecked) return;
 
     const savedConfig = getConfig();
     if (savedConfig) {
@@ -366,8 +370,9 @@ export default function ChatPage() {
     } else {
       setConfigDialogOpen(true);
     }
+    setIsConfigChecked(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assistantId, setAssistantId]);
+  }, [assistantId, setAssistantId, isConfigChecked]);
   const handleSaveConfig = useCallback(
     (newConfig: StandaloneConfig) => {
       saveConfig(newConfig);
@@ -381,13 +386,21 @@ export default function ChatPage() {
   );
 
   if (!config) {
+    // 配置检查中，保持空白
+    if (!isConfigChecked) {
+      return null;
+    }
+
+    // 确认无配置，显示欢迎页
     return (
       <>
-        <ConfigDialog
-          open={configDialogOpen}
-          onOpenChange={setConfigDialogOpen}
-          onSave={handleSaveConfig}
-        />
+        {configDialogOpen && (
+          <ConfigDialog
+            open={configDialogOpen}
+            onOpenChange={setConfigDialogOpen}
+            onSave={handleSaveConfig}
+          />
+        )}
         <div className="flex h-screen items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold">{t("title")}</h1>
@@ -411,6 +424,7 @@ export default function ChatPage() {
         configDialogOpen={configDialogOpen}
         setConfigDialogOpen={setConfigDialogOpen}
         handleSaveConfig={handleSaveConfig}
+        isConfigChecked={isConfigChecked}
       />
     </ClientProvider>
   );
