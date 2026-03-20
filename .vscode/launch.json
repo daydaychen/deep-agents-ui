@@ -8,21 +8,10 @@
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "node",
       "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
-      "args": [
-        "dev",
-        "-p",
-        "3003"
-      ],
-      "runtimeArgs": [
-        "--inspect"
-      ],
-      "skipFiles": [
-        "<node_internals>/**",
-        "${workspaceFolder}/node_modules/**"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/.next/**/*.js"
-      ]
+      "args": ["dev", "-p", "3003"],
+      "runtimeArgs": ["--inspect"],
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"],
+      "outFiles": ["${workspaceFolder}/.next/**/*.js"]
       // server-side 仅调试 Node 进程，不自动附加浏览器
     },
     {

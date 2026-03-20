@@ -8,9 +8,10 @@
     }
   },
   "files": {
-    "includes": ["src/**/*", "**/*.{ts,tsx,js,jsx,json,md}"]
+    "includes": ["src/**/*"]
   },
   "formatter": {
+    "includes": ["src/**/*"],
     "enabled": true,
     "formatWithErrors": false,
     "indentStyle": "space",
