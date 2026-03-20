@@ -315,7 +315,10 @@
       "currentConfig": "当前配置",
       "diffView": "变更对比",
       "noConfig": "暂无配置数据",
-      "nodeCount": "{count} 个节点"
+      "nodeCount": "{count} 个节点",
+      "pipeline": "流水线",
+      "fields": "字段",
+      "showAll": "显示全部"
     },
     "data": {
       "noData": "暂无数据",

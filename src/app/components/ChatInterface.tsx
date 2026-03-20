@@ -352,8 +352,16 @@ ChatInterfaceInner.displayName = "ChatInterfaceInner";
 
 // Outer component that provides Inspector context
 export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
+  const { sendMessage: chatSendMessage } = useChatActions();
+  const handleInspectorSendMessage = useCallback(
+    (message: string) => {
+      chatSendMessage(message);
+    },
+    [chatSendMessage],
+  );
+
   return (
-    <InspectorProvider>
+    <InspectorProvider onSendMessage={handleInspectorSendMessage}>
       <ChatInterfaceInner assistant={assistant} />
     </InspectorProvider>
   );

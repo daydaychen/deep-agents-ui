@@ -6,9 +6,10 @@ import { initialInspectorState, inspectorReducer } from "./inspector-reducer";
 
 interface InspectorProviderProps {
   children: React.ReactNode;
+  onSendMessage?: (message: string) => void;
 }
 
-export function InspectorProvider({ children }: InspectorProviderProps) {
+export function InspectorProvider({ children, onSendMessage }: InspectorProviderProps) {
   const [state, dispatch] = useReducer(inspectorReducer, initialInspectorState);
 
   // Keyboard shortcuts
@@ -48,7 +49,11 @@ export function InspectorProvider({ children }: InspectorProviderProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [state.isOpen]);
 
-  const value = useMemo(() => ({ state, dispatch }), [state, dispatch]);
+  const value = useMemo(
+    () => ({ state, dispatch, onSendMessage }),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: dispatch is stable from useReducer but included for clarity
+    [state, dispatch, onSendMessage],
+  );
 
   return <InspectorContext.Provider value={value}>{children}</InspectorContext.Provider>;
 }

@@ -81,6 +81,7 @@ export type InspectorAction =
 export interface InspectorContextValue {
   state: InspectorState;
   dispatch: React.Dispatch<InspectorAction>;
+  onSendMessage?: (message: string) => void;
 }
 
 export const InspectorContext = createContext<InspectorContextValue | null>(null);

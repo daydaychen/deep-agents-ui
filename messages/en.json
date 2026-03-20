@@ -315,7 +315,10 @@
       "currentConfig": "Current Config",
       "diffView": "Diff View",
       "noConfig": "No config data yet",
-      "nodeCount": "{count} nodes"
+      "nodeCount": "{count} nodes",
+      "pipeline": "Pipeline",
+      "fields": "fields",
+      "showAll": "Show all"
     },
     "data": {
       "noData": "No data yet",

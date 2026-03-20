@@ -8,6 +8,7 @@ import { ConfigTab } from "./tabs/ConfigTab";
 import { DataTab } from "./tabs/DataTab";
 import { LogTab } from "./tabs/LogTab";
 import { ScreenshotTab } from "./tabs/ScreenshotTab";
+import { QuickActions } from "./widgets/QuickActions";
 
 export const InspectorPanel = React.memo(() => {
   const { state } = useInspector();
@@ -24,6 +25,7 @@ export const InspectorPanel = React.memo(() => {
           {activeTab === "screenshot" && <ScreenshotTab />}
         </ScrollArea>
       </div>
+      <QuickActions />
     </div>
   );
 });

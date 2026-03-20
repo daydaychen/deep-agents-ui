@@ -11,24 +11,33 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useInspector } from "../inspector-context";
+import { PipelineGraph } from "../widgets/PipelineGraph";
 
 export const ConfigTab = React.memo(() => {
   const { state } = useInspector();
   const t = useTranslations("inspector");
   const { resolvedTheme } = useTheme();
   const [showDiff, setShowDiff] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   const isDark = resolvedTheme === "dark";
   const syntaxStyle = isDark ? atomOneDark : atomOneLight;
 
   const configJson = useMemo(() => {
-    if (!state.configData.current) return "";
+    const data = selectedNode
+      ? ((state.configData.current as Record<string, unknown>)?.[selectedNode] ??
+        (
+          (state.configData.current as Record<string, unknown>)?.stages as Record<string, unknown>
+        )?.[selectedNode] ??
+        state.configData.current)
+      : state.configData.current;
+    if (!data) return "";
     try {
-      return JSON.stringify(state.configData.current, null, 2);
+      return JSON.stringify(data, null, 2);
     } catch {
-      return String(state.configData.current);
+      return String(data);
     }
-  }, [state.configData.current]);
+  }, [state.configData.current, selectedNode]);
 
   const previousJson = useMemo(() => {
     if (!state.configData.previous) return "";
@@ -120,13 +129,36 @@ export const ConfigTab = React.memo(() => {
         </div>
       </div>
 
+      {/* Pipeline Graph */}
+      <PipelineGraph
+        onNodeClick={(name) => {
+          setSelectedNode((prev) => (prev === name ? null : name));
+        }}
+      />
+
+      {/* Selected node indicator */}
+      {selectedNode && (
+        <div className="flex items-center gap-2">
+          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            {selectedNode}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedNode(null)}
+            className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground"
+          >
+            {t("config.showAll")}
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       {showDiff && diffResult ? (
         <div className="overflow-auto rounded-lg border border-border/40 bg-muted/10 p-0">
           <pre className="m-0 p-4 font-mono text-[11px] leading-relaxed">
             {diffResult.map((part: Change, i: number) => (
               <span
-                key={i}
+                key={`${part.added ? "a" : part.removed ? "r" : "u"}-${i}`}
                 className={cn(
                   part.added &&
                     "bg-[color:color-mix(in_srgb,var(--color-success),transparent_80%)] text-[var(--color-success)]",
