@@ -114,7 +114,6 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     reviewConfig,
     onResume,
     isLoading,
-    messageId,
   }) => {
     const t = useTranslations("toolCall");
     const tInspector = useTranslations("inspector");
@@ -127,7 +126,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     // Reset expansion state when messageId changes (e.g. thread switch)
     React.useEffect(() => {
       setIsExpanded(hasUiComponent || hasActionRequest);
-    }, [messageId, hasUiComponent, hasActionRequest]);
+    }, [hasUiComponent, hasActionRequest]);
 
     // Auto-expand/collapse based on status
     React.useEffect(() => {
@@ -335,67 +334,86 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           isExpanded && hasContent && "shadow-md ring-1 ring-border/20 dark:ring-white/[0.01]",
         )}
       >
-        {/* Header */}
-        <button
-          type="button"
-          onClick={() => hasContent && setIsExpanded(!isExpanded)}
-          disabled={!hasContent}
-          aria-expanded={isExpanded}
-          className={cn(
-            "grid w-full min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 text-left transition-colors",
-            hasContent ? "cursor-pointer hover:bg-muted/30" : "cursor-default",
-          )}
-        >
-          {/* Tool Status & Name */}
-          <div className="flex min-w-0 shrink-0 items-center gap-2.5">
-            <div
-              className={cn(
-                "flex h-6 w-6 items-center justify-center rounded-md border shadow-inner",
-                statusStyles.iconBorder,
-                statusStyles.iconBg,
-              )}
-            >
-              {statusIcon}
+        {/* Header Container */}
+        <div className="relative">
+          {/* Main Toggle Button - Covers the entire header area */}
+          <button
+            type="button"
+            onClick={() => hasContent && setIsExpanded(!isExpanded)}
+            disabled={!hasContent}
+            aria-expanded={hasContent ? isExpanded : undefined}
+            className={cn(
+              "grid w-full min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 text-left transition-colors",
+              hasContent ? "cursor-pointer hover:bg-muted/30" : "cursor-default",
+            )}
+          >
+            {/* Tool Status & Name */}
+            <div className="flex min-w-0 shrink-0 items-center gap-2.5">
+              <div
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-md border shadow-inner",
+                  statusStyles.iconBorder,
+                  statusStyles.iconBg,
+                )}
+              >
+                {statusIcon}
+              </div>
             </div>
-          </div>
 
-          {/* Tool Name + Category Badge + Summary */}
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden px-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate font-mono text-[11px] font-bold leading-none text-foreground">
-                {name}
-              </span>
-              {/* Category badge */}
-              {category !== "unknown" && (
-                <span
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wider",
-                    categoryConfig.colorClass,
-                  )}
-                >
-                  {categoryConfig.icon}
-                  {tInspector(`toolCategory.${category}`)}
+            {/* Tool Name + Category Badge + Summary */}
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden px-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="truncate font-mono text-[11px] font-bold leading-none text-foreground">
+                  {name}
+                </span>
+                {/* Category badge */}
+                {category !== "unknown" && (
+                  <span
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wider",
+                      categoryConfig.colorClass,
+                    )}
+                  >
+                    {categoryConfig.icon}
+                    {tInspector(`toolCategory.${category}`)}
+                  </span>
+                )}
+              </div>
+              {/* Result summary when collapsed */}
+              {!isExpanded && summary && (
+                <span className="truncate text-[10px] leading-none text-muted-foreground/60">
+                  {summary}
+                </span>
+              )}
+              {/* Args preview when no summary */}
+              {!isExpanded && !summary && argsPreview && (
+                <span className="truncate font-mono text-[10px] leading-none text-muted-foreground/50">
+                  ({argsPreview})
                 </span>
               )}
             </div>
-            {/* Result summary when collapsed */}
-            {!isExpanded && summary && (
-              <span className="truncate text-[10px] leading-none text-muted-foreground/60">
-                {summary}
-              </span>
-            )}
-            {/* Args preview when no summary */}
-            {!isExpanded && !summary && argsPreview && (
-              <span className="truncate font-mono text-[10px] leading-none text-muted-foreground/50">
-                ({argsPreview})
-              </span>
-            )}
-          </div>
 
-          {/* Actions */}
-          <div className="flex shrink-0 items-center gap-1">
-            {/* View in Inspector button */}
-            {canInspect && (
+            {/* Actions Spacer/Chevron */}
+            <div className="flex shrink-0 items-center gap-1">
+              {/* Reservation for Inspector button space */}
+              {canInspect && <div className="w-[26px]" />}
+
+              {hasContent && (
+                <div
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
+                    isExpanded && "rotate-180",
+                  )}
+                >
+                  <ChevronDown size={12} />
+                </div>
+              )}
+            </div>
+          </button>
+
+          {/* View in Inspector button - Positioned over the spacer in the button */}
+          {canInspect && (
+            <div className="absolute right-10 top-1/2 z-10 -translate-y-1/2">
               <button
                 type="button"
                 onClick={handleViewInInspector}
@@ -404,19 +422,9 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
               >
                 <PanelRightOpen size={10} />
               </button>
-            )}
-            {hasContent && (
-              <div
-                className={cn(
-                  "flex h-5 w-5 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
-                  isExpanded && "rotate-180",
-                )}
-              >
-                <ChevronDown size={12} />
-              </div>
-            )}
-          </div>
-        </button>
+            </div>
+          )}
+        </div>
 
         {isExpanded && hasContent && (
           <div className="px-4 pb-4 duration-200 animate-in fade-in slide-in-from-top-1">
