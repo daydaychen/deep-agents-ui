@@ -7,6 +7,7 @@ import { detectAntiCrawl } from "@/app/utils/tool-result-parser";
 import { cn } from "@/lib/utils";
 import { type LogEntry, useInspector } from "../inspector-context";
 import { AntiCrawlAlert } from "../widgets/AntiCrawlAlert";
+import { EmptyState } from "../widgets/EmptyState";
 
 type LogFilter = "all" | "error" | "warn";
 
@@ -48,15 +49,10 @@ export const LogTab = React.memo(() => {
 
   if (!hasLogs && !hasValidation) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
-        <ScrollText
-          size={32}
-          className="mb-4 text-muted-foreground/20"
-        />
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/40">
-          {t("log.noLogs")}
-        </p>
-      </div>
+      <EmptyState
+        icon={ScrollText}
+        message={t("log.noLogs")}
+      />
     );
   }
 
@@ -119,7 +115,7 @@ export const LogTab = React.memo(() => {
         <>
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
-              {t("log.noLogs").replace("暂无日志", "日志")}
+              {t("log.title")}
             </h3>
             <div className="flex items-center gap-1">
               <Filter className="mr-1 h-3 w-3 text-muted-foreground/40" />

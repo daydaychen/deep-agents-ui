@@ -309,7 +309,10 @@
       "viewInInspector": "View in Inspector",
       "runTest": "Run Test",
       "validate": "Validate",
-      "startTask": "Start Task"
+      "startTask": "Start Task",
+      "validateCommand": "Please validate the current task configuration",
+      "runTestCommand": "Please test the current task",
+      "startTaskCommand": "Please start the current task"
     },
     "config": {
       "currentConfig": "Current Config",
@@ -333,6 +336,7 @@
       "rows": "rows"
     },
     "log": {
+      "title": "Logs",
       "noLogs": "No logs yet",
       "streaming": "Streaming...",
       "filterAll": "All",

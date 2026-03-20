@@ -2,9 +2,11 @@
 
 import { ChevronLeft, ChevronRight, Download, Image, X, ZoomIn } from "lucide-react";
 import { useTranslations } from "next-intl";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { downloadUrl } from "@/app/utils/download";
 import { Button } from "@/components/ui/button";
 import { useInspector } from "../inspector-context";
+import { EmptyState } from "../widgets/EmptyState";
 
 export const ScreenshotTab = React.memo(() => {
   const { state } = useInspector();
@@ -24,38 +26,37 @@ export const ScreenshotTab = React.memo(() => {
     return () => window.removeEventListener("keydown", handler);
   }, [zoomed]);
 
+  // Compute image src once for current screenshot, with safe scheme validation
+  const imgSrc = useMemo(() => {
+    if (state.screenshots.length === 0) return "";
+    const current = state.screenshots[currentIndex];
+    const data = current.data;
+    // Only allow data:image/* and https:// schemes
+    if (data.startsWith("data:image/")) return data;
+    if (data.startsWith("https://")) return data;
+    // Assume raw base64 content
+    if (/^[A-Za-z0-9+/=\s]+$/.test(data.substring(0, 100))) {
+      return `data:image/png;base64,${data}`;
+    }
+    return "";
+  }, [state.screenshots, currentIndex]);
+
   const handleDownload = useCallback(() => {
     if (state.screenshots.length === 0) return;
     const current = state.screenshots[currentIndex];
-    const imgSrc =
-      current.data.startsWith("data:") || current.data.startsWith("http")
-        ? current.data
-        : `data:image/png;base64,${current.data}`;
-    const a = document.createElement("a");
-    a.href = imgSrc;
-    a.download = current.label || `screenshot-${currentIndex + 1}.png`;
-    a.click();
-  }, [state.screenshots, currentIndex]);
+    downloadUrl(imgSrc, current.label || `screenshot-${currentIndex + 1}.png`);
+  }, [state.screenshots, currentIndex, imgSrc]);
 
   if (state.screenshots.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
-        <Image
-          size={32}
-          className="mb-4 text-muted-foreground/20"
-        />
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/40">
-          {t("screenshot.noScreenshots")}
-        </p>
-      </div>
+      <EmptyState
+        icon={Image}
+        message={t("screenshot.noScreenshots")}
+      />
     );
   }
 
   const current = state.screenshots[currentIndex];
-  const imgSrc =
-    current.data.startsWith("data:") || current.data.startsWith("http")
-      ? current.data
-      : `data:image/png;base64,${current.data}`;
 
   return (
     <>

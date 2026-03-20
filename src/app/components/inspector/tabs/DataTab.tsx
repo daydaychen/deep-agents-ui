@@ -4,9 +4,11 @@ import { Copy, Database, Download, Maximize2, Minimize2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { downloadFile } from "@/app/utils/download";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useInspector } from "../inspector-context";
+import { EmptyState } from "../widgets/EmptyState";
 
 export const DataTab = React.memo(() => {
   const { state } = useInspector();
@@ -26,22 +28,19 @@ export const DataTab = React.memo(() => {
 
   const handleExportJSON = useCallback(() => {
     const json = JSON.stringify(state.testResults, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "data.json";
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadFile(json, "data.json", "application/json");
   }, [state.testResults]);
 
   const handleExportCSV = useCallback(() => {
     if (columns.length === 0) return;
     const csvEscape = (v: string) => {
-      if (v.includes(",") || v.includes('"') || v.includes("\n")) {
-        return `"${v.replace(/"/g, '""')}"`;
+      let safe = v;
+      // Prefix formula-trigger characters to prevent CSV injection
+      if (/^[=+\-@\t\r]/.test(safe)) safe = `'${safe}`;
+      if (safe.includes(",") || safe.includes('"') || safe.includes("\n")) {
+        return `"${safe.replace(/"/g, '""')}"`;
       }
-      return v;
+      return safe;
     };
     const header = columns.map(csvEscape).join(",");
     const rows = state.testResults.map((row) =>
@@ -53,26 +52,15 @@ export const DataTab = React.memo(() => {
         .join(","),
     );
     const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "data.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadFile(csv, "data.csv", "text/csv");
   }, [state.testResults, columns]);
 
   if (state.testResults.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
-        <Database
-          size={32}
-          className="mb-4 text-muted-foreground/20"
-        />
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/40">
-          {t("data.noData")}
-        </p>
-      </div>
+      <EmptyState
+        icon={Database}
+        message={t("data.noData")}
+      />
     );
   }
 

@@ -17,11 +17,6 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { useCallback, useMemo, useState } from "react";
-import type {
-  LogEntry,
-  Screenshot,
-  ValidationResult,
-} from "@/app/components/inspector/inspector-context";
 import { useInspectorOptional } from "@/app/components/inspector/inspector-context";
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
 import { ActionRequest, ReviewConfig, ToolCall, UiComponent } from "@/app/types/types";
@@ -147,61 +142,61 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       }
     }, [toolCall.status, hasUiComponent, hasActionRequest]);
 
+    // Parse tool result once and memoize
+    const parsedResult = useMemo(() => {
+      if (toolCall.status !== "completed" || !toolCall.result) return null;
+      return parseToolResult(toolCall.name, toolCall.result, toolCall.id);
+    }, [toolCall.status, toolCall.result, toolCall.name, toolCall.id]);
+
+    const canInspect = !!inspector && !!parsedResult;
+
     // Auto-push to Inspector when tool completes
     const hasPushedRef = React.useRef<string | null>(null);
     React.useEffect(() => {
-      if (!inspector || toolCall.status !== "completed" || !toolCall.result) return;
+      if (!inspector || !parsedResult) return;
       // Avoid duplicate pushes for same tool call
       const pushKey = `${toolCall.id}-${toolCall.status}`;
       if (hasPushedRef.current === pushKey) return;
 
-      const parsed = parseToolResult(toolCall.name, toolCall.result, toolCall.id);
-      if (!parsed) return;
-
       hasPushedRef.current = pushKey;
 
-      switch (parsed.type) {
-        case "config":
-          inspector.dispatch({
-            type: "PUSH_CONFIG",
-            payload: {
-              config: parsed.data as Record<string, unknown>,
-              taskName: parsed.metadata?.taskName || toolCall.name,
-              toolCallId: toolCall.id,
-            },
-          });
-          break;
-        case "validation":
-          inspector.dispatch({
-            type: "PUSH_VALIDATION",
-            payload: parsed.data as ValidationResult,
-          });
-          break;
-        case "test_log":
-          inspector.dispatch({
-            type: "PUSH_LOG",
-            payload: parsed.data as LogEntry[],
-          });
-          break;
-        case "screenshot":
-          inspector.dispatch({
-            type: "PUSH_SCREENSHOT",
-            payload: parsed.data as Screenshot,
-          });
-          break;
+      if (parsedResult.type === "config") {
+        inspector.dispatch({
+          type: "PUSH_CONFIG",
+          payload: {
+            config: parsedResult.data,
+            taskName: parsedResult.metadata?.taskName || toolCall.name,
+            toolCallId: toolCall.id,
+          },
+        });
+      } else if (parsedResult.type === "validation") {
+        inspector.dispatch({
+          type: "PUSH_VALIDATION",
+          payload: parsedResult.data,
+        });
+      } else if (parsedResult.type === "test_log") {
+        inspector.dispatch({
+          type: "PUSH_LOG",
+          payload: parsedResult.data,
+        });
+      } else if (parsedResult.type === "screenshot") {
+        inspector.dispatch({
+          type: "PUSH_SCREENSHOT",
+          payload: parsedResult.data,
+        });
       }
-    }, [inspector, toolCall.id, toolCall.status, toolCall.result, toolCall.name]);
+    }, [inspector, toolCall.id, toolCall.status, toolCall.name, parsedResult]);
 
     const [expandedArgs, setExpandedArgs] = useState<Record<string, boolean>>({});
 
     // Deep Arg Extraction
     const finalArgs = useMemo(() => {
-      const toolCallAny = toolCall as unknown as Record<string, unknown>;
       const raw =
         toolCall.args ??
-        toolCallAny.input ??
-        (toolCallAny.function as Record<string, unknown>)?.arguments ??
-        toolCallAny.arguments;
+        (toolCall as ToolCall & Record<string, unknown>).input ??
+        ((toolCall as ToolCall & Record<string, unknown>).function as Record<string, unknown>)
+          ?.arguments ??
+        (toolCall as ToolCall & Record<string, unknown>).arguments;
       if (!raw) return {};
       if (typeof raw === "object" && !Array.isArray(raw)) return raw;
       if (typeof raw !== "string" || (raw as string).trim() === "") return {};
@@ -243,23 +238,15 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       [toolCall.name, toolCall.result, toolCall.status],
     );
 
-    // Can this tool push to inspector?
-    const canInspect = useMemo(() => {
-      if (!inspector || !toolCall.result || toolCall.status !== "completed") return false;
-      return parseToolResult(toolCall.name, toolCall.result, toolCall.id) !== null;
-    }, [inspector, toolCall.name, toolCall.result, toolCall.status, toolCall.id]);
-
     const handleViewInInspector = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!inspector || !toolCall.result) return;
-        const parsed = parseToolResult(toolCall.name, toolCall.result, toolCall.id);
-        if (!parsed) return;
+        if (!inspector || !parsedResult) return;
 
         // Open inspector to the appropriate tab
-        inspector.dispatch({ type: "OPEN_PANEL", payload: parsed.inspectorTab });
+        inspector.dispatch({ type: "OPEN_PANEL", payload: parsedResult.inspectorTab });
       },
-      [inspector, toolCall.name, toolCall.result, toolCall.id],
+      [inspector, parsedResult],
     );
 
     const name = toolCall.name || "Unknown Tool";

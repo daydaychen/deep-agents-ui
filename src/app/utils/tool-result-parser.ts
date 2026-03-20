@@ -1,5 +1,4 @@
 import type {
-  InspectorTab,
   LogEntry,
   Screenshot,
   ValidationResult,
@@ -7,17 +6,49 @@ import type {
 
 // --- Types ---
 
-export interface ParsedToolResult {
-  type: "config" | "test_log" | "validation" | "data" | "screenshot" | "raw";
-  inspectorTab: InspectorTab;
-  summary: string;
-  data: unknown;
-  metadata?: {
-    taskName?: string;
-    stageName?: string;
-    toolCallId?: string;
-  };
+export interface ParsedMetadata {
+  taskName?: string;
+  stageName?: string;
+  toolCallId?: string;
 }
+
+export type ParsedToolResult =
+  | {
+      type: "config";
+      inspectorTab: "config";
+      summary: string;
+      data: Record<string, unknown>;
+      metadata?: ParsedMetadata;
+    }
+  | {
+      type: "test_log";
+      inspectorTab: "log";
+      summary: string;
+      data: LogEntry[];
+      metadata?: ParsedMetadata;
+    }
+  | {
+      type: "validation";
+      inspectorTab: "log";
+      summary: string;
+      data: ValidationResult;
+      metadata?: ParsedMetadata;
+    }
+  | {
+      type: "screenshot";
+      inspectorTab: "screenshot";
+      summary: string;
+      data: Screenshot;
+      metadata?: ParsedMetadata;
+    }
+  | {
+      type: "data";
+      inspectorTab: "data";
+      summary: string;
+      data: unknown;
+      metadata?: ParsedMetadata;
+    }
+  | { type: "raw"; inspectorTab: "log"; summary: string; data: string; metadata?: ParsedMetadata };
 
 export type ToolCategory = "task" | "test" | "hook" | "template" | "browser" | "unknown";
 
@@ -184,7 +215,7 @@ export function parseToolResult(
       type: "config",
       inspectorTab: "config",
       summary: summarizeStagesGet(parsed ?? {}),
-      data: parsed,
+      data: parsed ?? {},
       metadata: { toolCallId },
     };
   }
@@ -198,7 +229,7 @@ export function parseToolResult(
       type: "config",
       inspectorTab: "config",
       summary: getToolSummary(toolName, result) ?? "",
-      data: parsed,
+      data: parsed ?? {},
       metadata: { toolCallId },
     };
   }

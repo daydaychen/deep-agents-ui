@@ -235,7 +235,9 @@ const ChatInterfaceInner = React.memo<ChatInterfaceProps>(({ assistant }) => {
             )}
           >
             <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
-              <InspectorPanel />
+              <ErrorBoundary>
+                <InspectorPanel />
+              </ErrorBoundary>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

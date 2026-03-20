@@ -309,7 +309,10 @@
       "viewInInspector": "在检查器中查看",
       "runTest": "运行测试",
       "validate": "验证配置",
-      "startTask": "启动任务"
+      "startTask": "启动任务",
+      "validateCommand": "请验证当前任务配置",
+      "runTestCommand": "请测试当前任务",
+      "startTaskCommand": "请启动当前任务"
     },
     "config": {
       "currentConfig": "当前配置",
@@ -333,6 +336,7 @@
       "rows": "行"
     },
     "log": {
+      "title": "日志",
       "noLogs": "暂无日志",
       "streaming": "实时接收中...",
       "filterAll": "全部",

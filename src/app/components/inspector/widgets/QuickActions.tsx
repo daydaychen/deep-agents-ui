@@ -4,6 +4,7 @@ import { Download, Play, PlayCircle, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { useCallback } from "react";
 import { toast } from "sonner";
+import { downloadFile } from "@/app/utils/download";
 import { Button } from "@/components/ui/button";
 import { useInspector } from "../inspector-context";
 
@@ -17,33 +18,27 @@ export const QuickActions = React.memo(() => {
   const handleExport = useCallback(() => {
     if (!state.configData.current) return;
     const json = JSON.stringify(state.configData.current, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${state.configData.taskName || "config"}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadFile(json, `${state.configData.taskName || "config"}.json`, "application/json");
     toast.success(t("actions.exportJSON"));
   }, [state.configData.current, state.configData.taskName, t]);
 
   const handleValidate = useCallback(() => {
     if (onSendMessage) {
-      onSendMessage("请验证当前任务配置");
+      onSendMessage(t("actions.validateCommand"));
     }
-  }, [onSendMessage]);
+  }, [onSendMessage, t]);
 
   const handleRunTest = useCallback(() => {
     if (onSendMessage) {
-      onSendMessage("请测试当前任务");
+      onSendMessage(t("actions.runTestCommand"));
     }
-  }, [onSendMessage]);
+  }, [onSendMessage, t]);
 
   const handleStartTask = useCallback(() => {
     if (onSendMessage) {
-      onSendMessage("请启动当前任务");
+      onSendMessage(t("actions.startTaskCommand"));
     }
-  }, [onSendMessage]);
+  }, [onSendMessage, t]);
 
   if (!hasConfig && !onSendMessage) return null;
 

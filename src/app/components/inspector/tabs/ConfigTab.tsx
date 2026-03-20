@@ -5,14 +5,19 @@ import { Copy, Download, GitCompareArrows, Settings2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import React, { useCallback, useMemo, useState } from "react";
-import SyntaxHighlighter from "react-syntax-highlighter";
+import json from "react-syntax-highlighter/dist/esm/languages/hljs/json";
+import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/light";
 import { atomOneDark, atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { toast } from "sonner";
+import { downloadFile } from "@/app/utils/download";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useInspector } from "../inspector-context";
 import { ConfigTimeline } from "../widgets/ConfigTimeline";
+import { EmptyState } from "../widgets/EmptyState";
 import { PipelineGraph } from "../widgets/PipelineGraph";
+
+SyntaxHighlighter.registerLanguage("json", json);
 
 export const ConfigTab = React.memo(() => {
   const { state } = useInspector();
@@ -107,17 +112,16 @@ export const ConfigTab = React.memo(() => {
     [compareIndex],
   );
 
+  const handleNodeClick = useCallback((name: string) => {
+    setSelectedNode((prev) => (prev === name ? null : name));
+  }, []);
+
   if (!state.configData.current) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
-        <Settings2
-          size={32}
-          className="mb-4 text-muted-foreground/20"
-        />
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/40">
-          {t("config.noConfig")}
-        </p>
-      </div>
+      <EmptyState
+        icon={Settings2}
+        message={t("config.noConfig")}
+      />
     );
   }
 
@@ -127,13 +131,7 @@ export const ConfigTab = React.memo(() => {
   };
 
   const handleExport = () => {
-    const blob = new Blob([configJson], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${state.configData.taskName || "config"}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadFile(configJson, `${state.configData.taskName || "config"}.json`, "application/json");
   };
 
   const showDiffView = (showDiff || isComparing) && diffResult;
@@ -193,11 +191,7 @@ export const ConfigTab = React.memo(() => {
       />
 
       {/* Pipeline Graph */}
-      <PipelineGraph
-        onNodeClick={(name) => {
-          setSelectedNode((prev) => (prev === name ? null : name));
-        }}
-      />
+      <PipelineGraph onNodeClick={handleNodeClick} />
 
       {/* Selected node indicator */}
       {selectedNode && (
