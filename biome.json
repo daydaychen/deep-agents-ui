@@ -53,7 +53,7 @@
       },
       "suspicious": {
         "noArrayIndexKey": "warn",
-        "noConsole": "warn",
+        "noConsole": "off",
         "noExplicitAny": "warn"
       },
       "a11y": {
