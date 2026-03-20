@@ -361,6 +361,10 @@
       "changeUA": "Change User-Agent",
       "reduceThrottle": "Reduce Concurrency"
     },
+    "sidePanel": {
+      "agentTrace": "Agent Trace",
+      "inspector": "Inspector"
+    },
     "toolCategory": {
       "task": "Task Config",
       "test": "Test",

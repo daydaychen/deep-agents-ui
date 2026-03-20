@@ -245,6 +245,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
 
         // Open inspector to the appropriate tab
         inspector.dispatch({ type: "OPEN_PANEL", payload: parsedResult.inspectorTab });
+        inspector.onRequestShow?.();
       },
       [inspector, parsedResult],
     );

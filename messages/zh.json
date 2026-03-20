@@ -361,6 +361,10 @@
       "changeUA": "修改 User-Agent",
       "reduceThrottle": "降低并发"
     },
+    "sidePanel": {
+      "agentTrace": "Agent 追踪",
+      "inspector": "检查器"
+    },
     "toolCategory": {
       "task": "任务配置",
       "test": "测试",

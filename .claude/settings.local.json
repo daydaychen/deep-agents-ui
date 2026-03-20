@@ -3,11 +3,13 @@
     "allow": [
       "WebSearch",
       "Bash(tree:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm build:*)",
+      "Bash(npx next:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "docs-langchain"
-  ]
+  "enabledMcpjsonServers": ["docs-langchain"]
 }

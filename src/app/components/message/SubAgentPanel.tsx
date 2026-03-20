@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useMemo } from "react";
 import { Message } from "@langchain/langgraph-sdk";
-import { MessageContent } from "./MessageContent";
+import { Loader2, Terminal } from "lucide-react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
+import { SubAgent } from "@/app/types/types";
 import { extractStringFromMessageContent } from "@/app/utils/utils";
-import { X, Loader2, Terminal } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { SubAgent } from "@/app/types/types";
+import { MessageContent } from "./MessageContent";
 
 interface SubAgentPanelProps {
   subAgentId: string | null;
@@ -22,12 +21,12 @@ interface SubAgentPanelProps {
 const EMPTY_MESSAGES: Message[] = [];
 
 export const SubAgentPanel = React.memo<SubAgentPanelProps>(
-  ({ subAgentId, subAgents, subagentMessagesMap, onClose }) => {
+  ({ subAgentId, subAgents, subagentMessagesMap }) => {
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const subAgent = useMemo(
       () => subAgents.find((s) => s.id === subAgentId),
-      [subAgents, subAgentId]
+      [subAgents, subAgentId],
     );
 
     // Robust message lookup with memoization to stabilize reference
@@ -58,8 +57,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
     if (!subAgentId) return null;
 
     return (
-      <div
-        role="complementary"
+      <aside
         aria-label={`${name} details`}
         className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-background"
       >
@@ -71,7 +69,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-[0.5px] shadow-sm transition-all !dark:border-transparent",
                 status === "active"
                   ? "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_93%)] border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)] text-[var(--color-primary)] motion-safe:animate-pulse"
-                  : "border-border bg-muted/50 text-muted-foreground"
+                  : "border-border bg-muted/50 text-muted-foreground",
               )}
             >
               {status === "active" ? (
@@ -93,10 +91,10 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
                     status === "active"
                       ? "animate-pulse bg-[var(--color-primary)]"
                       : status === "completed"
-                      ? "bg-[var(--color-success)]"
-                      : status === "error"
-                      ? "bg-destructive"
-                      : "bg-muted-foreground/30"
+                        ? "bg-[var(--color-success)]"
+                        : status === "error"
+                          ? "bg-destructive"
+                          : "bg-muted-foreground/30",
                   )}
                 />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 transition-colors">
@@ -105,15 +103,6 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
               </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="ml-2 h-8 w-8 shrink-0 rounded-full hover:bg-muted"
-            aria-label="Close panel"
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
         </div>
 
         {/* Content Stream - Scrollable Area */}
@@ -133,11 +122,8 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
               ) : (
                 processedMessages.map((data, idx) => {
                   const isUser = data.message.type === "human";
-                  const messageContent = extractStringFromMessageContent(
-                    data.message
-                  );
-                  const hasContent =
-                    messageContent && messageContent.trim() !== "";
+                  const messageContent = extractStringFromMessageContent(data.message);
+                  const hasContent = messageContent && messageContent.trim() !== "";
                   const hasToolCalls = data.toolCalls.length > 0;
 
                   return (
@@ -150,7 +136,7 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
                         <div
                           className={cn(
                             "h-1.5 w-1.5 rounded-full",
-                            isUser ? "bg-primary/40" : "bg-blue-500/40"
+                            isUser ? "bg-primary/40" : "bg-blue-500/40",
                           )}
                         />
                         <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">
@@ -204,9 +190,9 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-muted-foreground/40 to-transparent" />
           </div>
         </div>
-      </div>
+      </aside>
     );
-  }
+  },
 );
 
 SubAgentPanel.displayName = "SubAgentPanel";

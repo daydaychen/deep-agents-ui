@@ -82,6 +82,9 @@ export interface InspectorContextValue {
   state: InspectorState;
   dispatch: React.Dispatch<InspectorAction>;
   onSendMessage?: (message: string) => void;
+  onRequestShow?: () => void;
+  onToggleInspector?: () => void;
+  onClosePanel?: () => void;
 }
 
 export const InspectorContext = createContext<InspectorContextValue | null>(null);

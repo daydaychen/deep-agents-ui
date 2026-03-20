@@ -1,9 +1,8 @@
 "use client";
 
-import { Database, Image, ScrollText, Settings2, X } from "lucide-react";
+import { Database, Image, ScrollText, Settings2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { type InspectorTab, useInspector } from "./inspector-context";
 
@@ -19,7 +18,7 @@ export const InspectorHeader = React.memo(() => {
   const t = useTranslations("inspector");
 
   return (
-    <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-3 py-2">
+    <div className="flex shrink-0 items-center border-b border-border/50 px-3 py-2">
       <div className="flex items-center gap-1">
         {TABS.map((tab) => (
           <button
@@ -38,15 +37,6 @@ export const InspectorHeader = React.memo(() => {
           </button>
         ))}
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => dispatch({ type: "CLOSE_PANEL" })}
-        className="h-7 w-7 shrink-0 rounded-full hover:bg-muted"
-        aria-label="Close inspector"
-      >
-        <X className="h-3.5 w-3.5" />
-      </Button>
     </div>
   );
 });
