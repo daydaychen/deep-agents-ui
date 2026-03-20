@@ -1,8 +1,8 @@
 "use client";
 
-import { Textarea } from "@/components/ui/textarea";
-import React from "react";
 import { useTranslations } from "next-intl";
+import React from "react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface RejectionMessageInputProps {
   value: string;
@@ -15,10 +15,14 @@ export const RejectionMessageInput = React.memo<RejectionMessageInputProps>(
     const t = useTranslations("approval");
     return (
       <div className="mb-4">
-        <label className="mb-2 block text-xs font-medium text-foreground">
+        <label
+          htmlFor="rejection-message"
+          className="mb-2 block text-xs font-medium text-foreground"
+        >
           {t("rejectionMessage")}
         </label>
         <Textarea
+          id="rejection-message"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={t("rejectionPlaceholder")}
@@ -28,7 +32,7 @@ export const RejectionMessageInput = React.memo<RejectionMessageInputProps>(
         />
       </div>
     );
-  }
+  },
 );
 
 RejectionMessageInput.displayName = "RejectionMessageInput";

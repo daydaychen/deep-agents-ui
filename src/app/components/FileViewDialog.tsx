@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useMemo, useCallback, useState, useEffect } from "react";
-import { FileText, Copy, Download, Edit, Save, X, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Copy, Download, Edit, FileText, Loader2, Save, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { toast } from "sonner";
+import useSWRMutation from "swr/mutation";
 import { MarkdownContent } from "@/app/components/MarkdownContent";
 import type { FileItem } from "@/app/types/types";
-import useSWRMutation from "swr/mutation";
-import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 
 const LANGUAGE_MAP: Record<string, string> = {
   js: "javascript",
@@ -76,8 +76,8 @@ export const FileViewDialog = React.memo<{
     },
     {
       onSuccess: () => setIsEditingMode(false),
-      onError: (error) => toast.error(t("error") + ": " + String(error)),
-    }
+      onError: (error) => toast.error(`${t("error")}: ${String(error)}`),
+    },
   );
 
   // Derived values to avoid subscribing to entire file object
@@ -145,11 +145,7 @@ export const FileViewDialog = React.memo<{
   }, [file, onClose]);
 
   const fileNameIsValid = useMemo(() => {
-    return (
-      fileName.trim() !== "" &&
-      !fileName.includes("/") &&
-      !fileName.includes(" ")
-    );
+    return fileName.trim() !== "" && !fileName.includes("/") && !fileName.includes(" ");
   }, [fileName]);
 
   return (
@@ -256,12 +252,8 @@ export const FileViewDialog = React.memo<{
                   ) : isVeryLargeFile ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400">
-                        <span className="font-bold">
-                          ⚠️ Large File Detected:
-                        </span>
-                        <span>
-                          Syntax highlighting disabled for better performance.
-                        </span>
+                        <span className="font-bold">⚠️ Large File Detected:</span>
+                        <span>Syntax highlighting disabled for better performance.</span>
                       </div>
                       <pre className="overflow-auto whitespace-pre-wrap rounded-lg bg-[#1e1e1e] p-4 font-mono text-xs leading-relaxed text-zinc-300 shadow-inner">
                         <code>{fileContent}</code>
@@ -317,10 +309,7 @@ export const FileViewDialog = React.memo<{
               onClick={() => fileUpdate.trigger()}
               size="sm"
               disabled={
-                fileUpdate.isMutating ||
-                !fileName.trim() ||
-                !fileContent.trim() ||
-                !fileNameIsValid
+                fileUpdate.isMutating || !fileName.trim() || !fileContent.trim() || !fileNameIsValid
               }
             >
               {fileUpdate.isMutating ? (

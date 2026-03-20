@@ -1,26 +1,18 @@
 "use client";
 
+import { AIMessage, Message } from "@langchain/langgraph-sdk";
+import { Check, Copy, Cpu, RotateCcw, Zap } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React, { useCallback, useState } from "react";
 import { BranchSwitcher } from "@/app/components/BranchSwitcher";
 import { EditMessage } from "@/app/components/EditMessage";
 import { formatTokenCount } from "@/app/utils/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { COPY_SUCCESS_DURATION_MS } from "@/lib/constants";
 import { useLatest } from "@/lib/hooks/useLatest";
-import { AIMessage, Message } from "@langchain/langgraph-sdk";
-import { Check, Copy, Cpu, RotateCcw, Zap } from "lucide-react";
-import React, { useCallback, useState } from "react";
-import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_BRANCH_OPTIONS: string[] = [];
 
@@ -95,7 +87,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
             console.error("Failed to copy message:", err);
           });
       }
-    }, [messageContentRef, onCopyRef]); 
+    }, [messageContentRef, onCopyRef]);
 
     // Determine what's actually visible
     const hasVisibleCopyButton = hasContent && !isLoading;
@@ -108,16 +100,9 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
     // Metadata visibility - response_metadata is on BaseMessage, usage_metadata on AIMessage
     const modelName = (message?.response_metadata?.model_name ||
       message?.response_metadata?.model) as string | undefined;
-    const modelProvider = message?.response_metadata?.model_provider as
-      | string
-      | undefined;
-    const stopReason = message?.response_metadata?.stop_reason as
-      | string
-      | undefined;
-    const usage =
-      message?.type === "ai"
-        ? (message as AIMessage).usage_metadata
-        : undefined;
+    const modelProvider = message?.response_metadata?.model_provider as string | undefined;
+    const stopReason = message?.response_metadata?.stop_reason as string | undefined;
+    const usage = message?.type === "ai" ? (message as AIMessage).usage_metadata : undefined;
     const hasMetadata = !isUser && (!!modelName || !!usage);
 
     const hasAnyVisibleAction =
@@ -159,21 +144,15 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                         variant="ghost"
                         size="icon"
                         onClick={handleCopy}
-                        aria-label={
-                          copySuccess ? t("copied") : t("copy")
-                        }
+                        aria-label={copySuccess ? t("copied") : t("copy")}
                         className={cn(
                           "h-6 w-6 rounded-full transition-all duration-200",
                           copySuccess
                             ? "hover:bg-success/10 text-success"
-                            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
                         )}
                       >
-                        {copySuccess ? (
-                          <Check className="h-3 w-3" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
+                        {copySuccess ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent
@@ -240,14 +219,10 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                         <span className="font-semibold text-muted-foreground/70">
                           {t("provider")}
                         </span>
-                        <span className="text-foreground">
-                          {modelProvider || "Unknown"}
-                        </span>
+                        <span className="text-foreground">{modelProvider || "Unknown"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="font-semibold text-muted-foreground/70">
-                          {t("model")}
-                        </span>
+                        <span className="font-semibold text-muted-foreground/70">{t("model")}</span>
                         <span className="text-foreground">{modelName}</span>
                       </div>
                       {stopReason && (
@@ -275,25 +250,17 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
                       className="flex w-fit flex-col gap-1 p-2"
                     >
                       <div className="flex items-center justify-between gap-4 text-xs">
-                        <span className="font-semibold text-muted-foreground/70">
-                          {t("input")}
-                        </span>
-                        <span className="text-foreground">
-                          {usage.input_tokens || 0}
-                        </span>
+                        <span className="font-semibold text-muted-foreground/70">{t("input")}</span>
+                        <span className="text-foreground">{usage.input_tokens || 0}</span>
                       </div>
                       <div className="flex items-center justify-between gap-4 text-xs">
                         <span className="font-semibold text-muted-foreground/70">
                           {t("output")}
                         </span>
-                        <span className="text-foreground">
-                          {usage.output_tokens || 0}
-                        </span>
+                        <span className="text-foreground">{usage.output_tokens || 0}</span>
                       </div>
                       <div className="my-1 flex items-center justify-between gap-4 border-t border-muted-foreground/10 pt-1 text-xs">
-                        <span className="font-semibold text-muted-foreground/70">
-                          {t("total")}
-                        </span>
+                        <span className="font-semibold text-muted-foreground/70">{t("total")}</span>
                         <span className="font-medium text-foreground">
                           {usage.total_tokens || 0}
                         </span>
@@ -307,7 +274,7 @@ export const MessageToolbar = React.memo<MessageToolbarProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 MessageToolbar.displayName = "MessageToolbar";

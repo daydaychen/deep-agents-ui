@@ -1,10 +1,10 @@
 "use client";
 
-import { MarkdownContent } from "@/app/components/MarkdownContent";
-import { cn } from "@/lib/utils";
-import React, { useState } from "react";
 import { Brain, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
+import React, { useState } from "react";
+import { MarkdownContent } from "@/app/components/MarkdownContent";
+import { cn } from "@/lib/utils";
 
 interface MessageContentProps {
   content: string;
@@ -23,6 +23,7 @@ export const MessageContent = React.memo<MessageContentProps>(
         {!isUser && reasoningContent && (
           <div className="border-border/40 bg-muted/20 flex flex-col gap-2 overflow-hidden rounded-lg border transition-all duration-200">
             <button
+              type="button"
               onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
               aria-expanded={isReasoningExpanded}
               className="text-muted-foreground hover:bg-muted/30 flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors"
@@ -39,9 +40,7 @@ export const MessageContent = React.memo<MessageContentProps>(
             <div
               className={cn(
                 "grid transition-[grid-template-rows,opacity] duration-200 ease-in-out",
-                isReasoningExpanded
-                  ? "grid-rows-[1fr] opacity-100"
-                  : "grid-rows-[0fr] opacity-0"
+                isReasoningExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
               )}
             >
               <div className="overflow-hidden">
@@ -62,14 +61,12 @@ export const MessageContent = React.memo<MessageContentProps>(
               "mt-0.5 overflow-hidden break-words text-sm font-normal leading-relaxed",
               isUser
                 ? "border-primary/20 dark:border-primary/30 rounded-2xl rounded-tr-none border bg-user-message px-3 py-2 text-foreground shadow-sm"
-                : "rounded-2xl rounded-tl-none bg-accent/30 px-4 py-3 text-primary"
+                : "rounded-2xl rounded-tl-none bg-accent/30 px-4 py-3 text-primary",
             )}
           >
             {isUser ? (
               <div className="flex flex-col gap-2">
-                <p className="m-0 whitespace-pre-wrap break-words leading-relaxed">
-                  {content}
-                </p>
+                <p className="m-0 whitespace-pre-wrap break-words leading-relaxed">{content}</p>
               </div>
             ) : (
               <MarkdownContent
@@ -81,7 +78,7 @@ export const MessageContent = React.memo<MessageContentProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 MessageContent.displayName = "MessageContent";

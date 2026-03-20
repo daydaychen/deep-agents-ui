@@ -1,9 +1,9 @@
 "use client";
 
 import type { Assistant, Message } from "@langchain/langgraph-sdk";
-import type { TodoItem } from "@/app/types/types";
 import { createContext, useContext } from "react";
 import type { useChat } from "@/app/hooks/useChat";
+import type { TodoItem } from "@/app/types/types";
 
 export type StateType = {
   messages: Message[];
@@ -72,12 +72,8 @@ export type ChatActionsContextType = Pick<
   | "setOverrideConfig"
 >;
 
-export const ChatStateContext = createContext<ChatStateContextType | undefined>(
-  undefined
-);
-export const ChatActionsContext = createContext<
-  ChatActionsContextType | undefined
->(undefined);
+export const ChatStateContext = createContext<ChatStateContextType | undefined>(undefined);
+export const ChatActionsContext = createContext<ChatActionsContextType | undefined>(undefined);
 
 export function useChatState() {
   const context = useContext(ChatStateContext);

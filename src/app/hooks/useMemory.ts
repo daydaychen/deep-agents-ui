@@ -1,10 +1,10 @@
 "use client";
 
-import { useClient } from "@/providers/client-context";
-import { DEFAULT_MEMORY_LIMIT } from "@/lib/constants";
 import { useCallback } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
+import { DEFAULT_MEMORY_LIMIT } from "@/lib/constants";
+import { useClient } from "@/providers/client-context";
 
 export interface Namespace {
   namespace: string[];
@@ -31,13 +31,13 @@ export function useMemory() {
         (ns: string[]): Namespace => ({
           namespace: ns,
           count: 0, // Note: The API doesn't return count, we'll need to fetch items to get accurate count
-        })
+        }),
       );
     },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-    }
+    },
   );
 
   // 搜索指定命名空间下的项目
@@ -49,7 +49,7 @@ export function useMemory() {
         limit?: number;
         offset?: number;
         query?: string;
-      }
+      },
     ) => {
       const result = await client.store.searchItems(namespacePrefix, {
         limit: options?.limit ?? 10,
@@ -59,7 +59,7 @@ export function useMemory() {
       });
       return result.items;
     },
-    [client]
+    [client],
   );
 
   // 获取单个项目
@@ -67,7 +67,7 @@ export function useMemory() {
     async (namespace: string[], key: string) => {
       return await client.store.getItem(namespace, key);
     },
-    [client]
+    [client],
   );
 
   // 创建或更新项目
@@ -84,14 +84,14 @@ export function useMemory() {
           value: Record<string, unknown>;
           ttl?: number | null;
         };
-      }
+      },
     ) => {
       await client.store.putItem(arg.namespace, arg.key, arg.value, {
         ttl: arg.ttl,
       });
       // 重新加载命名空间列表
       mutateNamespaces();
-    }
+    },
   );
 
   // 删除项目
@@ -101,7 +101,7 @@ export function useMemory() {
       await client.store.deleteItem(arg.namespace, arg.key);
       // 重新加载命名空间列表
       mutateNamespaces();
-    }
+    },
   );
 
   return {

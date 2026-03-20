@@ -1,15 +1,15 @@
 "use client";
 
+import { Languages } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Languages } from "lucide-react";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
 export function LanguageSwitcher() {
@@ -25,10 +25,10 @@ export function LanguageSwitcher() {
 
   const handleLocaleChange = (newLocale: string) => {
     if (newLocale === locale) return;
-    
+
     // Use the localized router to replace the path
     router.replace(pathname, { locale: newLocale as "en" | "zh" });
-    
+
     // Force a full page reload after a short delay to ensure UI updates
     // in complex App Router scenarios with persistent client-side state
     setTimeout(() => {
@@ -49,7 +49,10 @@ export function LanguageSwitcher() {
           <span className="sr-only">{t("language")}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8}>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+      >
         {routing.locales.map((cur) => (
           <DropdownMenuItem
             key={cur}

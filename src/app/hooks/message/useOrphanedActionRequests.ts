@@ -1,5 +1,5 @@
-import type { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
 import { useMemo } from "react";
+import type { ActionRequest, ReviewConfig, ToolCall } from "@/app/types/types";
 
 export interface OrphanedApproval {
   actionRequest: ActionRequest;
@@ -13,7 +13,7 @@ export interface OrphanedApproval {
 export function useOrphanedActionRequests(
   actionRequestsMap: Map<string, ActionRequest> | undefined,
   reviewConfigsMap: Map<string, ReviewConfig> | undefined,
-  toolCalls: ToolCall[]
+  toolCalls: ToolCall[],
 ): OrphanedApproval[] {
   return useMemo(() => {
     if (!actionRequestsMap || actionRequestsMap.size === 0) return [];

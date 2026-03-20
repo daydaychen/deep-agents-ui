@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 /**
  * Hook to detect if the user prefers reduced motion.
@@ -12,14 +12,14 @@ export function useReducedMotion(): boolean {
 
   useEffect(() => {
     // Check if window is available (SSR safety)
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduced(mq.matches);
 
     const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   return reduced;

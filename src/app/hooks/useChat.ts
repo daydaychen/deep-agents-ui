@@ -1,5 +1,16 @@
 "use client";
 
+import { type Assistant, type Checkpoint, type Message } from "@langchain/langgraph-sdk";
+import type {
+  BaseStream,
+  SubagentStreamInterface,
+  UseStreamOptions,
+  UseStreamThread,
+} from "@langchain/langgraph-sdk/react";
+import { useStream } from "@langchain/langgraph-sdk/react";
+import { useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { StandaloneConfig } from "@/lib/config";
 import {
   DEFAULT_MESSAGE_LIMIT,
@@ -7,34 +18,14 @@ import {
   ERROR_MESSAGE_TRUNCATION_LENGTH,
   TOAST_DURATION_MS,
 } from "@/lib/constants";
-import { generateId } from "@/lib/id-utils";
-import {
-  LLMOverrideConfig,
-  OverrideConfig,
-  StateType,
-} from "@/providers/chat-context";
-import { useClient } from "@/providers/client-context";
-import {
-  type Assistant,
-  type Checkpoint,
-  type Message,
-} from "@langchain/langgraph-sdk";
-import type {
-  UseStreamOptions,
-  UseStreamThread,
-  SubagentStreamInterface,
-} from "@langchain/langgraph-sdk/react";
-import { useStream } from "@langchain/langgraph-sdk/react";
-import type { BaseStream } from "@langchain/langgraph-sdk/react";
-import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
-import { usePersistedMessages } from "./usePersistedMessages";
 import { useLatest } from "@/lib/hooks/useLatest";
+import { generateId } from "@/lib/id-utils";
+import { LLMOverrideConfig, OverrideConfig, StateType } from "@/providers/chat-context";
+import { useClient } from "@/providers/client-context";
+import { usePersistedMessages } from "./usePersistedMessages";
 
 // Extend useStream options with DeepAgent-specific options not yet exported in SDK types
-interface UseStreamOptionsWithDeepAgentExtensions
-  extends UseStreamOptions<StateType> {
+interface UseStreamOptionsWithDeepAgentExtensions extends UseStreamOptions<StateType> {
   filterSubagentMessages?: boolean;
   streamSubgraphs?: boolean;
 }
@@ -54,14 +45,14 @@ export type {
 
 export function useChat({
   activeAssistant,
-  onHistoryRevalidate,
+  onHistoryRevalidateAction,
   thread,
   recursionLimit = DEFAULT_RECURSION_LIMIT,
   recursionMultiplier = 6,
   config,
 }: {
   activeAssistant: Assistant | null;
-  onHistoryRevalidate?: () => void;
+  onHistoryRevalidateAction?: () => void;
   thread?: UseStreamThread<StateType>;
   recursionLimit?: number;
   recursionMultiplier?: number;
@@ -71,15 +62,12 @@ export function useChat({
   const client = useClient();
   const [sessionId, setSessionId] = useState<string>(() => generateId());
   const isSubmittingRef = useRef(false);
-  const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>(
-    () => ({})
-  );
+  const [overrideConfig, setOverrideConfig] = useState<OverrideConfig>(() => ({}));
 
   // Derived values to avoid subscribing to entire activeAssistant object
   const hasActiveAssistant = !!activeAssistant;
   const assistantThinking =
-    activeAssistant?.config?.configurable?.thinking ??
-    activeAssistant?.metadata?.thinking;
+    activeAssistant?.config?.configurable?.thinking ?? activeAssistant?.metadata?.thinking;
   const assistantThinkingBoolean =
     typeof assistantThinking === "boolean" ? assistantThinking : false;
   const assistantAuthMode = activeAssistant?.metadata?.authMode;
@@ -114,7 +102,7 @@ export function useChat({
       langfuse_user_id: config.userId || "user",
       user_id: config.userId || "user",
     }),
-    [sessionId, config.userId]
+    [sessionId, config.userId],
   );
 
   // Use useLatest to store frequently changing config values for stable callbacks
@@ -130,9 +118,7 @@ export function useChat({
       if (threadId && client) {
         try {
           const threadData = await client.threads.get(threadId);
-          const existingSessionId = threadData.metadata?.langfuse_session_id as
-            | string
-            | undefined;
+          const existingSessionId = threadData.metadata?.langfuse_session_id as string | undefined;
           if (existingSessionId) {
             setSessionId(existingSessionId);
           } else {
@@ -160,9 +146,9 @@ export function useChat({
     threadId: threadId ?? null,
     onThreadId: setThreadId,
     // Revalidate thread list when stream finishes, errors, or creates new thread
-    onFinish: onHistoryRevalidate,
-    onError: onHistoryRevalidate,
-    onCreated: onHistoryRevalidate,
+    onFinish: onHistoryRevalidateAction,
+    onError: onHistoryRevalidateAction,
+    onCreated: onHistoryRevalidateAction,
     fetchStateHistory: { limit: DEFAULT_MESSAGE_LIMIT },
     thread: thread,
     filterSubagentMessages: true,
@@ -218,7 +204,7 @@ export function useChat({
   const { subagentMessagesMap } = usePersistedMessages(
     threadId,
     (stream as ExtendedStream).subagents,
-    stream.isLoading
+    stream.isLoading,
   );
 
   // Store sendMessage handler in ref for stable reference
@@ -266,7 +252,7 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-        }
+        },
       );
     };
   }, [
@@ -288,8 +274,8 @@ export function useChat({
     (
       messages: Message[],
       checkpoint?: Checkpoint,
-      isRerunningSubagent?: boolean,
-      optimisticMessages?: Message[]
+
+      optimisticMessages?: Message[],
     ) => {
       if (stream.isLoading || isSubmittingRef.current) return;
       isSubmittingRef.current = true;
@@ -320,9 +306,7 @@ export function useChat({
 
       if (checkpoint) {
         stream.submit(undefined, {
-          ...(optimisticMessages
-            ? { optimisticValues: { messages: optimisticMessages } }
-            : {}),
+          ...(optimisticMessages ? { optimisticValues: { messages: optimisticMessages } } : {}),
           metadata: currentMetadata,
           config: {
             ...assistantConfig,
@@ -345,7 +329,7 @@ export function useChat({
             streamMode: ["messages", "updates"],
             streamSubgraphs: true,
             streamResumable: true,
-          }
+          },
         );
       }
     },
@@ -357,7 +341,7 @@ export function useChat({
       recursionLimitRef,
       recursionMultiplierRef,
       activeAssistantConfigRef,
-    ]
+    ],
   );
 
   const setFiles = useCallback(
@@ -365,60 +349,56 @@ export function useChat({
       if (!threadId || !client) return;
       await client.threads.updateState(threadId, { values: { files } });
     },
-    [client, threadId]
+    [client, threadId],
   );
 
-  const continueStream = useCallback(
-    (hasTaskToolCall?: boolean) => {
-      if (stream.isLoading || isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      // We don't reset activeSubAgentId here because continue often means
-      // resuming a subagent or the next step in the same chain
+  const continueStream = useCallback(() => {
+    if (stream.isLoading || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    // We don't reset activeSubAgentId here because continue often means
+    // resuming a subagent or the next step in the same chain
 
-      // Read current values from refs to avoid dependency on changing state
-      const currentOverrideConfig = overrideConfigRef.current;
-      const currentMetadata = metadataRef.current;
-      const currentRecursionLimit = recursionLimitRef.current;
-      const currentRecursionMultiplier = recursionMultiplierRef.current;
-      const currentAssistantConfig = activeAssistantConfigRef.current;
+    // Read current values from refs to avoid dependency on changing state
+    const currentOverrideConfig = overrideConfigRef.current;
+    const currentMetadata = metadataRef.current;
+    const currentRecursionLimit = recursionLimitRef.current;
+    const currentRecursionMultiplier = recursionMultiplierRef.current;
+    const currentAssistantConfig = activeAssistantConfigRef.current;
 
-      const finalRecursionLimit =
-        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
-        currentRecursionMultiplier;
+    const finalRecursionLimit =
+      (currentOverrideConfig.recursionLimit || currentRecursionLimit) * currentRecursionMultiplier;
 
-      // Cache getFinalConfigurable result to avoid repeated calls
-      const finalConfigurable = getFinalConfigurable();
+    // Cache getFinalConfigurable result to avoid repeated calls
+    const finalConfigurable = getFinalConfigurable();
 
-      const assistantConfig = {
-        ...(currentAssistantConfig ?? {}),
-        configurable: {
-          ...finalConfigurable,
-          // Pass auth_mode to backend for interrupt policy
-          auth_mode: currentOverrideConfig.authMode ?? "ask",
-        },
-      };
+    const assistantConfig = {
+      ...(currentAssistantConfig ?? {}),
+      configurable: {
+        ...finalConfigurable,
+        // Pass auth_mode to backend for interrupt policy
+        auth_mode: currentOverrideConfig.authMode ?? "ask",
+      },
+    };
 
-      stream.submit(undefined, {
-        metadata: currentMetadata,
-        config: {
-          ...assistantConfig,
-          recursion_limit: finalRecursionLimit,
-        },
-        streamMode: ["messages", "updates"],
-        streamSubgraphs: true,
-        streamResumable: true,
-      });
-    },
-    [
-      stream,
-      getFinalConfigurable,
-      overrideConfigRef,
-      metadataRef,
-      recursionLimitRef,
-      recursionMultiplierRef,
-      activeAssistantConfigRef,
-    ]
-  );
+    stream.submit(undefined, {
+      metadata: currentMetadata,
+      config: {
+        ...assistantConfig,
+        recursion_limit: finalRecursionLimit,
+      },
+      streamMode: ["messages", "updates"],
+      streamSubgraphs: true,
+      streamResumable: true,
+    });
+  }, [
+    stream,
+    getFinalConfigurable,
+    overrideConfigRef,
+    metadataRef,
+    recursionLimitRef,
+    recursionMultiplierRef,
+    activeAssistantConfigRef,
+  ]);
 
   const markCurrentThreadAsResolved = useCallback(() => {
     if (stream.isLoading || isSubmittingRef.current) return;
@@ -448,7 +428,7 @@ export function useChat({
         streamResumable: true,
       });
     },
-    [stream, metadataRef]
+    [stream, metadataRef],
   );
 
   const stopStream = useCallback(() => {
@@ -472,7 +452,7 @@ export function useChat({
       const actual = message.id ? messageIndexMap.get(message.id) : -1;
       return actual !== undefined ? actual : fallbackIndex;
     },
-    [messageIndexMap]
+    [messageIndexMap],
   );
 
   const retryFromMessage = useCallback(
@@ -535,7 +515,7 @@ export function useChat({
       recursionLimitRef,
       recursionMultiplierRef,
       activeAssistantConfigRef,
-    ]
+    ],
   );
 
   const editMessage = useCallback(
@@ -597,7 +577,7 @@ export function useChat({
           streamMode: ["messages", "updates"],
           streamSubgraphs: true,
           streamResumable: true,
-        }
+        },
       );
     },
     [
@@ -609,7 +589,7 @@ export function useChat({
       recursionLimitRef,
       recursionMultiplierRef,
       activeAssistantConfigRef,
-    ]
+    ],
   );
 
   // Helper function to get branch information for a specific message
@@ -620,14 +600,11 @@ export function useChat({
       const metadata = stream.getMessagesMetadata?.(message, indexToUse);
 
       // Get branch options from metadata
-      const branchOptions =
-        (metadata?.branchOptions as string[] | undefined) || [];
+      const branchOptions = (metadata?.branchOptions as string[] | undefined) || [];
 
       // Find current branch index
       const currentBranch = metadata?.branch;
-      const currentBranchIndex = currentBranch
-        ? branchOptions.indexOf(currentBranch)
-        : 0;
+      const currentBranchIndex = currentBranch ? branchOptions.indexOf(currentBranch) : 0;
 
       // Determine if this message can be retried
       // User messages should only support editing, not retrying
@@ -641,7 +618,7 @@ export function useChat({
         canRetry,
       };
     },
-    [stream, resolveMessageIndex]
+    [stream, resolveMessageIndex],
   );
 
   const latestError = useMemo(() => {
@@ -667,8 +644,8 @@ export function useChat({
       typeof error === "string"
         ? error
         : isApiError(error)
-        ? error.message || JSON.stringify(error)
-        : JSON.stringify(error);
+          ? error.message || JSON.stringify(error)
+          : JSON.stringify(error);
 
     // Try to parse JSON if the error message contains a JSON object
     if (!errorMessage.includes("{") || !errorMessage.includes("}")) {
@@ -697,9 +674,7 @@ export function useChat({
       if (parsed.detail) {
         if (Array.isArray(parsed.detail)) {
           errorMessage = parsed.detail
-            .map((d: unknown) =>
-              typeof d === "string" ? d : JSON.stringify(d)
-            )
+            .map((d: unknown) => (typeof d === "string" ? d : JSON.stringify(d)))
             .join(", ");
         } else if (typeof parsed.detail === "object") {
           errorMessage = JSON.stringify(parsed.detail);
@@ -710,9 +685,7 @@ export function useChat({
         errorMessage = String(parsed.message);
       } else if (parsed.error) {
         errorMessage =
-          typeof parsed.error === "string"
-            ? parsed.error
-            : JSON.stringify(parsed.error);
+          typeof parsed.error === "string" ? parsed.error : JSON.stringify(parsed.error);
       }
     } catch {
       // Ignore parsing errors and keep original
@@ -729,10 +702,7 @@ export function useChat({
     if (latestError) {
       toast.error(latestError, {
         duration: TOAST_DURATION_MS,
-        id: `chat-error-${latestError.substring(
-          0,
-          ERROR_MESSAGE_TRUNCATION_LENGTH
-        )}`, // Avoid duplicate toasts for the same message
+        id: `chat-error-${latestError.substring(0, ERROR_MESSAGE_TRUNCATION_LENGTH)}`, // Avoid duplicate toasts for the same message
       });
     }
   }, [latestError]);
@@ -741,6 +711,7 @@ export function useChat({
   const lastAutoActivatedIdRef = useRef<string | null>(null);
 
   // Reset active subagent and tracking ref when thread changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <- We only want to reset when threadId changes, not on every stream change>
   useEffect(() => {
     setActiveSubAgentId(null);
     lastAutoActivatedIdRef.current = null;
@@ -750,15 +721,12 @@ export function useChat({
   useEffect(() => {
     const extendedStream = stream as ExtendedStream;
     if (extendedStream.activeSubagents.length > 0) {
-      const lastActive =
-        extendedStream.activeSubagents[
-          extendedStream.activeSubagents.length - 1
-        ];
+      const lastActive = extendedStream.activeSubagents[extendedStream.activeSubagents.length - 1];
 
       // Only auto-activate if it's a NEW subagent we haven't activated yet
       if (lastActive.id !== lastAutoActivatedIdRef.current) {
         lastAutoActivatedIdRef.current = lastActive.id;
-        
+
         // Don't auto-activate if there's an interrupt (HITL approval pending)
         // The interrupt indicates the subagent is waiting for human input
         if (!stream.interrupt) {
@@ -825,6 +793,6 @@ export function useChat({
       overrideConfig,
       config,
       threadId,
-    ]
+    ],
   );
 }

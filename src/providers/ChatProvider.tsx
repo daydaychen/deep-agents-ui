@@ -1,10 +1,10 @@
 "use client";
 
-import { type StateType, useChat } from "@/app/hooks/useChat";
-import type { StandaloneConfig } from "@/lib/config";
 import { Assistant } from "@langchain/langgraph-sdk";
 import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
 import { ReactNode, useMemo } from "react";
+import { type StateType, useChat } from "@/app/hooks/useChat";
+import type { StandaloneConfig } from "@/lib/config";
 import {
   ChatActionsContext,
   ChatActionsContextType,
@@ -15,7 +15,7 @@ import {
 interface ChatProviderProps {
   children: ReactNode;
   activeAssistant: Assistant | null;
-  onHistoryRevalidate?: () => void;
+  onHistoryRevalidateAction?: () => void;
   thread?: UseStreamThread<StateType>;
   recursionLimit?: number;
   recursionMultiplier?: number;
@@ -25,7 +25,7 @@ interface ChatProviderProps {
 export function ChatProvider({
   children,
   activeAssistant,
-  onHistoryRevalidate,
+  onHistoryRevalidateAction,
   thread,
   recursionLimit,
   recursionMultiplier,
@@ -33,7 +33,7 @@ export function ChatProvider({
 }: ChatProviderProps) {
   const chat = useChat({
     activeAssistant,
-    onHistoryRevalidate,
+    onHistoryRevalidateAction,
     thread,
     recursionLimit,
     recursionMultiplier,
@@ -64,7 +64,7 @@ export function ChatProvider({
       config: chat.config,
       threadId: chat.threadId,
     }),
-    [chat]
+    [chat],
   );
 
   // chat is already memoized in useChat hook, use it directly as single dependency
@@ -84,14 +84,12 @@ export function ChatProvider({
       setBranch: chat.setBranch,
       setOverrideConfig: chat.setOverrideConfig,
     }),
-    [chat]
+    [chat],
   );
 
   return (
     <ChatActionsContext.Provider value={actions}>
-      <ChatStateContext.Provider value={state}>
-        {children}
-      </ChatStateContext.Provider>
+      <ChatStateContext.Provider value={state}>{children}</ChatStateContext.Provider>
     </ChatActionsContext.Provider>
   );
 }

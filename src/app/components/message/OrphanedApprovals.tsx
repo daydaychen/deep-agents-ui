@@ -1,8 +1,8 @@
 "use client";
 
+import React from "react";
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
 import type { ActionRequest, ReviewConfig } from "@/app/types/types";
-import React from "react";
 
 interface OrphanedApproval {
   actionRequest: ActionRequest;
@@ -36,7 +36,7 @@ export const OrphanedApprovals = React.memo<OrphanedApprovalsProps>(
         ))}
       </div>
     );
-  }
+  },
 );
 
 OrphanedApprovals.displayName = "OrphanedApprovals";

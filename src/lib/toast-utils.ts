@@ -17,7 +17,7 @@ interface ErrorToastOptions {
 export function showErrorToast(
   message: string,
   error?: unknown,
-  options?: ErrorToastOptions
+  options?: ErrorToastOptions,
 ): void {
   const errorMessage = error ? `${message}: ${String(error)}` : message;
   const toastId = options?.id || `toast-${errorMessage.substring(0, 50)}`;

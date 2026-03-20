@@ -1,17 +1,10 @@
 "use client";
 
+import { AlertCircle, Bot, CheckCircle2, ChevronDown, Loader2, ScrollText } from "lucide-react";
+import React, { useMemo } from "react";
 import type { SubAgent } from "@/app/types/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  AlertCircle,
-  Bot,
-  CheckCircle2,
-  ChevronDown,
-  Loader2,
-  ScrollText,
-} from "lucide-react";
-import React, { useMemo } from "react";
 
 interface SubAgentIndicatorProps {
   subAgent: SubAgent;
@@ -66,13 +59,7 @@ const getStatusIcon = (status: SubAgent["status"]) => {
 };
 
 export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
-  ({
-    subAgent,
-    onToggleExpand,
-    onShowLogs,
-    isExpanded = false,
-    isActiveInSidebar = false,
-  }) => {
+  ({ subAgent, onToggleExpand, onShowLogs, isExpanded = false, isActiveInSidebar = false }) => {
     const status = subAgent.status || "pending";
     const name =
       subAgent.agentName && subAgent.agentName !== subAgent.subAgentName
@@ -86,13 +73,11 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
       // 1. Priority: If 'description' exists, show it directly (most meaningful)
       if (input.description && typeof input.description === "string") {
         const desc = input.description;
-        return desc.length > 300 ? desc.substring(0, 300) + "…" : desc;
+        return desc.length > 300 ? `${desc.substring(0, 300)}…` : desc;
       }
 
       // 2. Fallback: Filter out redundant 'subagent_type' and join others
-      const entries = Object.entries(input).filter(
-        ([key]) => key !== "subagent_type"
-      );
+      const entries = Object.entries(input).filter(([key]) => key !== "subagent_type");
       if (entries.length === 0) return "";
 
       try {
@@ -100,13 +85,12 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
           .map(([key, value]) => {
             let valStr = "";
             if (value === null || value === undefined) valStr = "null";
-            else if (typeof value === "object")
-              valStr = Array.isArray(value) ? "[...]" : "{...}";
+            else if (typeof value === "object") valStr = Array.isArray(value) ? "[...]" : "{...}";
             else valStr = String(value);
             return `${key}: ${valStr}`;
           })
           .join(", ");
-        return preview.length > 300 ? preview.substring(0, 300) + "…" : preview;
+        return preview.length > 300 ? `${preview.substring(0, 300)}…` : preview;
       } catch {
         return "";
       }
@@ -121,7 +105,8 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-success),transparent_88%)]",
             iconBg: "bg-[color:color-mix(in_srgb,var(--color-success),transparent_85%)]",
             iconBorder: "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)]",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-success),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-success),transparent_95%)]",
           };
         case "error":
           return {
@@ -139,7 +124,8 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-primary),transparent_88%)]",
             iconBg: "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_85%)]",
             iconBorder: "border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)]",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-primary),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-primary),transparent_95%)]",
           };
         case "pending":
           return {
@@ -148,7 +134,8 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             hoverBg: "hover:bg-muted/50",
             iconBg: "bg-muted/40",
             iconBorder: "border-border/50",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
           };
         case "interrupted":
           return {
@@ -157,7 +144,8 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-warning),transparent_88%)]",
             iconBg: "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_85%)]",
             iconBorder: "border-[color:color-mix(in_srgb,var(--color-warning),transparent_70%)]",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-warning),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-warning),transparent_95%)]",
           };
         default:
           return {
@@ -166,7 +154,8 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             hoverBg: "hover:bg-muted/50",
             iconBg: "bg-muted/40",
             iconBorder: "border-border/50",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
           };
       }
     }, [status]);
@@ -180,7 +169,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
           statusStyles.hoverBg,
           statusStyles.darkBorder, // 5% border in dark mode instead of total suppression
           isActiveInSidebar &&
-            "border-primary/40 bg-primary/20 shadow-md shadow-primary/5 ring-1 ring-primary/20 dark:ring-primary/40"
+            "border-primary/40 bg-primary/20 shadow-md shadow-primary/5 ring-1 ring-primary/20 dark:ring-primary/40",
         )}
       >
         <div className="flex items-center gap-1 pr-1.5">
@@ -190,7 +179,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
             onClick={onToggleExpand}
             className={cn(
               "grid w-full min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 text-left transition-colors duration-200",
-              "hover:bg-muted/30 active:bg-muted/50"
+              "hover:bg-muted/30 active:bg-muted/50",
             )}
           >
             {/* Tool Status & Name */}
@@ -201,7 +190,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                   statusStyles.iconBorder,
                   statusStyles.iconBg,
                   "dark:border-white/5",
-                  status === "active" && "scale-105"
+                  status === "active" && "scale-105",
                 )}
               >
                 {getStatusIcon(status)}
@@ -215,9 +204,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                 {argsPreview && (
                   <>
                     <span className="text-muted-foreground/50 ml-1.5">(</span>
-                    <span className="text-muted-foreground/60">
-                      {argsPreview}
-                    </span>
+                    <span className="text-muted-foreground/60">{argsPreview}</span>
                     <span className="text-muted-foreground/50">)</span>
                   </>
                 )}
@@ -229,7 +216,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
               <div
                 className={cn(
                   "flex h-5 w-5 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
-                  isExpanded && "rotate-180"
+                  isExpanded && "rotate-180",
                 )}
               >
                 <ChevronDown size={12} />
@@ -250,7 +237,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
                 "h-8 w-8 cursor-pointer rounded-xl transition-[background-color,border-color,color,opacity] duration-200",
                 isActiveInSidebar
                   ? "text-primary-foreground hover:bg-primary/90 bg-primary shadow-lg shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted hover:text-primary dark:hover:bg-white/5"
+                  : "text-muted-foreground hover:bg-muted hover:text-primary dark:hover:bg-white/5",
               )}
               title="View Internal Core Trace"
             >
@@ -263,7 +250,7 @@ export const SubAgentIndicator = React.memo<SubAgentIndicatorProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 SubAgentIndicator.displayName = "SubAgentIndicator";

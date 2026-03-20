@@ -1,9 +1,9 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
+import { cn } from "@/lib/utils";
 
 interface AgentThinkingIndicatorProps {
   isActive: boolean;
@@ -29,7 +29,7 @@ export const AgentThinkingIndicator = React.memo<AgentThinkingIndicatorProps>(
         className={cn(
           "flex items-center gap-2 text-sm text-muted-foreground",
           "duration-300 animate-in fade-in slide-in-from-bottom-2",
-          className
+          className,
         )}
         role="status"
         aria-live="polite"
@@ -41,7 +41,7 @@ export const AgentThinkingIndicator = React.memo<AgentThinkingIndicatorProps>(
         <span className="font-medium">{t("agentThinking")}</span>
       </div>
     );
-  }
+  },
 );
 
 AgentThinkingIndicator.displayName = "AgentThinkingIndicator";

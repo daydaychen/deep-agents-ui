@@ -1,12 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ArrowUp, Command, Square } from "lucide-react";
-import React, { FormEvent, useCallback, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import React, { FormEvent, useCallback, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useChatState } from "@/providers/chat-context";
-import { useTranslations } from "next-intl";
-
 import { DockToolbar } from "./DockToolbar";
 
 interface ChatInputProps {
@@ -34,17 +33,18 @@ export const ChatInput = React.memo<ChatInputProps>(
           onSubmit();
         }
       },
-      [onSubmit, submitDisabled]
+      [onSubmit, submitDisabled],
     );
 
     // Auto-resize textarea based on content
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <Only depends on input value>
     React.useLayoutEffect(() => {
       const textarea = textareaRef.current;
       if (textarea) {
         textarea.style.height = "auto";
         const scrollHeight = textarea.scrollHeight;
         textarea.style.height = scrollHeight > 0 ? `${scrollHeight}px` : "auto";
-        
+
         if (scrollHeight > 300) {
           textarea.style.overflowY = "auto";
         } else {
@@ -53,7 +53,7 @@ export const ChatInput = React.memo<ChatInputProps>(
       }
     }, [input]);
 
-    // Auto-focus textarea on mount or when switching threads
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <Auto-focus textarea on mount or when switching threads>
     useEffect(() => {
       textareaRef.current?.focus();
     }, [threadId]);
@@ -101,14 +101,10 @@ export const ChatInput = React.memo<ChatInputProps>(
               onCompositionEnd={() => {
                 isComposingRef.current = false;
               }}
-              placeholder={
-                isLoading
-                  ? t("inputPlaceholderLoading")
-                  : t("inputPlaceholderDefault")
-              }
+              placeholder={isLoading ? t("inputPlaceholderLoading") : t("inputPlaceholderDefault")}
               className={cn(
                 "w-full resize-none border-0 bg-transparent py-1.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40",
-                "max-h-[300px]"
+                "max-h-[300px]",
               )}
             />
           </div>
@@ -121,7 +117,10 @@ export const ChatInput = React.memo<ChatInputProps>(
             <div className="flex flex-shrink-0 items-center gap-2.5 pr-1">
               <div className="flex items-center gap-1 text-muted-foreground/30 transition-opacity hover:opacity-100">
                 <div className="flex scale-[0.75] items-center gap-1 rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 font-mono text-3xs font-bold ring-1 ring-border/5">
-                  <Command size={10} strokeWidth={2.5} />
+                  <Command
+                    size={10}
+                    strokeWidth={2.5}
+                  />
                   <span className="leading-none">ENTER</span>
                 </div>
               </div>
@@ -150,7 +149,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                     "h-9 w-9 cursor-pointer rounded-full transition-all duration-300 active:scale-90",
                     hasInput
                       ? "text-primary-foreground bg-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 hover:brightness-110"
-                      : "bg-muted text-muted-foreground/20 opacity-40"
+                      : "bg-muted text-muted-foreground/20 opacity-40",
                   )}
                 >
                   <ArrowUp
@@ -165,7 +164,7 @@ export const ChatInput = React.memo<ChatInputProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 ChatInput.displayName = "ChatInput";

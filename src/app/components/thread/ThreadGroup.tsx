@@ -1,7 +1,7 @@
 "use client";
 
-import type { ThreadItem } from "@/app/hooks/useThreads";
 import React from "react";
+import type { ThreadItem } from "@/app/hooks/useThreads";
 import { ThreadListItem } from "./ThreadListItem";
 
 const GROUP_LABELS = {
@@ -24,14 +24,7 @@ interface ThreadGroupProps {
 }
 
 export const ThreadGroup = React.memo<ThreadGroupProps>(
-  ({
-    groupType,
-    threads,
-    currentThreadId,
-    onThreadSelect,
-    onMarkAsResolved,
-    onDeleteThread,
-  }) => {
+  ({ groupType, threads, currentThreadId, onThreadSelect, onMarkAsResolved, onDeleteThread }) => {
     if (threads.length === 0) return null;
 
     return (
@@ -56,7 +49,7 @@ export const ThreadGroup = React.memo<ThreadGroupProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 ThreadGroup.displayName = "ThreadGroup";

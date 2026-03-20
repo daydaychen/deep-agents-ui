@@ -1,8 +1,8 @@
+import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import * as React from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { findDuplicateKeys } from "@/lib/validation";
 
@@ -26,20 +26,20 @@ export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
   });
 
   // Check for duplicate keys using O(n) algorithm
-  const fieldKeys = fields.map(
-    (field) => (field as { key?: string }).key ?? ""
-  );
+  const fieldKeys = fields.map((field) => (field as { key?: string }).key ?? "");
   const items = fieldKeys.map((key) => ({ key }));
-  const duplicateKeys = React.useMemo(
-    () => new Set(findDuplicateKeys(items)),
-    [items]
-  );
+  const duplicateKeys = React.useMemo(() => new Set(findDuplicateKeys(items)), [items]);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        {label && <label className="text-xs font-semibold">{label}</label>}
-      </div>
+      {label && (
+        <label
+          htmlFor={`${name}-0`}
+          className="text-xs font-semibold"
+        >
+          {label}
+        </label>
+      )}
 
       {suggestions && suggestions.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pb-1">
@@ -74,12 +74,12 @@ export function KeyValueForm({ name, label, suggestions }: KeyValueFormProps) {
             >
               <div className="flex-1 space-y-1">
                 <Input
+                  id={index === 0 ? `${name}-0` : undefined}
                   {...register(`${name}.${index}.key`)}
                   placeholder="Key"
                   className={cn(
                     "h-8 font-mono text-xs",
-                    isDuplicate &&
-                      "border-destructive focus-visible:ring-destructive"
+                    isDuplicate && "border-destructive focus-visible:ring-destructive",
                   )}
                 />
                 {isDuplicate && (

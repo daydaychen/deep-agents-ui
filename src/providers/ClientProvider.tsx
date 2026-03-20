@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, ReactNode } from "react";
 import { Client } from "@langchain/langgraph-sdk";
+import { ReactNode, useMemo } from "react";
 import { ClientContext } from "./client-context";
 
 interface ClientProviderProps {
@@ -9,10 +9,7 @@ interface ClientProviderProps {
   deploymentUrl: string;
 }
 
-export function ClientProvider({
-  children,
-  deploymentUrl,
-}: ClientProviderProps) {
+export function ClientProvider({ children, deploymentUrl }: ClientProviderProps) {
   const client = useMemo(() => {
     return new Client({
       apiUrl: deploymentUrl,
@@ -24,7 +21,5 @@ export function ClientProvider({
 
   const value = useMemo(() => ({ client }), [client]);
 
-  return (
-    <ClientContext.Provider value={value}>{children}</ClientContext.Provider>
-  );
+  return <ClientContext.Provider value={value}>{children}</ClientContext.Provider>;
 }

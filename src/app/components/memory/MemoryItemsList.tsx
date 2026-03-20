@@ -1,20 +1,16 @@
 "use client";
 
-import { MemoryItemCard } from "@/app/components/memory/MemoryItemCard";
 import type { Item } from "@langchain/langgraph-sdk";
 import { Loader2 } from "lucide-react";
-import React from "react";
 import { useTranslations } from "next-intl";
+import React from "react";
+import { MemoryItemCard } from "@/app/components/memory/MemoryItemCard";
 
 interface MemoryItemsListProps {
   items: Item[];
   isLoading: boolean;
   onSelectItem: (item: Item) => void;
-  onDeleteItem: (
-    namespace: string[],
-    key: string,
-    event: React.MouseEvent
-  ) => void;
+  onDeleteItem: (namespace: string[], key: string, event: React.MouseEvent) => void;
   isDeleting?: boolean;
 }
 
@@ -36,11 +32,7 @@ export const MemoryItemsList = React.memo<MemoryItemsListProps>(
     }
 
     if (items.length === 0) {
-      return (
-        <p className="px-2 py-2 text-xs text-muted-foreground">
-          {t("noItemsInNamespace")}
-        </p>
-      );
+      return <p className="px-2 py-2 text-xs text-muted-foreground">{t("noItemsInNamespace")}</p>;
     }
 
     return (
@@ -59,7 +51,7 @@ export const MemoryItemsList = React.memo<MemoryItemsListProps>(
         ))}
       </div>
     );
-  }
+  },
 );
 
 MemoryItemsList.displayName = "MemoryItemsList";

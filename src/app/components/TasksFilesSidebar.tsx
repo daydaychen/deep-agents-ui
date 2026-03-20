@@ -1,28 +1,22 @@
 "use client";
 
-import React, {
-  useCallback,
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-} from "react";
 import {
-  FileText,
   CheckCircle2,
+  ChevronDown,
   Circle,
   Clock,
-  ChevronDown,
-  LayoutList,
-  FolderTree,
   ExternalLink,
+  FileText,
+  FolderTree,
+  LayoutList,
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import type { TodoItem, FileItem } from "@/app/types/types";
-import { useChatState } from "@/providers/chat-context";
-import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileViewDialog } from "@/app/components/FileViewDialog";
+import type { FileItem, TodoItem } from "@/app/types/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { useChatState } from "@/providers/chat-context";
 
 function FileListItem({
   filePath,
@@ -36,11 +30,7 @@ function FileListItem({
   t: (key: string) => string;
 }) {
   const fileContent = useMemo(() => {
-    if (
-      typeof rawContent === "object" &&
-      rawContent !== null &&
-      "content" in rawContent
-    ) {
+    if (typeof rawContent === "object" && rawContent !== null && "content" in rawContent) {
       const contentArray = (rawContent as { content: unknown }).content;
       if (Array.isArray(contentArray)) {
         return contentArray.join("\n");
@@ -94,7 +84,7 @@ export function FilesPopover({
       await setFiles({ ...files, [fileName]: content });
       setSelectedFile({ path: fileName, content: content });
     },
-    [files, setFiles]
+    [files, setFiles],
   );
 
   const fileKeys = Object.keys(files);
@@ -214,6 +204,7 @@ export const TasksFilesSidebar = React.memo<{
         {/* Tasks Section */}
         <div className="flex max-h-[60%] min-h-0 flex-col border-b border-border/40">
           <button
+            type="button"
             onClick={() => setTasksOpen((v) => !v)}
             className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/30"
           >
@@ -222,7 +213,7 @@ export const TasksFilesSidebar = React.memo<{
                 size={16}
                 className={cn(
                   "transition-colors",
-                  tasksOpen ? "text-primary" : "text-muted-foreground"
+                  tasksOpen ? "text-primary" : "text-muted-foreground",
                 )}
               />
               <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-foreground/80">
@@ -238,7 +229,7 @@ export const TasksFilesSidebar = React.memo<{
               size={14}
               className={cn(
                 "text-muted-foreground transition-transform duration-300",
-                tasksOpen ? "rotate-0" : "-rotate-90 opacity-40"
+                tasksOpen ? "rotate-0" : "-rotate-90 opacity-40",
               )}
             />
           </button>
@@ -265,18 +256,14 @@ export const TasksFilesSidebar = React.memo<{
                           className="space-y-1.5"
                         >
                           <h3 className="flex items-center gap-2 px-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                            {
-                              groupedLabels[
-                                status as keyof typeof groupedLabels
-                              ]
-                            }
+                            {groupedLabels[status as keyof typeof groupedLabels]}
                           </h3>
                           {groupTodos.map((todo, index) => (
                             <div
                               key={`${status}_${todo.id}_${index}`}
                               className={cn(
                                 "group flex items-start gap-2.5 rounded-lg p-2 text-xs transition-colors hover:bg-muted/40",
-                                todo.status === "completed" && "opacity-60"
+                                todo.status === "completed" && "opacity-60",
                               )}
                             >
                               {getStatusIcon(todo.status)}
@@ -284,7 +271,7 @@ export const TasksFilesSidebar = React.memo<{
                                 className={cn(
                                   "flex-1 break-words leading-relaxed",
                                   todo.status === "completed" &&
-                                    "line-through decoration-muted-foreground/30"
+                                    "line-through decoration-muted-foreground/30",
                                 )}
                               >
                                 {todo.content}
@@ -292,7 +279,7 @@ export const TasksFilesSidebar = React.memo<{
                             </div>
                           ))}
                         </div>
-                      )
+                      ),
                   )}
                 </div>
               )}
@@ -303,6 +290,7 @@ export const TasksFilesSidebar = React.memo<{
         {/* Files Section */}
         <div className="flex min-h-0 flex-1 flex-col">
           <button
+            type="button"
             onClick={() => setFilesOpen((v) => !v)}
             className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/30"
           >
@@ -311,7 +299,7 @@ export const TasksFilesSidebar = React.memo<{
                 size={16}
                 className={cn(
                   "transition-colors",
-                  filesOpen ? "text-primary" : "text-muted-foreground"
+                  filesOpen ? "text-primary" : "text-muted-foreground",
                 )}
               />
               <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-foreground/80">
@@ -327,7 +315,7 @@ export const TasksFilesSidebar = React.memo<{
               size={14}
               className={cn(
                 "text-muted-foreground transition-transform duration-300",
-                filesOpen ? "rotate-0" : "-rotate-90 opacity-40"
+                filesOpen ? "rotate-0" : "-rotate-90 opacity-40",
               )}
             />
           </button>

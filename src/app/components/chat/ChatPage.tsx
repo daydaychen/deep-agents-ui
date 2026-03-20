@@ -336,7 +336,7 @@ function HomePageInner({
           >
             <ChatProvider
               activeAssistant={assistant ?? null}
-              onHistoryRevalidate={() => mutateThreads?.()}
+              onHistoryRevalidateAction={() => mutateThreads?.()}
               recursionLimit={config.recursionLimit}
               recursionMultiplier={config.recursionMultiplier}
               config={config}

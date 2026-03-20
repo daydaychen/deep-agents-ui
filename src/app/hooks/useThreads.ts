@@ -1,9 +1,9 @@
-import { getConfig } from "@/lib/config";
-import { THREAD_TITLE_MAX_LENGTH, DEFAULT_THREAD_LIMIT } from "@/lib/constants";
 import type { Message, Thread } from "@langchain/langgraph-sdk";
 import { Client } from "@langchain/langgraph-sdk";
 import useSWRInfinite from "swr/infinite";
 import { deleteThreadData } from "@/app/utils/db";
+import { getConfig } from "@/lib/config";
+import { DEFAULT_THREAD_LIMIT, THREAD_TITLE_MAX_LENGTH } from "@/lib/constants";
 import type { StateType } from "@/providers/chat-context";
 
 export interface ThreadItem {
@@ -18,10 +18,7 @@ export interface ThreadItem {
 
 const DEFAULT_PAGE_SIZE = 20;
 
-export function useThreads(props: {
-  status?: Thread["status"];
-  limit?: number;
-}) {
+export function useThreads(props: { status?: Thread["status"]; limit?: number }) {
   const pageSize = props.limit || DEFAULT_PAGE_SIZE;
 
   return useSWRInfinite(
@@ -65,10 +62,9 @@ export function useThreads(props: {
       });
 
       // Check if assistantId is a UUID (deployed) or graph name (local)
-      const isUUID =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          assistantId
-        );
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        assistantId,
+      );
 
       const threads = await client.threads.search({
         limit: pageSize,
@@ -145,7 +141,7 @@ export function useThreads(props: {
     {
       revalidateFirstPage: true,
       revalidateOnFocus: true,
-    }
+    },
   );
 }
 
@@ -168,10 +164,7 @@ export function useDeleteThread() {
       try {
         await deleteThreadData(threadId);
       } catch (error) {
-        console.error(
-          `Failed to delete IndexedDB data for thread ${threadId}:`,
-          error
-        );
+        console.error(`Failed to delete IndexedDB data for thread ${threadId}:`, error);
       }
     },
   };
@@ -185,13 +178,7 @@ export function useMarkThreadAsResolved() {
   }
 
   return {
-    trigger: async ({
-      threadId,
-      assistantId,
-    }: {
-      threadId: string;
-      assistantId?: string;
-    }) => {
+    trigger: async ({ threadId, assistantId }: { threadId: string; assistantId?: string }) => {
       const client = new Client({
         apiUrl: config.deploymentUrl,
       });

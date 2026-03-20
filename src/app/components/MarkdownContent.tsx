@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneDark,
-  oneLight,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
-import { cn } from "@/lib/utils";
-import { COPY_SUCCESS_DURATION_MS } from "@/lib/constants";
 import { Check, Copy } from "lucide-react";
 import { useTheme } from "next-themes";
+import React, { useCallback, useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkGfm from "remark-gfm";
+import { COPY_SUCCESS_DURATION_MS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 // Hoisted RegExp to avoid recreating on each render
 const LANGUAGE_REGEX = /language-(\w+)/;
@@ -34,15 +31,12 @@ const CopyButton = ({ text }: { text: string }) => {
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className="absolute right-2 top-2 rounded-md bg-muted/50 p-1.5 text-muted-foreground opacity-0 transition-[opacity,background-color,color] hover:bg-muted group-hover:opacity-100"
       title="Copy code"
     >
-      {copied ? (
-        <Check className="h-3.5 w-3.5 text-success" />
-      ) : (
-        <Copy className="h-3.5 w-3.5" />
-      )}
+      {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
 };
@@ -66,7 +60,7 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
           "[&_code]:!bg-transparent",
           "[&_code_*]:!bg-transparent",
           "[&_.react-syntax-highlighter]:!bg-transparent",
-          className
+          className,
         )}
       >
         <ReactMarkdown
@@ -98,22 +92,20 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
               }
 
               // Use explicit logic-based coloring to avoid Tailwind 'dark:' prefix issues
-              const containerBg =
-                mounted && isDark ? "bg-[#1e1e1e]" : "bg-zinc-50";
-              const headerBg =
-                mounted && isDark ? "bg-zinc-900/80" : "bg-muted/40";
+              const containerBg = mounted && isDark ? "bg-[#1e1e1e]" : "bg-zinc-50";
+              const headerBg = mounted && isDark ? "bg-zinc-900/80" : "bg-muted/40";
 
               return (
                 <div
                   className={cn(
                     "group relative my-2 overflow-hidden rounded-lg border border-border shadow-sm",
-                    containerBg
+                    containerBg,
                   )}
                 >
                   <div
                     className={cn(
                       "flex items-center justify-between border-b border-border px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70",
-                      headerBg
+                      headerBg,
                     )}
                   >
                     <span>{match[1]}</span>
@@ -172,15 +164,11 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
             ),
             table: ({ children }) => (
               <div className="my-4 overflow-x-auto rounded-lg border border-border">
-                <table className="w-full border-collapse text-sm">
-                  {children}
-                </table>
+                <table className="w-full border-collapse text-sm">{children}</table>
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-muted/50 text-muted-foreground">
-                {children}
-              </thead>
+              <thead className="bg-muted/50 text-muted-foreground">{children}</thead>
             ),
             tr: ({ children }) => (
               <tr className="border-b border-border transition-colors last:border-0 hover:bg-muted/30">
@@ -188,20 +176,16 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
               </tr>
             ),
             th: ({ children }) => (
-              <th className="p-3 text-left align-middle font-semibold">
-                {children}
-              </th>
+              <th className="p-3 text-left align-middle font-semibold">{children}</th>
             ),
-            td: ({ children }) => (
-              <td className="p-3 align-middle">{children}</td>
-            ),
+            td: ({ children }) => <td className="p-3 align-middle">{children}</td>,
           }}
         >
           {content}
         </ReactMarkdown>
       </div>
     );
-  }
+  },
 );
 
 MarkdownContent.displayName = "MarkdownContent";

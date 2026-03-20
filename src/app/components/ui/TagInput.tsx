@@ -1,6 +1,6 @@
+import { X } from "lucide-react";
 import * as React from "react";
 import { Badge } from "@/app/components/ui/Badge";
-import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_TAGS: string[] = [];
@@ -12,12 +12,7 @@ interface TagInputProps {
   className?: string;
 }
 
-export function TagInput({
-  tags = DEFAULT_TAGS,
-  onChange,
-  placeholder,
-  className,
-}: TagInputProps) {
+export function TagInput({ tags = DEFAULT_TAGS, onChange, placeholder, className }: TagInputProps) {
   const [inputValue, setInputValue] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -41,10 +36,11 @@ export function TagInput({
   };
 
   return (
-    <div
+    <fieldset
+      aria-label={placeholder || "Tags"}
       className={cn(
         "flex min-h-[36px] w-full flex-wrap gap-1.5 rounded-md border border-input bg-muted/30 px-2 py-1.5 text-xs ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-        className
+        className,
       )}
       onClick={() => inputRef.current?.focus()}
       onKeyDown={(e) => {
@@ -52,7 +48,6 @@ export function TagInput({
           inputRef.current?.focus();
         }
       }}
-      role="presentation"
     >
       {tags.map((tag) => (
         <Badge
@@ -81,6 +76,6 @@ export function TagInput({
         className="min-w-[80px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
         placeholder={tags.length === 0 ? placeholder : ""}
       />
-    </div>
+    </fieldset>
   );
 }

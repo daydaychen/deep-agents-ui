@@ -3,12 +3,11 @@
  */
 
 // Hoisted RegExp to avoid recreating on each function call
-const PROTOTYPE_POLLUTION_REGEX =
-  /["'](__proto__|constructor|prototype)["']\s*:/;
+const PROTOTYPE_POLLUTION_REGEX = /["'](__proto__|constructor|prototype)["']\s*:/;
 
 export function parseJSON(
   str: string,
-  options: { disallowPrototypes?: boolean; maxDepth?: number } = {}
+  options: { disallowPrototypes?: boolean; maxDepth?: number } = {},
 ): unknown {
   const { disallowPrototypes = true, maxDepth = 5 } = options;
 

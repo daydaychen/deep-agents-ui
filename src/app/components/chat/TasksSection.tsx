@@ -1,11 +1,11 @@
 "use client";
 
 import { CheckCircle, Circle, Clock, FileIcon } from "lucide-react";
-import React, { Fragment, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
+import React, { Fragment, useMemo, useRef } from "react";
+import { FilesPopover } from "@/app/components/TasksFilesSidebar";
 import type { TodoItem } from "@/app/types/types";
 import { cn } from "@/lib/utils";
-import { FilesPopover } from "@/app/components/TasksFilesSidebar";
 import { TaskProgressButton } from "./TaskProgressButton";
 
 interface TasksSectionProps {
@@ -13,7 +13,6 @@ interface TasksSectionProps {
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
   isLoading: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interrupt: any;
   metaOpen: "tasks" | "files" | null;
   setMetaOpen: React.Dispatch<React.SetStateAction<"tasks" | "files" | null>>;
@@ -82,7 +81,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
         pending: todos.filter((t) => t.status === "pending"),
         completed: todos.filter((t) => t.status === "completed"),
       }),
-      [todos]
+      [todos],
     );
 
     const hasTasks = todos.length > 0;
@@ -96,52 +95,45 @@ export const TasksSection = React.memo<TasksSectionProps>(
       <div
         className={cn(
           "flex flex-col overflow-y-auto border-b border-border bg-muted/5 transition-[height,opacity,background-color,border-color] duration-300 ease-in-out",
-          hasTasks || hasFiles ? "max-h-72" : "max-h-0 border-b-0"
+          hasTasks || hasFiles ? "max-h-72" : "max-h-0 border-b-0",
         )}
       >
-        {!metaOpen && (
-          <>
-            {(() => {
-              const tasksTrigger = hasTasks ? (
-                <TaskProgressButton
-                  todos={todos}
-                  groupedTodos={groupedTodos}
-                  onClick={() =>
-                    setMetaOpen((prev) => (prev === "tasks" ? null : "tasks"))
-                  }
-                  isExpanded={metaOpen === "tasks"}
+        {!metaOpen &&
+          (() => {
+            const tasksTrigger = hasTasks ? (
+              <TaskProgressButton
+                todos={todos}
+                groupedTodos={groupedTodos}
+                onClick={() => setMetaOpen((prev) => (prev === "tasks" ? null : "tasks"))}
+                isExpanded={metaOpen === "tasks"}
+              />
+            ) : null;
+
+            const filesTrigger = hasFiles ? (
+              <button
+                type="button"
+                onClick={() => setMetaOpen((prev) => (prev === "files" ? null : "files"))}
+                className="flex flex-shrink-0 cursor-pointer items-center gap-2 px-[18px] py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted/10 hover:text-foreground"
+                aria-expanded={metaOpen === "files"}
+              >
+                <FileIcon
+                  size={14}
+                  className="opacity-70"
                 />
-              ) : null;
+                {t("filesState")}
+                <span className="text-primary-foreground flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-center text-[9px] font-bold leading-none">
+                  {Object.keys(files).length}
+                </span>
+              </button>
+            ) : null;
 
-              const filesTrigger = hasFiles ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMetaOpen((prev) => (prev === "files" ? null : "files"))
-                  }
-                  className="flex flex-shrink-0 cursor-pointer items-center gap-2 px-[18px] py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted/10 hover:text-foreground"
-                  aria-expanded={metaOpen === "files"}
-                >
-                  <FileIcon
-                    size={14}
-                    className="opacity-70"
-                  />
-                  {t("filesState")}
-                  <span className="text-primary-foreground flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-center text-[9px] font-bold leading-none">
-                    {Object.keys(files).length}
-                  </span>
-                </button>
-              ) : null;
-
-              return (
-                <div className="grid grid-cols-[1fr_auto_auto] items-center">
-                  {tasksTrigger}
-                  {filesTrigger}
-                </div>
-              );
-            })()}
-          </>
-        )}
+            return (
+              <div className="grid grid-cols-[1fr_auto_auto] items-center">
+                {tasksTrigger}
+                {filesTrigger}
+              </div>
+            );
+          })()}
 
         {metaOpen && (
           <>
@@ -150,9 +142,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
                 <button
                   type="button"
                   className="py-3 pr-4 first:pl-[18px] aria-expanded:font-semibold"
-                  onClick={() =>
-                    setMetaOpen((prev) => (prev === "tasks" ? null : "tasks"))
-                  }
+                  onClick={() => setMetaOpen((prev) => (prev === "tasks" ? null : "tasks"))}
                   aria-expanded={metaOpen === "tasks"}
                 >
                   {t("tasks")}
@@ -162,9 +152,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
                 <button
                   type="button"
                   className="inline-flex items-center gap-2 py-3 pr-4 first:pl-[18px] aria-expanded:font-semibold"
-                  onClick={() =>
-                    setMetaOpen((prev) => (prev === "files" ? null : "files"))
-                  }
+                  onClick={() => setMetaOpen((prev) => (prev === "files" ? null : "files"))}
                   aria-expanded={metaOpen === "files"}
                 >
                   {t("filesState")}
@@ -174,6 +162,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
                 </button>
               )}
               <button
+                type="button"
                 aria-label="Close"
                 className="flex-1"
                 onClick={() => setMetaOpen(null)}
@@ -204,9 +193,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
                         {todos.map((todo, index) => (
                           <Fragment key={`${status}_${todo.id}_${index}`}>
                             {getStatusIcon(todo.status, "mt-0.5")}
-                            <span className="break-words text-inherit">
-                              {todo.content}
-                            </span>
+                            <span className="break-words text-inherit">{todo.content}</span>
                           </Fragment>
                         ))}
                       </div>
@@ -227,7 +214,7 @@ export const TasksSection = React.memo<TasksSectionProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 TasksSection.displayName = "TasksSection";

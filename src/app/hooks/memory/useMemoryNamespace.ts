@@ -1,20 +1,15 @@
 import type { Item } from "@langchain/langgraph-sdk";
-import { DEFAULT_MEMORY_LIMIT } from "@/lib/constants";
 import { useCallback, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { DEFAULT_MEMORY_LIMIT } from "@/lib/constants";
 
 /**
  * Manage namespace selection and item loading for memory component
  */
 export function useMemoryNamespace(
-  searchItems: (
-    namespace: string[],
-    options?: { limit?: number }
-  ) => Promise<Item[]>
+  searchItems: (namespace: string[], options?: { limit?: number }) => Promise<Item[]>,
 ) {
-  const [selectedNamespace, setSelectedNamespace] = useState<string[] | null>(
-    null
-  );
+  const [selectedNamespace, setSelectedNamespace] = useState<string[] | null>(null);
   const [namespaceItems, setNamespaceItems] = useState<Item[]>([]);
   const [isLoadingItems, startLoadingItems] = useTransition();
 
@@ -38,7 +33,7 @@ export function useMemoryNamespace(
         });
       }
     },
-    [searchItems, selectedNamespace]
+    [searchItems, selectedNamespace],
   );
 
   const refreshItems = useCallback(
@@ -48,7 +43,7 @@ export function useMemoryNamespace(
         setNamespaceItems(items);
       }
     },
-    [searchItems, selectedNamespace]
+    [searchItems, selectedNamespace],
   );
 
   return {

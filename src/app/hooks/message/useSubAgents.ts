@@ -1,6 +1,6 @@
-import type { SubAgent, ToolCall } from "@/app/types/types";
 import { Message } from "@langchain/langgraph-sdk";
 import { useMemo } from "react";
+import type { SubAgent, ToolCall } from "@/app/types/types";
 
 /**
  * Extract subagent information from tool calls
@@ -10,7 +10,7 @@ import { useMemo } from "react";
  */
 export function useSubAgents(
   toolCalls: ToolCall[],
-  subagentMessagesMap?: Map<string, Message[]>
+  subagentMessagesMap?: Map<string, Message[]>,
 ): SubAgent[] {
   return useMemo(() => {
     const result: SubAgent[] = [];
@@ -25,29 +25,23 @@ export function useSubAgents(
         continue;
       }
 
-      const subagentType = (toolCall.args as Record<string, unknown>)[
-        "subagent_type"
-      ] as string;
+      const subagentType = (toolCall.args as Record<string, unknown>)["subagent_type"] as string;
 
       // Get messages for this subagent from the map or toolCall
-      const messages =
-        subagentMessagesMap?.get(toolCall.id) ||
-        toolCall.subAgentMessages ||
-        [];
+      const messages = subagentMessagesMap?.get(toolCall.id) || toolCall.subAgentMessages || [];
 
-        // Try to find agentName from the messages metadata
-        let agentName = subagentType; // Default to subagent_type from args
-        if (messages.length > 0) {
-          // Check the first few messages for the actual agent name from metadata
-          for (const msg of messages) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const msgAny = msg as any;
-            if (msgAny.metadata?.lc_agent_name) {
-              agentName = msgAny.metadata.lc_agent_name;
-              break;
-            }
+      // Try to find agentName from the messages metadata
+      let agentName = subagentType; // Default to subagent_type from args
+      if (messages.length > 0) {
+        // Check the first few messages for the actual agent name from metadata
+        for (const msg of messages) {
+          const msgAny = msg as any;
+          if (msgAny.metadata?.lc_agent_name) {
+            agentName = msgAny.metadata.lc_agent_name;
+            break;
           }
         }
+      }
 
       result.push({
         id: toolCall.id,

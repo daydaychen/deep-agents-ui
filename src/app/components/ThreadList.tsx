@@ -1,34 +1,17 @@
 "use client";
 
+import { Loader2, MessageSquare, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { ThreadGroup } from "@/app/components/thread/ThreadGroup";
-import {
-  ThreadStatusFilter,
-  type StatusFilter,
-} from "@/app/components/thread/ThreadStatusFilter";
-import {
-  getThreadGroupKeys,
-  useThreadGrouping,
-} from "@/app/hooks/thread/useThreadGrouping";
-import {
-  useDeleteThread,
-  useMarkThreadAsResolved,
-  useThreads,
-} from "@/app/hooks/useThreads";
-import { cn } from "@/lib/utils";
+import { type StatusFilter, ThreadStatusFilter } from "@/app/components/thread/ThreadStatusFilter";
+import { getThreadGroupKeys, useThreadGrouping } from "@/app/hooks/thread/useThreadGrouping";
+import { useDeleteThread, useMarkThreadAsResolved, useThreads } from "@/app/hooks/useThreads";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, MessageSquare, X } from "lucide-react";
-import { useQueryState } from "nuqs";
-import { useTranslations } from "next-intl";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { cn } from "@/lib/utils";
 
 // Static JSX elements - hoisted outside components to avoid recreation
 const loadingSkeletonElements = (
@@ -105,17 +88,14 @@ export function ThreadList({
     return threads.data?.flat() ?? [];
   }, [threads.data]);
 
-  const isLoadingMore =
-    threads.size > 0 && threads.data?.[threads.size - 1] == null;
+  const isLoadingMore = threads.size > 0 && threads.data?.[threads.size - 1] == null;
   const isEmpty = threads.data?.at(0)?.length === 0;
   const isReachingEnd = isEmpty || (threads.data?.at(-1)?.length ?? 0) < 20;
 
   // Group threads by time and status using the custom hook
   const grouped = useThreadGrouping(flattened);
 
-  const interruptedCount = flattened.filter(
-    (t) => t.status === "interrupted"
-  ).length;
+  const interruptedCount = flattened.filter((t) => t.status === "interrupted").length;
 
   // Expose thread list revalidation to parent component
   // Use refs to create a stable callback that always calls the latest mutate function
@@ -134,10 +114,9 @@ export function ThreadList({
     mutateRef.current();
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <Only run once on mount to avoid infinite loops>
   useEffect(() => {
     onMutateReadyRef.current?.(mutateFn);
-    // Only run once on mount to avoid infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Notify parent of interrupt count changes
@@ -162,7 +141,7 @@ export function ThreadList({
         console.error("Failed to delete thread:", error);
       }
     },
-    [currentThreadId, deleteThread, mutateFn, setCurrentThreadId]
+    [currentThreadId, deleteThread, mutateFn, setCurrentThreadId],
   );
 
   const handleMarkAsResolved = useCallback(
@@ -177,7 +156,7 @@ export function ThreadList({
         console.error("Failed to mark thread as resolved:", error);
       }
     },
-    [markThreadAsResolved, mutateFn]
+    [markThreadAsResolved, mutateFn],
   );
 
   return (
@@ -219,9 +198,7 @@ export function ThreadList({
         <ScrollArea className={cn("h-full w-full", isPending && "opacity-50")}>
           {threads.error && <ErrorState message={threads.error.message} />}
 
-          {!threads.error && !threads.data && threads.isLoading && (
-            <LoadingState />
-          )}
+          {!threads.error && !threads.data && threads.isLoading && <LoadingState />}
 
           {!threads.error && !threads.isLoading && isEmpty && <EmptyState />}
 

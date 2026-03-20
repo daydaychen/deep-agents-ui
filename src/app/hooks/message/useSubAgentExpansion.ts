@@ -6,13 +6,11 @@ import { useCallback, useState } from "react";
  * - Provides methods to check and toggle expansion state
  */
 export function useSubAgentExpansion() {
-  const [expandedSubAgents, setExpandedSubAgents] = useState<
-    Record<string, boolean>
-  >({});
+  const [expandedSubAgents, setExpandedSubAgents] = useState<Record<string, boolean>>({});
 
   const isSubAgentExpanded = useCallback(
     (id: string) => expandedSubAgents[id] ?? true,
-    [expandedSubAgents]
+    [expandedSubAgents],
   );
 
   const toggleSubAgent = useCallback((id: string) => {

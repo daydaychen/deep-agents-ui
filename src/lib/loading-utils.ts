@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Options for loading timeout
@@ -18,7 +18,7 @@ interface LoadingTimeoutOptions {
  */
 export function useLoadingTimeout(
   isLoading: boolean,
-  options: LoadingTimeoutOptions = {}
+  options: LoadingTimeoutOptions = {},
 ): {
   /** Whether a timeout is currently active */
   isTimedOut: boolean;
@@ -64,7 +64,7 @@ export function useLoadingTimeout(
  */
 export function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
-  delay: number
+  delay: number,
 ): T {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -78,7 +78,7 @@ export function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
         callback(...args);
       }, delay);
     },
-    [callback, delay]
+    [callback, delay],
   ) as T;
 
   useEffect(() => {
@@ -96,10 +96,7 @@ export function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
  * Hook for throttled value updates
  * Prevents rapid re-renders during streaming operations
  */
-export function useThrottledState<T>(
-  value: T,
-  throttleMs: number = 100
-): T {
+export function useThrottledState<T>(value: T, throttleMs: number = 100): T {
   const [throttledValue, setThrottledValue] = useState(value);
   const lastUpdateRef = useRef(0);
 
@@ -109,10 +106,13 @@ export function useThrottledState<T>(
       setThrottledValue(value);
       lastUpdateRef.current = now;
     } else {
-      const timer = setTimeout(() => {
-        setThrottledValue(value);
-        lastUpdateRef.current = Date.now();
-      }, throttleMs - (now - lastUpdateRef.current));
+      const timer = setTimeout(
+        () => {
+          setThrottledValue(value);
+          lastUpdateRef.current = Date.now();
+        },
+        throttleMs - (now - lastUpdateRef.current),
+      );
 
       return () => clearTimeout(timer);
     }

@@ -1,16 +1,14 @@
 "use client";
 
+import { Activity } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useConnectionStatus } from "@/app/hooks/useConnectionStatus";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
-import { Activity } from "lucide-react";
 
 // Static icon components - hoisted outside to avoid recreation on every render
 const ConnectedIcon = <Activity className="h-4 w-4 text-emerald-500" />;
 const DisconnectedIcon = <Activity className="h-4 w-4 text-destructive" />;
-const ConnectingIcon = (
-  <Activity className="h-4 w-4 animate-pulse text-yellow-500" />
-);
+const ConnectingIcon = <Activity className="h-4 w-4 animate-pulse text-yellow-500" />;
 const ErrorIcon = <Activity className="h-4 w-4 text-destructive" />;
 
 export function ConnectionStatusIndicator() {
@@ -49,7 +47,7 @@ export function ConnectionStatusIndicator() {
         <span
           className={cn(
             "absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background",
-            current.color
+            current.color,
           )}
         />
       </div>

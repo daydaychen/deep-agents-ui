@@ -1,9 +1,29 @@
 "use client";
 
-import { useState, useEffect, useMemo, useTransition } from "react";
-import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Assistant } from "@langchain/langgraph-sdk";
+import { Client } from "@langchain/langgraph-sdk";
+import {
+  Calendar,
+  Database,
+  Globe,
+  Hash,
+  LayoutGrid,
+  ListFilter,
+  Loader2,
+  Settings2,
+  Tag,
+  Trash2,
+  User,
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
+import { KeyValueForm } from "@/app/components/ui/KeyValueForm";
+import { TagInput } from "@/app/components/ui/TagInput";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,9 +32,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,34 +42,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  createAssistantConfigAuditEvent,
+  createAuthModeChangeAuditEvent,
+  logAuditEvent,
+} from "@/lib/audit-logger";
 import { StandaloneConfig } from "@/lib/config";
 import { DEFAULT_MESSAGE_LIMIT } from "@/lib/constants";
 import { parseJSON } from "@/lib/safe-json-parse";
 import { escapeHtml } from "@/lib/utils";
-import {
-  logAuditEvent,
-  createAssistantConfigAuditEvent,
-  createAuthModeChangeAuditEvent,
-} from "@/lib/audit-logger";
-import { Client } from "@langchain/langgraph-sdk";
-import type { Assistant } from "@langchain/langgraph-sdk";
-import { toast } from "sonner";
-import {
-  Loader2,
-  Settings2,
-  Globe,
-  ListFilter,
-  Hash,
-  User,
-  Calendar,
-  Trash2,
-  Tag,
-  Database,
-  LayoutGrid,
-} from "lucide-react";
-import { useTranslations } from "next-intl";
-import { KeyValueForm } from "@/app/components/ui/KeyValueForm";
-import { TagInput } from "@/app/components/ui/TagInput";
 import { createDuplicateKeyValidator } from "@/lib/validation";
 
 interface ConfigDialogProps {
@@ -73,10 +73,7 @@ const assistantFormSchema = z
   .superRefine((data, ctx) => {
     const validateDuplicates = createDuplicateKeyValidator();
 
-    const configurableResult = validateDuplicates(
-      data.configurable,
-      "configurable"
-    );
+    const configurableResult = validateDuplicates(data.configurable, "configurable");
     if (configurableResult) {
       ctx.addIssue(configurableResult);
     }
@@ -97,23 +94,17 @@ export function ConfigDialog({
   currentDeploymentUrl,
 }: ConfigDialogProps) {
   const t = useTranslations("config");
-  const [deploymentUrl, setDeploymentUrl] = useState(
-    initialConfig?.deploymentUrl || ""
-  );
-  const [assistantId, setAssistantId] = useState(
-    initialConfig?.assistantId || ""
-  );
+  const [deploymentUrl, setDeploymentUrl] = useState(initialConfig?.deploymentUrl || "");
+  const [assistantId, setAssistantId] = useState(initialConfig?.assistantId || "");
   const [recursionLimit, setRecursionLimit] = useState(
-    initialConfig?.recursionLimit?.toString() || "100"
+    initialConfig?.recursionLimit?.toString() || "100",
   );
   const [recursionMultiplier, setRecursionMultiplier] = useState(
-    initialConfig?.recursionMultiplier?.toString() || "6"
+    initialConfig?.recursionMultiplier?.toString() || "6",
   );
   const [userId, setUserId] = useState(initialConfig?.userId || "");
   const [assistants, setAssistants] = useState<Assistant[]>([]);
-  const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(
-    null
-  );
+  const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
   const [isPendingAssistants, startLoadingAssistants] = useTransition();
   const [isPendingDetails, startLoadingDetails] = useTransition();
   const [useCustomId, setUseCustomId] = useState(false);
@@ -139,9 +130,7 @@ export function ConfigDialog({
       setDeploymentUrl(initialConfig.deploymentUrl || "");
       setAssistantId(initialConfig.assistantId);
       setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
-      setRecursionMultiplier(
-        initialConfig.recursionMultiplier?.toString() || "6"
-      );
+      setRecursionMultiplier(initialConfig.recursionMultiplier?.toString() || "6");
       setUserId(initialConfig.userId || "");
     }
   }, [open, initialConfig]);
@@ -179,10 +168,7 @@ export function ConfigDialog({
       const metadata = assistant.metadata || {};
       const configurable = config.configurable || {};
 
-      const toEntries = (
-        obj: Record<string, unknown>,
-        excludeKeys: string[] = []
-      ) => {
+      const toEntries = (obj: Record<string, unknown>, excludeKeys: string[] = []) => {
         const excludeKeysSet = new Set(excludeKeys);
         return Object.entries(obj)
           .filter(([key]) => !excludeKeysSet.has(key))
@@ -197,8 +183,7 @@ export function ConfigDialog({
       const authMode = VALID_AUTH_MODES.has(authModeValue)
         ? (authModeValue as "ask" | "read" | "auto")
         : "ask";
-      const defaultModel =
-        typeof metadata.defaultModel === "string" ? metadata.defaultModel : "";
+      const defaultModel = typeof metadata.defaultModel === "string" ? metadata.defaultModel : "";
 
       return {
         tags: config.tags || [],
@@ -230,7 +215,7 @@ export function ConfigDialog({
             (value.startsWith("[") && value.endsWith("]")) ||
             value === "true" ||
             value === "false" ||
-            !isNaN(Number(value))
+            !Number.isNaN(Number(value))
           ) {
             obj[key] = parseJSON(value);
           } else {
@@ -280,14 +265,7 @@ export function ConfigDialog({
         setSelectedAssistant(null);
       }
     });
-  }, [
-    assistantId,
-    deploymentUrl,
-    currentDeploymentUrl,
-    open,
-    reset,
-    mapToForm,
-  ]);
+  }, [assistantId, deploymentUrl, currentDeploymentUrl, open, reset, mapToForm]);
 
   const handleDeleteAssistant = async () => {
     if (!selectedAssistant) return;
@@ -306,7 +284,7 @@ export function ConfigDialog({
         toast.success(t("assistantDeleted"));
         setAssistantId("");
         setAssistants((prev) =>
-          prev.filter((a) => a.assistant_id !== selectedAssistant.assistant_id)
+          prev.filter((a) => a.assistant_id !== selectedAssistant.assistant_id),
         );
         setSelectedAssistant(null);
       } catch (error) {
@@ -327,13 +305,13 @@ export function ConfigDialog({
     }
 
     const parsedRecursionLimit = parseInt(recursionLimit, 10);
-    if (isNaN(parsedRecursionLimit) || parsedRecursionLimit < 1) {
+    if (Number.isNaN(parsedRecursionLimit) || parsedRecursionLimit < 1) {
       toast.error(t("recursionLimitPositive"));
       return;
     }
 
     const parsedRecursionMultiplier = parseInt(recursionMultiplier, 10);
-    if (isNaN(parsedRecursionMultiplier) || parsedRecursionMultiplier < 1) {
+    if (Number.isNaN(parsedRecursionMultiplier) || parsedRecursionMultiplier < 1) {
       toast.error(t("recursionMultiplierPositive"));
       return;
     }
@@ -345,16 +323,12 @@ export function ConfigDialog({
       // Check for auth mode change to Auto mode - require confirmation (must be outside transition)
       const formValues = methods.getValues();
       const { config, metadata } = mapFromForm(formValues);
-      const oldAuthMode = selectedAssistant.metadata?.authMode as
-        | string
-        | undefined;
+      const oldAuthMode = selectedAssistant.metadata?.authMode as string | undefined;
       const newAuthMode = metadata.authMode as string | undefined;
 
       if (newAuthMode === "auto" && oldAuthMode !== "auto") {
         // Show warning confirmation dialog
-        const confirmed = window.confirm(
-          "切换到 Auto 模式将绕过所有安全审批。确定继续？"
-        );
+        const confirmed = window.confirm("切换到 Auto 模式将绕过所有安全审批。确定继续？");
         if (!confirmed) {
           return;
         }
@@ -364,7 +338,7 @@ export function ConfigDialog({
           selectedAssistant.assistant_id,
           oldAuthMode,
           newAuthMode,
-          userId
+          userId,
         );
         logAuditEvent(auditEvent);
       }
@@ -382,9 +356,7 @@ export function ConfigDialog({
           // Check key count first to avoid expensive JSON.stringify when obviously different
           const currentConfigKeys = Object.keys(selectedAssistant.config || {});
           const newConfigKeys = Object.keys(config || {});
-          const currentMetadataKeys = Object.keys(
-            selectedAssistant.metadata || {}
-          );
+          const currentMetadataKeys = Object.keys(selectedAssistant.metadata || {});
           const newMetadataKeys = Object.keys(metadata || {});
 
           const keyCountsMatch =
@@ -413,7 +385,7 @@ export function ConfigDialog({
             const configAuditEvent = createAssistantConfigAuditEvent(
               selectedAssistant.assistant_id,
               { authMode: newAuthMode, defaultModel: metadata.defaultModel },
-              userId
+              userId,
             );
             logAuditEvent(configAuditEvent);
 
@@ -600,8 +572,7 @@ export function ConfigDialog({
                             <DialogDescription>
                               {t.rich("deleteAssistantDescription", {
                                 name: escapeHtml(
-                                  selectedAssistant.name ||
-                                    selectedAssistant.graph_id
+                                  selectedAssistant.name || selectedAssistant.graph_id,
                                 ),
                                 strong: (chunks: React.ReactNode) => (
                                   <strong className="font-semibold text-foreground">
@@ -646,13 +617,11 @@ export function ConfigDialog({
                 <div className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/20 p-3 text-[10px]">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    {t("created")}:{" "}
-                    {formattedDate(selectedAssistant.created_at)}
+                    {t("created")}: {formattedDate(selectedAssistant.created_at)}
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    {t("updated")}:{" "}
-                    {formattedDate(selectedAssistant.updated_at)}
+                    {t("updated")}: {formattedDate(selectedAssistant.updated_at)}
                   </div>
                 </div>
               )}
@@ -741,15 +710,9 @@ export function ConfigDialog({
                           <SelectValue placeholder="Select mode" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ask">
-                            🛡️ {t("authMode.ask")}
-                          </SelectItem>
-                          <SelectItem value="read">
-                            👁️ {t("authMode.read")}
-                          </SelectItem>
-                          <SelectItem value="auto">
-                            ⚡ {t("authMode.auto")}
-                          </SelectItem>
+                          <SelectItem value="ask">🛡️ {t("authMode.ask")}</SelectItem>
+                          <SelectItem value="read">👁️ {t("authMode.read")}</SelectItem>
+                          <SelectItem value="auto">⚡ {t("authMode.auto")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -760,9 +723,7 @@ export function ConfigDialog({
                       </Label>
                       <Input
                         value={watch("defaultModel")}
-                        onChange={(e) =>
-                          setValue("defaultModel", e.target.value)
-                        }
+                        onChange={(e) => setValue("defaultModel", e.target.value)}
                         placeholder="e.g. gpt-4o"
                         className="h-9"
                       />
@@ -838,11 +799,7 @@ export function ConfigDialog({
           <Button
             onClick={handleSave}
             className="min-w-[120px] px-8"
-            disabled={
-              isPendingDetails ||
-              isPendingUpdate ||
-              !methods.formState.isValid
-            }
+            disabled={isPendingDetails || isPendingUpdate || !methods.formState.isValid}
           >
             {isPendingUpdate || isPendingDelete ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

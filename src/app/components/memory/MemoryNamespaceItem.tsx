@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { ChevronDown, Database } from "lucide-react";
 import React from "react";
+import { cn } from "@/lib/utils";
 
 interface MemoryNamespaceItemProps {
   namespace: string;
@@ -14,6 +14,7 @@ export const MemoryNamespaceItem = React.memo<MemoryNamespaceItemProps>(
   ({ namespace, isExpanded, onClick }) => {
     return (
       <button
+        type="button"
         onClick={onClick}
         aria-expanded={isExpanded}
         className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm font-medium transition-colors hover:bg-muted"
@@ -29,12 +30,12 @@ export const MemoryNamespaceItem = React.memo<MemoryNamespaceItemProps>(
           size={14}
           className={cn(
             "text-muted-foreground transition-transform duration-200 ease-out",
-            isExpanded ? "rotate-180" : "rotate-0"
+            isExpanded ? "rotate-180" : "rotate-0",
           )}
         />
       </button>
     );
-  }
+  },
 );
 
 MemoryNamespaceItem.displayName = "MemoryNamespaceItem";

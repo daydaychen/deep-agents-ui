@@ -1,8 +1,8 @@
 "use client";
 
-import { useClient } from "@/providers/client-context";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
+import { useClient } from "@/providers/client-context";
 
 export type ConnectionStatus = "connected" | "disconnected" | "connecting" | "error";
 
@@ -27,7 +27,7 @@ export function useConnectionStatus() {
       revalidateOnFocus: true,
       shouldRetryOnError: true,
       dedupingInterval: 5000,
-    }
+    },
   );
 
   useEffect(() => {

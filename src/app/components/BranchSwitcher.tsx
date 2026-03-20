@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, GitFork } from "lucide-react";
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface BranchSwitcherProps {
   branchOptions: string[] | undefined;
@@ -31,7 +31,7 @@ export const BranchSwitcher = React.memo<BranchSwitcherProps>(
       <div
         className={cn(
           "flex items-center gap-1 px-1 py-0.5 rounded-full bg-accent/30 border border-accent/50 transition-all duration-200",
-          className
+          className,
         )}
       >
         <div className="flex items-center gap-1.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -75,7 +75,7 @@ export const BranchSwitcher = React.memo<BranchSwitcherProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 BranchSwitcher.displayName = "BranchSwitcher";

@@ -1,10 +1,10 @@
 "use client";
 
+import { Check, Loader2, Pencil, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Pencil, X } from "lucide-react";
-import React from "react";
-import { useTranslations } from "next-intl";
 
 interface ApprovalActionsProps {
   isEditing: boolean;
@@ -37,10 +37,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
     const t = useTranslations("approval");
 
     // Move useMemo before any early returns to satisfy React Hooks rules
-    const allowedDecisionsSet = React.useMemo(
-      () => new Set(allowedDecisions),
-      [allowedDecisions]
-    );
+    const allowedDecisionsSet = React.useMemo(() => new Set(allowedDecisions), [allowedDecisions]);
 
     if (isEditing) {
       return (
@@ -131,7 +128,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
             disabled={isLoading}
             className={cn(
               "min-h-[18px] min-w-[44px] bg-green-600 text-white hover:bg-green-700",
-              "dark:bg-green-600 dark:hover:bg-green-700"
+              "dark:bg-green-600 dark:hover:bg-green-700",
             )}
           >
             <Check size={14} />
@@ -140,7 +137,7 @@ export const ApprovalActions = React.memo<ApprovalActionsProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 ApprovalActions.displayName = "ApprovalActions";

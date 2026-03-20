@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useMemo, useCallback, useState, useEffect } from "react";
-import { Database, Copy, Download, Edit, Save, X, Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogHeader,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Copy, Database, Download, Edit, Loader2, Save, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import useSWRMutation from "swr/mutation";
+import type { MemoryItem } from "@/app/types/types";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -19,21 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import type { MemoryItem } from "@/app/types/types";
-import useSWRMutation from "swr/mutation";
-import { useTranslations } from "next-intl";
+import { Textarea } from "@/components/ui/textarea";
 import type { StandaloneConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { MarkdownContent } from "./MarkdownContent";
 
 export const MemoryItemDialog = React.memo<{
   item: MemoryItem | null;
-  onSaveItem: (
-    namespace: string[],
-    key: string,
-    value: Record<string, unknown>
-  ) => Promise<void>;
+  onSaveItem: (namespace: string[], key: string, value: Record<string, unknown>) => Promise<void>;
   onClose: () => void;
   editDisabled: boolean;
   config: StandaloneConfig;
@@ -44,9 +35,7 @@ export const MemoryItemDialog = React.memo<{
 
   // Split namespace into ID and Type
   const [namespaceId, setNamespaceId] = useState("");
-  const [namespaceType, setNamespaceType] = useState<"memories" | "reports">(
-    "memories"
-  );
+  const [namespaceType, setNamespaceType] = useState<"memories" | "reports">("memories");
   const [itemKey, setItemKey] = useState(item?.key || "/");
   const [content, setContent] = useState("");
 
@@ -62,9 +51,7 @@ export const MemoryItemDialog = React.memo<{
       if (!namespaceId || !namespaceType || !itemKey || !content) return;
 
       const now = new Date().toISOString();
-      const contentArray = content
-        .split("\n")
-        .filter((line) => line.trim() !== "");
+      const contentArray = content.split("\n").filter((line) => line.trim() !== "");
 
       const newValue: Record<string, unknown> = {
         content: contentArray,
@@ -76,9 +63,8 @@ export const MemoryItemDialog = React.memo<{
     },
     {
       onSuccess: () => setIsEditingMode(false),
-      onError: (error) =>
-        toast.error(t("saveItemFailed", { error: String(error) })),
-    }
+      onError: (error) => toast.error(t("saveItemFailed", { error: String(error) })),
+    },
   );
 
   useEffect(() => {
@@ -197,7 +183,10 @@ export const MemoryItemDialog = React.memo<{
             <div className="space-y-4 p-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-medium uppercase text-muted-foreground">
+                  <label
+                    htmlFor="namespace-id"
+                    className="text-xs font-medium uppercase text-muted-foreground"
+                  >
                     {t("namespaceId")}
                   </label>
                   {isEditingMode ? (
@@ -205,7 +194,10 @@ export const MemoryItemDialog = React.memo<{
                       value={namespaceId}
                       onValueChange={setNamespaceId}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger
+                        id="namespace-id"
+                        className="w-full"
+                      >
                         <SelectValue placeholder={t("selectId")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -220,29 +212,29 @@ export const MemoryItemDialog = React.memo<{
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
-                      {namespaceId}
-                    </div>
+                    <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">{namespaceId}</div>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium uppercase text-muted-foreground">
+                  <label
+                    htmlFor="namespace-type"
+                    className="text-xs font-medium uppercase text-muted-foreground"
+                  >
                     {t("namespaceType")}
                   </label>
                   {isEditingMode ? (
                     <Select
                       value={namespaceType}
-                      onValueChange={(val) =>
-                        setNamespaceType(val as "memories" | "reports")
-                      }
+                      onValueChange={(val) => setNamespaceType(val as "memories" | "reports")}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger
+                        id="namespace-type"
+                        className="w-full"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="memories">
-                          {t("memories")}
-                        </SelectItem>
+                        <SelectItem value="memories">{t("memories")}</SelectItem>
                         <SelectItem value="reports">{t("reports")}</SelectItem>
                       </SelectContent>
                     </Select>
@@ -255,25 +247,27 @@ export const MemoryItemDialog = React.memo<{
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium uppercase text-muted-foreground">
+                <label
+                  htmlFor="item-key"
+                  className="text-xs font-medium uppercase text-muted-foreground"
+                >
                   {t("key")}
                 </label>
                 {isEditingMode ? (
                   <div className="space-y-1">
                     <Input
+                      id="item-key"
                       value={itemKey}
                       onChange={(e) => setItemKey(e.target.value)}
                       placeholder="/filename.md"
                       className={cn(
                         "text-sm",
                         !itemKey.startsWith("/") &&
-                          "border-destructive focus-visible:ring-destructive"
+                          "border-destructive focus-visible:ring-destructive",
                       )}
                     />
                     {!itemKey.startsWith("/") && (
-                      <p className="text-[10px] text-destructive">
-                        {t("invalidKey")}
-                      </p>
+                      <p className="text-[10px] text-destructive">{t("invalidKey")}</p>
                     )}
                   </div>
                 ) : (
@@ -285,7 +279,10 @@ export const MemoryItemDialog = React.memo<{
 
               <div className="flex min-h-[300px] flex-col space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium uppercase text-muted-foreground">
+                  <label
+                    htmlFor="item-content"
+                    className="text-xs font-medium uppercase text-muted-foreground"
+                  >
                     {t("content")}
                   </label>
                   {!isEditingMode && (
@@ -334,6 +331,7 @@ export const MemoryItemDialog = React.memo<{
                 <div className="min-h-[300px] flex-1">
                   {isEditingMode ? (
                     <Textarea
+                      id="item-content"
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       placeholder={t("contentPlaceholder")}
@@ -345,9 +343,7 @@ export const MemoryItemDialog = React.memo<{
                         <MarkdownContent content={content} />
                       ) : (
                         <div className="flex items-center justify-center p-12">
-                          <p className="text-sm text-muted-foreground">
-                            {t("itemEmpty")}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{t("itemEmpty")}</p>
                         </div>
                       )}
                     </div>

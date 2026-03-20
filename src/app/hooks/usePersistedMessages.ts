@@ -22,16 +22,14 @@ interface PersistedSubagentMessage {
 export function usePersistedMessages(
   threadId: string | null,
   subagents: Map<string, SubagentStreamInterface<unknown, unknown, string>>,
-  isLoading: boolean
+  isLoading: boolean,
 ) {
   const dbRef = useRef<IDBDatabase | null>(null);
   const dbReadyPromiseRef = useRef<Promise<IDBDatabase | null> | null>(null);
 
   // Use ref for the actual data to avoid rapid re-renders during streaming
   const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
-  const [subagentMessagesMap, setSubagentMessagesMap] = useState<
-    Map<string, Message[]>
-  >(new Map());
+  const [subagentMessagesMap, setSubagentMessagesMap] = useState<Map<string, Message[]>>(new Map());
 
   const pendingWriteRef = useRef(false);
   const lastUpdateRef = useRef(0);
@@ -48,6 +46,7 @@ export function usePersistedMessages(
     return counts;
   }, [subagents]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <ignore reason>
   useEffect(() => {
     if (subagentSize === 0) return;
 
@@ -162,7 +161,9 @@ export function usePersistedMessages(
         });
         // Wait for transaction to complete
         await new Promise<void>((resolve, reject) => {
+          // biome-ignore lint/style/noNonNullAssertion: <ignore reason>
           transaction!.oncomplete = () => resolve();
+          // biome-ignore lint/style/noNonNullAssertion: <ignore reason>
           transaction!.onerror = () => reject(transaction!.error);
         });
       } catch (error) {
@@ -172,12 +173,10 @@ export function usePersistedMessages(
         transaction = null;
       }
     },
-    [threadId]
+    [threadId],
   );
 
-  const loadSubagentMessages = useCallback(async (): Promise<
-    Map<string, Message[]>
-  > => {
+  const loadSubagentMessages = useCallback(async (): Promise<Map<string, Message[]>> => {
     if (!threadId || !dbReadyPromiseRef.current) return new Map();
     const db = await dbReadyPromiseRef.current;
     if (!db) return new Map();
@@ -187,20 +186,19 @@ export function usePersistedMessages(
       transaction = db.transaction([STORE_NAME], "readonly");
       const store = transaction.objectStore(STORE_NAME);
       const index = store.index("threadId");
-      const result = await new Promise<PersistedSubagentMessage[]>(
-        (resolve, reject) => {
-          const request = index.getAll(threadId);
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-        }
-      );
+      const result = await new Promise<PersistedSubagentMessage[]>((resolve, reject) => {
+        const request = index.getAll(threadId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
 
       const subagentMap = new Map<string, Message[]>();
       const sortedResult = result.toSorted(
-        (a, b) => a.timestamp - b.timestamp || a.index - b.index
+        (a, b) => a.timestamp - b.timestamp || a.index - b.index,
       );
       sortedResult.forEach((pm) => {
         if (!subagentMap.has(pm.toolCallId)) subagentMap.set(pm.toolCallId, []);
+        // biome-ignore lint/style/noNonNullAssertion: <ignore reason>
         subagentMap.get(pm.toolCallId)!.push(pm.message);
       });
       return subagentMap;
@@ -247,6 +245,6 @@ export function usePersistedMessages(
     () => ({
       subagentMessagesMap,
     }),
-    [subagentMessagesMap]
+    [subagentMessagesMap],
   );
 }

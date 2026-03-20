@@ -16,10 +16,10 @@ export async function deleteThreadData(threadId: string): Promise<void> {
         const transaction = db.transaction([STORE_NAME], "readwrite");
         const store = transaction.objectStore(STORE_NAME);
         const index = store.index("threadId");
-        
+
         // Find all records with this threadId
         const getRequest = index.getAllKeys(threadId);
-        
+
         getRequest.onsuccess = () => {
           const keys = getRequest.result;
           if (keys.length === 0) {
@@ -29,7 +29,7 @@ export async function deleteThreadData(threadId: string): Promise<void> {
           }
 
           let deletedCount = 0;
-          keys.forEach(key => {
+          keys.forEach((key) => {
             const deleteRequest = store.delete(key);
             deleteRequest.onsuccess = () => {
               deletedCount++;

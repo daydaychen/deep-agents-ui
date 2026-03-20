@@ -1,9 +1,9 @@
 "use client";
 
-import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
-import { SubAgentDetails } from "@/app/components/message/SubAgentDetails";
-import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
 import React, { useCallback, useState } from "react";
+import { SubAgentDetails } from "@/app/components/message/SubAgentDetails";
+import { SubAgentIndicator } from "@/app/components/SubAgentIndicator";
+import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
 
 interface SubAgentSectionProps {
   subAgents: SubAgent[];
@@ -32,6 +32,7 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
     const prevSubAgentsRef = React.useRef<SubAgent[]>([]);
 
     // 1. Thread switch reset
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <- We only want to reset on messageId change, not on every threadId change>
     React.useEffect(() => {
       setExpandedIds(new Set());
       prevSubAgentsRef.current = [];
@@ -44,22 +45,28 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
         let changed = false;
 
         subAgents.forEach((sa) => {
-          const prevSa = prevSubAgentsRef.current.find(p => p.id === sa.id);
+          const prevSa = prevSubAgentsRef.current.find((p) => p.id === sa.id);
           const prevStatus = prevSa?.status;
           const currentStatus = sa.status;
 
           // Transition to ACTIVE or INTERRUPTED: Auto-expand
-          if ((currentStatus === "active" && prevStatus !== "active") ||
-              currentStatus === "interrupted") {
+          if (
+            (currentStatus === "active" && prevStatus !== "active") ||
+            currentStatus === "interrupted"
+          ) {
             if (!next.has(sa.id)) {
               next.add(sa.id);
               changed = true;
             }
           }
-          
+
           // Transition to FINISHED: Auto-collapse
-          if ((currentStatus === "completed" || currentStatus === "error") && 
-              (prevStatus !== "completed" && prevStatus !== "error" && prevStatus !== undefined)) {
+          if (
+            (currentStatus === "completed" || currentStatus === "error") &&
+            prevStatus !== "completed" &&
+            prevStatus !== "error" &&
+            prevStatus !== undefined
+          ) {
             if (next.has(sa.id)) {
               next.delete(sa.id);
               changed = true;
@@ -68,8 +75,8 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
         });
 
         // Cleanup: Remove any IDs that no longer exist in the current subAgents list
-        const currentIds = new Set(subAgents.map(sa => sa.id));
-        next.forEach(id => {
+        const currentIds = new Set(subAgents.map((sa) => sa.id));
+        next.forEach((id) => {
           if (!currentIds.has(id)) {
             next.delete(id);
             changed = true;
@@ -91,24 +98,27 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
       });
     }, []);
 
-    // Reset expanded states when component unmounts or context changes 
+    // Reset expanded states when component unmounts or context changes
     // (though local state handles most thread-switch cases automatically)
-    const handleShowLogs = useCallback((id: string) => {
-      if (!setActiveSubAgentId) return;
-      
-      // Don't open SubAgentPanel if subagent is in interrupted state
-      const subAgent = subAgents.find(sa => sa.id === id);
-      if (subAgent?.status === "interrupted") {
-        // Close panel if this interrupted subagent is currently active
-        if (activeSubAgentId === id) {
-          setActiveSubAgentId(null);
+    const handleShowLogs = useCallback(
+      (id: string) => {
+        if (!setActiveSubAgentId) return;
+
+        // Don't open SubAgentPanel if subagent is in interrupted state
+        const subAgent = subAgents.find((sa) => sa.id === id);
+        if (subAgent?.status === "interrupted") {
+          // Close panel if this interrupted subagent is currently active
+          if (activeSubAgentId === id) {
+            setActiveSubAgentId(null);
+          }
+          return;
         }
-        return;
-      }
-      
-      // Toggle logic: if already active, close it
-      setActiveSubAgentId(activeSubAgentId === id ? null : id);
-    }, [activeSubAgentId, setActiveSubAgentId, subAgents]);
+
+        // Toggle logic: if already active, close it
+        setActiveSubAgentId(activeSubAgentId === id ? null : id);
+      },
+      [activeSubAgentId, setActiveSubAgentId, subAgents],
+    );
 
     if (subAgents.length === 0) return null;
 
@@ -119,7 +129,10 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
           const isActiveInSidebar = activeSubAgentId === subAgent.id;
 
           return (
-            <div key={subAgent.id} className="flex w-full flex-col">
+            <div
+              key={subAgent.id}
+              className="flex w-full flex-col"
+            >
               <SubAgentIndicator
                 subAgent={subAgent}
                 onToggleExpand={() => toggleExpand(subAgent.id)}
@@ -127,7 +140,7 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
                 isExpanded={isExpanded}
                 isActiveInSidebar={isActiveInSidebar}
               />
-              
+
               {isExpanded && (
                 <SubAgentDetails
                   subAgent={subAgent}
@@ -142,7 +155,7 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
         })}
       </div>
     );
-  }
+  },
 );
 
 SubAgentSection.displayName = "SubAgentSection";

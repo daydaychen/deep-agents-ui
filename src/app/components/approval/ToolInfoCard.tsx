@@ -1,10 +1,10 @@
 "use client";
 
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React, { useState } from "react";
 import { ArgumentEditor } from "@/app/components/approval/ArgumentEditor";
 import type { ActionRequest } from "@/app/types/types";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import React, { useState } from "react";
-import { useTranslations } from "next-intl";
 
 interface ToolInfoCardProps {
   actionRequest: ActionRequest;
@@ -25,9 +25,7 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {t("tool")}
           </span>
-          <p className="mt-1 font-mono text-sm font-medium text-foreground">
-            {actionRequest.name}
-          </p>
+          <p className="mt-1 font-mono text-sm font-medium text-foreground">{actionRequest.name}</p>
         </div>
 
         {isEditing ? (
@@ -40,15 +38,12 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
         ) : (
           <div>
             <button
+              type="button"
               onClick={() => setIsExpanded(!isExpanded)}
               aria-expanded={isExpanded}
               className="flex cursor-pointer items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
             >
-              {isExpanded ? (
-                <ChevronDown size={14} />
-              ) : (
-                <ChevronRight size={14} />
-              )}
+              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               {t("arguments")}
             </button>
             {isExpanded && (
@@ -60,7 +55,7 @@ export const ToolInfoCard = React.memo<ToolInfoCardProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 ToolInfoCard.displayName = "ToolInfoCard";

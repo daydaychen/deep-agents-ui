@@ -1,11 +1,11 @@
 "use client";
 
+import { AlertCircle } from "lucide-react";
 import { ApprovalActions } from "@/app/components/approval/ApprovalActions";
 import { RejectionMessageInput } from "@/app/components/approval/RejectionMessageInput";
 import { ToolInfoCard } from "@/app/components/approval/ToolInfoCard";
 import { useApprovalState } from "@/app/hooks/approval/useApprovalState";
 import type { ActionRequest, ReviewConfig } from "@/app/types/types";
-import { AlertCircle } from "lucide-react";
 
 interface ToolApprovalInterruptProps {
   actionRequest: ActionRequest;
@@ -36,11 +36,7 @@ export function ToolApprovalInterrupt({
     cancelRejection,
   } = useApprovalState(actionRequest, onResume);
 
-  const allowedDecisions = reviewConfig?.allowed_decisions ?? [
-    "approve",
-    "reject",
-    "edit",
-  ];
+  const allowedDecisions = reviewConfig?.allowed_decisions ?? ["approve", "reject", "edit"];
 
   return (
     <div className="w-full rounded-md border border-border bg-muted/30 p-4">
@@ -50,9 +46,7 @@ export function ToolApprovalInterrupt({
           size={16}
           className="text-yellow-600 dark:text-yellow-400"
         />
-        <span className="text-xs font-semibold uppercase tracking-wider">
-          Approval Required
-        </span>
+        <span className="text-xs font-semibold uppercase tracking-wider">Approval Required</span>
       </div>
 
       {/* Description */}

@@ -20,7 +20,7 @@ export function formatDate(date: string | number | Date): string {
  */
 export function extractSubAgents(
   toolCalls: ToolCall[],
-  subagentMessagesMap?: Map<string, Message[]>
+  subagentMessagesMap?: Map<string, Message[]>,
 ): SubAgent[] {
   const result: SubAgent[] = [];
   for (const toolCall of toolCalls) {
@@ -40,22 +40,21 @@ export function extractSubAgents(
     const subagentType = subagentTypeValue as string;
 
     // Get messages for this subagent from the map or toolCall
-    const messages =
-      subagentMessagesMap?.get(toolCall.id) || toolCall.subAgentMessages || [];
+    const messages = subagentMessagesMap?.get(toolCall.id) || toolCall.subAgentMessages || [];
 
-      // Try to find agentName from the messages metadata
-      let agentName = subagentType; // Default to subagent_type from args
-      if (messages.length > 0) {
-        // Check the first few messages for the actual agent name from metadata
-        for (const msg of messages) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const msgAny = msg as any;
-          if (msgAny.metadata?.lc_agent_name) {
-            agentName = msgAny.metadata.lc_agent_name;
-            break;
-          }
+    // Try to find agentName from the messages metadata
+    let agentName = subagentType; // Default to subagent_type from args
+    if (messages.length > 0) {
+      // Check the first few messages for the actual agent name from metadata
+      for (const msg of messages) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const msgAny = msg as any;
+        if (msgAny.metadata?.lc_agent_name) {
+          agentName = msgAny.metadata.lc_agent_name;
+          break;
         }
       }
+    }
 
     result.push({
       id: toolCall.id,
@@ -73,7 +72,7 @@ export function extractSubAgents(
 
 export function formatTokenCount(count: number): string {
   if (count >= 1000) {
-    return (count / 1000).toFixed(1) + "k";
+    return `${(count / 1000).toFixed(1)}k`;
   }
   return count.toString();
 }
@@ -96,10 +95,7 @@ export function extractStringFromMessageContent(message: Message): string {
   for (const c of message.content) {
     // Filter: only process text blocks or strings
     const isTextBlock =
-      typeof c === "object" &&
-      c !== null &&
-      "type" in c &&
-      (c as { type: string }).type === "text";
+      typeof c === "object" && c !== null && "type" in c && (c as { type: string }).type === "text";
     const isString = typeof c === "string";
 
     if (!isTextBlock && !isString) {
@@ -111,8 +107,8 @@ export function extractStringFromMessageContent(message: Message): string {
       typeof c === "string"
         ? c
         : typeof c === "object" && c !== null && "text" in c
-        ? (c as { text?: string }).text || ""
-        : "";
+          ? (c as { text?: string }).text || ""
+          : "";
 
     result.push(text);
   }
@@ -155,9 +151,7 @@ export function isPreparingToCallTaskTool(messages: Message[]): boolean {
   const lastMessage = messages[messages.length - 1];
   return (
     (lastMessage.type === "ai" &&
-      lastMessage.tool_calls?.some(
-        (call: { name?: string }) => call.name === "task"
-      )) ||
+      lastMessage.tool_calls?.some((call: { name?: string }) => call.name === "task")) ||
     false
   );
 }

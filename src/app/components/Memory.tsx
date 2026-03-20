@@ -1,5 +1,10 @@
 "use client";
 
+import type { Item } from "@langchain/langgraph-sdk";
+import { AlertCircle, Brain, Filter, Loader2, Plus, Search, Sparkles, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { MemoryItemDialog } from "@/app/components/MemoryItemDialog";
 import { MemoryItemsList } from "@/app/components/memory/MemoryItemsList";
 import { MemoryNamespaceItem } from "@/app/components/memory/MemoryNamespaceItem";
@@ -7,8 +12,6 @@ import { useMemoryNamespace } from "@/app/hooks/memory/useMemoryNamespace";
 import { useMemory } from "@/app/hooks/useMemory";
 import type { MemoryItem } from "@/app/types/types";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -17,22 +20,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Item } from "@langchain/langgraph-sdk";
-import {
-  Loader2,
-  Plus,
-  Brain,
-  Trash2,
-  AlertCircle,
-  Search,
-  Sparkles,
-  Filter,
-} from "lucide-react";
-import React, { useCallback, useMemo, useState, useEffect } from "react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { StandaloneConfig } from "@/lib/config";
+import { cn } from "@/lib/utils";
 
 export const Memory = React.memo<{
   config: StandaloneConfig;
@@ -60,13 +51,8 @@ export const Memory = React.memo<{
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const {
-    selectedNamespace,
-    namespaceItems,
-    isLoadingItems,
-    handleNamespaceClick,
-    refreshItems,
-  } = useMemoryNamespace(searchItems);
+  const { selectedNamespace, namespaceItems, isLoadingItems, handleNamespaceClick, refreshItems } =
+    useMemoryNamespace(searchItems);
 
   const [selectedItem, setSelectedItem] = useState<MemoryItem | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -76,11 +62,7 @@ export const Memory = React.memo<{
   } | null>(null);
 
   const handleSaveItem = useCallback(
-    async (
-      namespace: string[],
-      key: string,
-      value: Record<string, unknown>
-    ) => {
+    async (namespace: string[], key: string, value: Record<string, unknown>) => {
       try {
         await putItem({ namespace, key, value });
         toast.success(t("itemSaved"));
@@ -93,7 +75,7 @@ export const Memory = React.memo<{
         throw error;
       }
     },
-    [putItem, mutateNamespaces, refreshItems, t]
+    [putItem, mutateNamespaces, refreshItems, t],
   );
 
   const confirmDelete = useCallback(async () => {
@@ -118,7 +100,7 @@ export const Memory = React.memo<{
       event.stopPropagation();
       setItemToDelete({ namespace, key });
     },
-    []
+    [],
   );
 
   const handleCreateNew = useCallback(() => {
@@ -230,9 +212,7 @@ export const Memory = React.memo<{
               </div>
             ) : searchResults.length === 0 ? (
               <div className="p-8 text-center opacity-60">
-                <p className="text-xs text-muted-foreground">
-                  {t("noMatchingMemories")}
-                </p>
+                <p className="text-xs text-muted-foreground">{t("noMatchingMemories")}</p>
               </div>
             ) : (
               <div className="grid gap-2">
@@ -259,9 +239,7 @@ export const Memory = React.memo<{
               size={32}
               className="mb-3 text-muted-foreground/30"
             />
-            <p className="text-xs text-muted-foreground">
-              {t("noMemoryEntries")}
-            </p>
+            <p className="text-xs text-muted-foreground">{t("noMemoryEntries")}</p>
           </div>
         ) : (
           <div className="space-y-2 pb-4">
@@ -272,17 +250,14 @@ export const Memory = React.memo<{
             <div className="grid gap-1.5">
               {sortedNamespaces.map((ns) => {
                 const namespaceStr = ns.namespace.join(".");
-                const isExpanded =
-                  selectedNamespace?.join(".") === namespaceStr;
+                const isExpanded = selectedNamespace?.join(".") === namespaceStr;
 
                 return (
                   <div
                     key={namespaceStr}
                     className={cn(
                       "overflow-hidden rounded-xl border border-border/40 transition-all",
-                      isExpanded
-                        ? "border-primary/20 bg-muted/10 shadow-sm"
-                        : "hover:bg-muted/5"
+                      isExpanded ? "border-primary/20 bg-muted/10 shadow-sm" : "hover:bg-muted/5",
                     )}
                   >
                     <MemoryNamespaceItem
@@ -335,9 +310,7 @@ export const Memory = React.memo<{
               {t.rich("deleteConfirm", {
                 key: itemToDelete?.key ?? "",
                 code: (chunks: React.ReactNode) => (
-                  <code className="whitespace-pre-wrap break-all">
-                    {chunks}
-                  </code>
+                  <code className="whitespace-pre-wrap break-all">{chunks}</code>
                 ),
               })}
             </DialogDescription>

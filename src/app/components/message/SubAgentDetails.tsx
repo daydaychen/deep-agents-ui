@@ -1,11 +1,11 @@
 "use client";
 
+import { Terminal } from "lucide-react";
+import React from "react";
 import { MarkdownContent } from "@/app/components/MarkdownContent";
 import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
 import type { ActionRequest, ReviewConfig, SubAgent } from "@/app/types/types";
 import { extractSubAgentContent } from "@/app/utils/utils";
-import { Terminal } from "lucide-react";
-import React from "react";
 
 interface SubAgentDetailsProps {
   subAgent: SubAgent;
@@ -16,17 +16,9 @@ interface SubAgentDetailsProps {
 }
 
 export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
-  ({
-    subAgent,
-    taskActionRequest,
-    taskReviewConfig,
-    onResumeInterrupt,
-    isLoading,
-  }) => {
+  ({ subAgent, taskActionRequest, taskReviewConfig, onResumeInterrupt, isLoading }) => {
     const hasInterrupt =
-      taskActionRequest &&
-      subAgent.status === "interrupted" &&
-      onResumeInterrupt;
+      taskActionRequest && subAgent.status === "interrupted" && onResumeInterrupt;
 
     if (hasInterrupt) {
       return (
@@ -46,7 +38,10 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
         {/* Input Section */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-1">
-            <Terminal size={10} className="text-muted-foreground/40" />
+            <Terminal
+              size={10}
+              className="text-muted-foreground/40"
+            />
             <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
               Protocol Input
             </h4>
@@ -68,15 +63,13 @@ export const SubAgentDetails = React.memo<SubAgentDetailsProps>(
               </h4>
             </div>
             <div className="rounded-xl border border-emerald-500/10 bg-muted/30 dark:bg-emerald-500/[0.05] dark:bg-zinc-950/50 p-3 text-sm shadow-inner">
-              <MarkdownContent
-                content={extractSubAgentContent(subAgent.output)}
-              />
+              <MarkdownContent content={extractSubAgentContent(subAgent.output)} />
             </div>
           </div>
         )}
       </div>
     );
-  }
+  },
 );
 
 SubAgentDetails.displayName = "SubAgentDetails";

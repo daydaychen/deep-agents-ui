@@ -94,7 +94,6 @@ const CATEGORY_CONFIG: Record<ToolCategory, { icon: React.ReactNode; colorClass:
 interface ToolCallBoxProps {
   toolCall: ToolCall;
   uiComponent?: UiComponent;
-  // biome-ignore lint/suspicious/noExplicitAny: LangGraph SDK stream type
   stream?: any;
   graphId?: string;
   actionRequest?: ActionRequest;
@@ -435,7 +434,6 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 <LoadExternalComponent
                   key={uiComponent.id}
                   stream={stream}
-                  // biome-ignore lint/suspicious/noExplicitAny: LangGraph SDK type mismatch
                   message={uiComponent as any}
                   namespace={graphId}
                   meta={{

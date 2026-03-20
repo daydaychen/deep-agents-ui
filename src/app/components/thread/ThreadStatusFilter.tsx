@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import React from "react";
 import type { ThreadItem } from "@/app/hooks/useThreads";
 import {
   Select,
@@ -12,8 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import React from "react";
-import { useTranslations } from "next-intl";
 
 export type StatusFilter = "all" | "idle" | "busy" | "interrupted" | "error";
 
@@ -37,12 +37,7 @@ interface StatusFilterItemProps {
 function StatusFilterItem({ status, label, badge }: StatusFilterItemProps) {
   return (
     <span className="inline-flex items-center gap-2">
-      <span
-        className={cn(
-          "inline-block size-2 rounded-full",
-          getThreadColor(status)
-        )}
-      />
+      <span className={cn("inline-block size-2 rounded-full", getThreadColor(status))} />
       {label}
       {badge !== undefined && badge > 0 && (
         <span className="ml-1 inline-flex items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold leading-none text-white">
@@ -109,7 +104,7 @@ export const ThreadStatusFilter = React.memo<ThreadStatusFilterProps>(
         </SelectContent>
       </Select>
     );
-  }
+  },
 );
 
 ThreadStatusFilter.displayName = "ThreadStatusFilter";

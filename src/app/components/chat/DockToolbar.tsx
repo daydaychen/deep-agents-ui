@@ -1,22 +1,18 @@
 "use client";
 
+import { Brain, ChevronDown, Eye, Shield, Sparkles, Zap } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Shield, Eye, Zap, Brain, Sparkles, ChevronDown } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  useChatState,
-  useChatActions,
-  OverrideConfig,
-} from "@/providers/chat-context";
 import { MODEL_OPTIONS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { OverrideConfig, useChatActions, useChatState } from "@/providers/chat-context";
 
 interface DockToolbarProps {
   onAction?: () => void;
@@ -87,7 +83,7 @@ export const DockToolbar = React.memo(({ onAction }: DockToolbarProps) => {
           onCloseAutoFocus={(e) => e.preventDefault()}
           className="min-w-[180px] max-h-[400px] overflow-y-auto rounded-xl border-border/50 bg-background/95 backdrop-blur-md shadow-xl"
         >
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => handleModelChange("")}
             className="gap-2 rounded-lg m-1 cursor-pointer focus:bg-muted/60"
           >
@@ -122,27 +118,27 @@ export const DockToolbar = React.memo(({ onAction }: DockToolbarProps) => {
             <span className="sr-only">{t(`authMode.${authMode}`)}</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
+        <DropdownMenuContent
           align="start"
           sideOffset={8}
           onCloseAutoFocus={(e) => e.preventDefault()}
           className="min-w-[160px] rounded-xl border-border/50 bg-background/95 backdrop-blur-md shadow-xl"
         >
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => handleAuthModeChange("ask")}
             className="gap-2 rounded-lg m-1 cursor-pointer focus:bg-muted/60"
           >
             <Shield className="h-4 w-4 text-green-500" />
             <span className="text-sm font-medium">{t("authMode.ask")}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => handleAuthModeChange("read")}
             className="gap-2 rounded-lg m-1 cursor-pointer focus:bg-muted/60"
           >
             <Eye className="h-4 w-4 text-yellow-500" />
             <span className="text-sm font-medium">{t("authMode.read")}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => handleAuthModeChange("auto")}
             className="gap-2 rounded-lg m-1 cursor-pointer focus:bg-muted/60"
           >
@@ -160,9 +156,9 @@ export const DockToolbar = React.memo(({ onAction }: DockToolbarProps) => {
         size="icon"
         className={cn(
           "h-8 w-8 rounded-full transition-all duration-300 active:scale-95",
-          isThinking 
-            ? "bg-[#34d399]/10 text-[#34d399] hover:bg-[#34d399]/20 shadow-[0_0_15px_-5px_#34d39966]" 
-            : "text-muted-foreground/60 hover:bg-muted/50 hover:text-foreground"
+          isThinking
+            ? "bg-[#34d399]/10 text-[#34d399] hover:bg-[#34d399]/20 shadow-[0_0_15px_-5px_#34d39966]"
+            : "text-muted-foreground/60 hover:bg-muted/50 hover:text-foreground",
         )}
         onClick={toggleThinking}
       >

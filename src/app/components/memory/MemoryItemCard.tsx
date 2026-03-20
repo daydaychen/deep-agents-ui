@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import type { Item } from "@langchain/langgraph-sdk";
 import { Database, Trash2 } from "lucide-react";
-import React from "react";
 import { useTranslations } from "next-intl";
+import React from "react";
+import { Button } from "@/components/ui/button";
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString("zh-CN", {
@@ -76,7 +76,7 @@ export const MemoryItemCard = React.memo<MemoryItemCardProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 MemoryItemCard.displayName = "MemoryItemCard";

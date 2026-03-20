@@ -1,9 +1,14 @@
 "use client";
 
+import { Message } from "@langchain/langgraph-sdk";
+import type { BaseStream, MessageMetadata } from "@langchain/langgraph-sdk/react";
+import { Bot, Clock, GitFork, User } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React, { useMemo } from "react";
+import { MessageToolbar } from "@/app/components/MessageToolbar";
 import { MessageContent } from "@/app/components/message/MessageContent";
 import { OrphanedApprovals } from "@/app/components/message/OrphanedApprovals";
 import { SubAgentSection } from "@/app/components/message/SubAgentSection";
-import { MessageToolbar } from "@/app/components/MessageToolbar";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useOrphanedActionRequests } from "@/app/hooks/message/useOrphanedActionRequests";
 import type { StateType } from "@/app/hooks/useChat";
@@ -17,14 +22,6 @@ import type {
 import { extractStringFromMessageContent, formatDate } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
 import { useChatState } from "@/providers/chat-context";
-import { Message } from "@langchain/langgraph-sdk";
-import type {
-  MessageMetadata,
-  BaseStream,
-} from "@langchain/langgraph-sdk/react";
-import { Bot, Clock, GitFork, User } from "lucide-react";
-import { useTranslations } from "next-intl";
-import React, { useMemo } from "react";
 
 const DEFAULT_SUB_AGENTS: SubAgent[] = [];
 const DEFAULT_BRANCH_OPTIONS: string[] = [];
@@ -45,7 +42,7 @@ interface ChatMessageProps {
   onEdit?: (editedMessage: Message, index: number) => void;
   getMessagesMetadata?: (
     message: Message,
-    index?: number
+    index?: number,
   ) => MessageMetadata<StateType> | undefined;
   setBranch?: (branch: string) => void;
   graphId?: string;
@@ -88,10 +85,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     const isUser = message.type === "human";
     const userName = config?.userId || tCommon("appName");
     const displayName = isUser ? userName : tCommon("appName");
-    const messageContent = useMemo(
-      () => extractStringFromMessageContent(message),
-      [message]
-    );
+    const messageContent = useMemo(() => extractStringFromMessageContent(message), [message]);
     const hasContent = messageContent && messageContent.trim() !== "";
     const hasToolCalls = toolCalls.length > 0;
 
@@ -112,7 +106,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     const orphanedApprovals = useOrphanedActionRequests(
       actionRequestsMap,
       reviewConfigsMap,
-      toolCalls
+      toolCalls,
     );
 
     const hasMultipleBranches = branchOptions && branchOptions.length > 1;
@@ -124,7 +118,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     return (
       <div
         className={cn(
-          "group flex w-full max-w-full gap-3 overflow-x-hidden px-4 py-2.5 transition-colors hover:bg-muted/5"
+          "group flex w-full max-w-full gap-3 overflow-x-hidden px-4 py-2.5 transition-colors hover:bg-muted/5",
         )}
       >
         {/* Avatar Container */}
@@ -134,14 +128,10 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               "flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border shadow-sm transition-[background-color,border-color,color,box-shadow] duration-200",
               isUser
                 ? "border-zinc-800 bg-zinc-900 text-white dark:border-zinc-200 dark:bg-zinc-100 dark:text-zinc-900"
-                : "bg-primary/10 border-primary/20 text-primary shadow-primary/5"
+                : "bg-primary/10 border-primary/20 text-primary shadow-primary/5",
             )}
           >
-            {isUser ? (
-              <User className="h-4 w-4" />
-            ) : (
-              <Bot className="h-4 w-4" />
-            )}
+            {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
           </div>
         </div>
 
@@ -149,13 +139,11 @@ export const ChatMessage = React.memo<ChatMessageProps>(
         <div
           className={cn(
             "flex min-w-0 flex-col gap-0.5",
-            isUser ? "max-w-[85%] items-start" : "max-w-[95%] flex-1"
+            isUser ? "max-w-[85%] items-start" : "max-w-[95%] flex-1",
           )}
         >
           {/* Sender Name/Label & Branch Indicator */}
-          <div
-            className={cn("mb-0.5 flex w-full items-center justify-between")}
-          >
+          <div className={cn("mb-0.5 flex w-full items-center justify-between")}>
             <div className="flex items-center gap-2">
               <div className="flex items-center px-1 text-2xs font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
                 {displayName}
@@ -172,7 +160,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               <div
                 className={cn(
                   "flex items-center gap-1 rounded-full border border-accent/30 bg-accent/20 px-1.5 py-0.5 text-2xs font-medium text-muted-foreground/60 transition-opacity group-hover:opacity-0",
-                  "ml-2"
+                  "ml-2",
                 )}
               >
                 <GitFork className="h-2 w-2 opacity-50" />
@@ -184,14 +172,11 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           </div>
 
           {(hasContent ||
-            (!isUser &&
-              (message.additional_kwargs?.reasoning_content as
-                | string
-                | undefined))) && (
+            (!isUser && (message.additional_kwargs?.reasoning_content as string | undefined))) && (
             <div
               className={cn(
                 "relative min-w-0 overflow-hidden",
-                "ml-0.5 w-full border-l-2 border-muted/30 pl-2 text-left !dark:border-white/5"
+                "ml-0.5 w-full border-l-2 border-muted/30 pl-2 text-left !dark:border-white/5",
               )}
             >
               <MessageContent
@@ -199,9 +184,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
                 isUser={isUser}
                 isStreaming={isStreaming}
                 reasoningContent={
-                  message.additional_kwargs?.reasoning_content as
-                    | string
-                    | undefined
+                  message.additional_kwargs?.reasoning_content as string | undefined
                 }
               />
             </div>
@@ -213,7 +196,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
               className={cn(
                 "flex w-full min-w-0 flex-col gap-2",
                 hasContent ? "mt-2" : "mt-0.5",
-                !isUser && "ml-0.5 border-l-2 border-muted/30 pl-2 !dark:border-white/5"
+                !isUser && "ml-0.5 border-l-2 border-muted/30 pl-2 !dark:border-white/5",
               )}
             >
               {!isUser && (
@@ -254,7 +237,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
             <div
               className={cn(
                 "flex w-full min-w-0 flex-col",
-                "ml-0.5 border-l-2 border-muted/30 pl-2 !dark:border-white/5"
+                "ml-0.5 border-l-2 border-muted/30 pl-2 !dark:border-white/5",
               )}
             >
               <SubAgentSection
@@ -282,24 +265,16 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           {/* 5. Message Toolbar */}
           <div
             className={cn(
-              "mt-1.5 translate-y-1 transform opacity-0 transition-[opacity,transform] duration-300 group-hover:translate-y-0 group-hover:opacity-100"
+              "mt-1.5 translate-y-1 transform opacity-0 transition-[opacity,transform] duration-300 group-hover:translate-y-0 group-hover:opacity-100",
             )}
           >
             <MessageToolbar
               messageContent={messageContent}
               isUser={isUser}
               isLoading={isLoading}
-              onRetry={
-                canRetry && onRetry
-                  ? () => onRetry(message, messageIndex)
-                  : undefined
-              }
+              onRetry={canRetry && onRetry ? () => onRetry(message, messageIndex) : undefined}
               showRetry={canRetry}
-              onEdit={
-                onEdit
-                  ? (editedMessage) => onEdit(editedMessage, messageIndex)
-                  : undefined
-              }
+              onEdit={onEdit ? (editedMessage) => onEdit(editedMessage, messageIndex) : undefined}
               showEdit={isUser}
               branchOptions={branchOptions}
               currentBranchIndex={currentBranchIndex}
@@ -311,7 +286,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 ChatMessage.displayName = "ChatMessage";

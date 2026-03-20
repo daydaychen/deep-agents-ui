@@ -1,8 +1,8 @@
 "use client";
 
-import { Textarea } from "@/components/ui/textarea";
-import React from "react";
 import { useTranslations } from "next-intl";
+import React from "react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ArgumentEditorProps {
   args: Record<string, unknown>;
@@ -36,8 +36,8 @@ export const ArgumentEditor = React.memo<ArgumentEditorProps>(
                       ? (editedArgs[key] as string)
                       : JSON.stringify(editedArgs[key], null, 2)
                     : typeof value === "string"
-                    ? value
-                    : JSON.stringify(value, null, 2)
+                      ? value
+                      : JSON.stringify(value, null, 2)
                 }
                 onChange={(e) => onUpdate(key, e.target.value)}
                 className="font-mono text-xs"
@@ -49,7 +49,7 @@ export const ArgumentEditor = React.memo<ArgumentEditorProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 ArgumentEditor.displayName = "ArgumentEditor";

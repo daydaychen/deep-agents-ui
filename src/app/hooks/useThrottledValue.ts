@@ -11,7 +11,7 @@ export function useThrottledValue<T>(value: T, interval: number): T {
   useEffect(() => {
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdatedRef.current;
-    
+
     nextValueRef.current = value;
 
     if (timeSinceLastUpdate >= interval) {

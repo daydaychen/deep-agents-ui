@@ -1,16 +1,12 @@
 "use client";
 
-import { extractStringFromMessageContent } from "@/app/utils/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { Message } from "@langchain/langgraph-sdk";
 import { Check, Edit, X } from "lucide-react";
-import React, { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import React, { useCallback, useRef, useState } from "react";
+import { extractStringFromMessageContent } from "@/app/utils/utils";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface EditMessageProps {
   message: Message;
@@ -23,13 +19,12 @@ export const EditMessage = React.memo<EditMessageProps>(
   ({ message, onEdit, className, showText = true }) => {
     const t = useTranslations("editMessage");
     const [editing, setEditing] = useState(false);
-    const [content, setContent] = useState(
-      extractStringFromMessageContent(message)
-    );
+    const [content, setContent] = useState(extractStringFromMessageContent(message));
     const isComposingRef = useRef(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Auto-resize textarea based on content
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <Only depends on content changes>
     React.useLayoutEffect(() => {
       const textarea = textareaRef.current;
       if (textarea) {
@@ -49,7 +44,7 @@ export const EditMessage = React.memo<EditMessageProps>(
         onEdit({ ...message, content: content.trim() });
         setEditing(false);
       },
-      [content, message, onEdit]
+      [content, message, onEdit],
     );
 
     const handleCancel = useCallback(() => {
@@ -67,7 +62,7 @@ export const EditMessage = React.memo<EditMessageProps>(
           handleCancel();
         }
       },
-      [handleSave, handleCancel]
+      [handleSave, handleCancel],
     );
 
     if (!editing) {
@@ -124,7 +119,7 @@ export const EditMessage = React.memo<EditMessageProps>(
               fieldSizing: "content",
             }}
             placeholder={t("editPlaceholder")}
-            // eslint-disable-next-line jsx-a11y/no-autofocus
+            // biome-ignore lint/a11y/noAutofocus: <Auto-focus for better UX when editing messages>
             autoFocus
             rows={1}
           />
@@ -154,7 +149,7 @@ export const EditMessage = React.memo<EditMessageProps>(
         </form>
       </div>
     );
-  }
+  },
 );
 
 EditMessage.displayName = "EditMessage";

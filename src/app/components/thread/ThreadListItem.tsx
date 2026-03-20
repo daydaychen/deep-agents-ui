@@ -1,5 +1,9 @@
 "use client";
 
+import { format } from "date-fns";
+import { MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React from "react";
 import type { ThreadItem } from "@/app/hooks/useThreads";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,10 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { MoreHorizontal } from "lucide-react";
-import { useTranslations } from "next-intl";
-import React from "react";
 
 const STATUS_COLORS: Record<ThreadItem["status"], string> = {
   idle: "bg-green-500",
@@ -49,12 +49,14 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
 
     return (
       <div
+        role="button"
+        tabIndex={0}
         className={cn(
-          "group grid w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-200",
+          "group grid w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "hover:bg-accent",
           isActive
             ? "border border-primary bg-accent hover:bg-accent"
-            : "border border-transparent bg-transparent"
+            : "border border-transparent bg-transparent",
         )}
         onClick={() => onSelect(thread.id)}
         onKeyDown={(e) => {
@@ -63,8 +65,6 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
             onSelect(thread.id);
           }
         }}
-        role="button"
-        tabIndex={0}
         aria-current={isActive}
       >
         <div className="min-w-0 flex-1">
@@ -72,9 +72,7 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
           <div className="mb-1 flex items-center justify-between">
             <h3 className="truncate text-sm font-semibold">{thread.title}</h3>
             <div className="ml-2 flex flex-shrink-0 items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {formatTime(thread.updatedAt)}
-              </span>
+              <span className="text-xs text-muted-foreground">{formatTime(thread.updatedAt)}</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -113,26 +111,18 @@ export const ThreadListItem = React.memo<ThreadListItemProps>(
           </div>
           {/* Description + Status Row */}
           <div className="flex items-center justify-between">
-            <p className="flex-1 truncate text-sm text-muted-foreground">
-              {thread.description}
-            </p>
+            <p className="flex-1 truncate text-sm text-muted-foreground">{thread.description}</p>
             <div className="ml-2 flex items-center gap-2">
               <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs">
-                {thread.messageCount}{" "}
-                {thread.messageCount === 1 ? t("message") : t("messages")}
+                {thread.messageCount} {thread.messageCount === 1 ? t("message") : t("messages")}
               </span>
-              <div
-                className={cn(
-                  "h-2 w-2 rounded-full",
-                  getThreadColor(thread.status)
-                )}
-              />
+              <div className={cn("h-2 w-2 rounded-full", getThreadColor(thread.status))} />
             </div>
           </div>
         </div>
       </div>
     );
-  }
+  },
 );
 
 ThreadListItem.displayName = "ThreadListItem";

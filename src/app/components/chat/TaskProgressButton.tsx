@@ -1,9 +1,9 @@
 "use client";
 
-import type { TodoItem } from "@/app/types/types";
-import { cn } from "@/lib/utils";
 import { CheckCircle, Circle, Clock } from "lucide-react";
 import React from "react";
+import type { TodoItem } from "@/app/types/types";
+import { cn } from "@/lib/utils";
 
 interface TaskProgressButtonProps {
   todos: TodoItem[];
@@ -107,7 +107,7 @@ export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
         })()}
       </button>
     );
-  }
+  },
 );
 
 TaskProgressButton.displayName = "TaskProgressButton";

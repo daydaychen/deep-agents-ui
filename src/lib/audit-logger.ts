@@ -1,6 +1,6 @@
 /**
  * Audit logging utilities for tracking sensitive configuration changes.
- * 
+ *
  * Currently logs to console for debugging. In production, this should
  * send events to a backend audit service.
  */
@@ -22,7 +22,7 @@ export interface AuditEvent {
 
 /**
  * Logs an audit event to the console and potentially to a backend service.
- * 
+ *
  * @param event - The audit event to log
  */
 export function logAuditEvent(event: AuditEvent): void {
@@ -41,7 +41,7 @@ export function logAuditEvent(event: AuditEvent): void {
 
 /**
  * Creates a standardized audit event for assistant configuration updates.
- * 
+ *
  * @param assistantId - The assistant being modified
  * @param changes - The configuration changes being made
  * @param userId - Optional user ID performing the change
@@ -50,7 +50,7 @@ export function logAuditEvent(event: AuditEvent): void {
 export function createAssistantConfigAuditEvent(
   assistantId: string,
   changes: Record<string, unknown>,
-  userId?: string
+  userId?: string,
 ): AuditEvent {
   return {
     action: "assistant_config_update",
@@ -63,7 +63,7 @@ export function createAssistantConfigAuditEvent(
 
 /**
  * Creates a standardized audit event for auth mode changes specifically.
- * 
+ *
  * @param assistantId - The assistant being modified
  * @param oldAuthMode - The previous auth mode
  * @param newAuthMode - The new auth mode
@@ -74,7 +74,7 @@ export function createAuthModeChangeAuditEvent(
   assistantId: string,
   oldAuthMode: string | undefined,
   newAuthMode: string,
-  userId?: string
+  userId?: string,
 ): AuditEvent {
   return {
     action: "auth_mode_change",
@@ -88,7 +88,8 @@ export function createAuthModeChangeAuditEvent(
     timestamp: new Date().toISOString(),
     metadata: {
       severity: newAuthMode === "auto" ? "high" : "normal",
-      reason: newAuthMode === "auto" ? "Switching to Auto mode bypasses all safety approvals" : undefined,
+      reason:
+        newAuthMode === "auto" ? "Switching to Auto mode bypasses all safety approvals" : undefined,
     },
   };
 }

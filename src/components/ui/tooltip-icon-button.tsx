@@ -1,11 +1,6 @@
 import React from "react";
 import { Button } from "./button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 
 interface TooltipIconButtonProps {
   icon: React.ReactNode;
@@ -14,12 +9,7 @@ interface TooltipIconButtonProps {
   disabled?: boolean;
 }
 
-export function TooltipIconButton({
-  icon,
-  onClick,
-  tooltip,
-  disabled,
-}: TooltipIconButtonProps) {
+export function TooltipIconButton({ icon, onClick, tooltip, disabled }: TooltipIconButtonProps) {
   return (
     <TooltipProvider>
       <Tooltip>
