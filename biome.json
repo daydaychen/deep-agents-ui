@@ -30,6 +30,7 @@
   },
   "linter": {
     "enabled": true,
+    "includes": ["src/**/*"],
     "rules": {
       "recommended": true,
       "complexity": {
