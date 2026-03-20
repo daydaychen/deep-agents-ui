@@ -8,7 +8,7 @@
     }
   },
   "files": {
-    "includes": ["src/**/*", "*.{ts,tsx,js,jsx,json,md}"]
+    "includes": ["src/**/*", "**/*.{ts,tsx,js,jsx,json,md}"]
   },
   "formatter": {
     "enabled": true,
