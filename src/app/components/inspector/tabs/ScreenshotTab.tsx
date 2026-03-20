@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Download, Image, X, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Image as ImageIcon, X, ZoomIn } from "lucide-react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { downloadUrl } from "@/app/utils/download";
@@ -50,7 +51,7 @@ export const ScreenshotTab = React.memo(() => {
   if (state.screenshots.length === 0) {
     return (
       <EmptyState
-        icon={Image}
+        icon={ImageIcon}
         message={t("screenshot.noScreenshots")}
       />
     );
@@ -60,9 +61,9 @@ export const ScreenshotTab = React.memo(() => {
 
   return (
     <>
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex h-full flex-col gap-3 p-4 overflow-y-auto min-w-0">
         {/* Navigation + actions */}
-        <div className="flex items-center justify-between">
+        <div className="shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-1">
             {hasMultiple && (
               <>
@@ -118,11 +119,15 @@ export const ScreenshotTab = React.memo(() => {
           onClick={() => setZoomed(true)}
           className="cursor-zoom-in overflow-hidden rounded-lg border border-border/40 transition-opacity hover:opacity-90"
         >
-          <img
-            src={imgSrc}
-            alt={current.label || "Screenshot"}
-            className="h-auto w-full object-contain"
-          />
+          {imgSrc && (
+            <Image
+              src={imgSrc}
+              alt={current.label || "Screenshot"}
+              width={800}
+              height={600}
+              className="h-auto w-full object-contain"
+            />
+          )}
         </button>
 
         {/* Label + timestamp */}
@@ -188,16 +193,19 @@ export const ScreenshotTab = React.memo(() => {
             </>
           )}
 
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled by parent dialog */}
-          <img
-            src={imgSrc}
-            alt={current.label || "Screenshot"}
-            className="max-h-[90vh] max-w-[90vw] cursor-zoom-out rounded-lg object-contain shadow-2xl"
-            onClick={(e) => {
-              e.stopPropagation();
-              setZoomed(false);
-            }}
-          />
+          {imgSrc && (
+            <Image
+              src={imgSrc}
+              alt={current.label || "Screenshot"}
+              width={1280}
+              height={960}
+              className="max-h-[90vh] max-w-[90vw] cursor-zoom-out rounded-lg object-contain shadow-2xl"
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoomed(false);
+              }}
+            />
+          )}
         </div>
       )}
     </>

@@ -1,23 +1,22 @@
 "use client";
 
+import JsonView from "@uiw/react-json-view";
+import { lightTheme } from "@uiw/react-json-view/light";
+import { vscodeTheme } from "@uiw/react-json-view/vscode";
 import { type Change, diffLines } from "diff";
 import { Copy, Download, GitCompareArrows, Settings2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import React, { useCallback, useMemo, useState } from "react";
-import json from "react-syntax-highlighter/dist/esm/languages/hljs/json";
-import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/light";
-import { atomOneDark, atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { toast } from "sonner";
 import { downloadFile } from "@/app/utils/download";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useInspector } from "../inspector-context";
 import { ConfigTimeline } from "../widgets/ConfigTimeline";
 import { EmptyState } from "../widgets/EmptyState";
 import { PipelineGraph } from "../widgets/PipelineGraph";
-
-SyntaxHighlighter.registerLanguage("json", json);
 
 export const ConfigTab = React.memo(() => {
   const { state } = useInspector();
@@ -28,9 +27,6 @@ export const ConfigTab = React.memo(() => {
   // Timeline state: null = show current, number = show snapshot at index
   const [timelineIndex, setTimelineIndex] = useState<number | null>(null);
   const [compareIndex, setCompareIndex] = useState<number | null>(null);
-
-  const isDark = resolvedTheme === "dark";
-  const syntaxStyle = isDark ? atomOneDark : atomOneLight;
 
   // Get the snapshots for the current task
   const snapshots = useMemo(() => {
@@ -47,7 +43,7 @@ export const ConfigTab = React.memo(() => {
     return state.configData.current;
   }, [timelineIndex, snapshots, state.configData.current]);
 
-  const configJson = useMemo(() => {
+  const configDataObject = useMemo(() => {
     const data = selectedNode
       ? ((displayConfig as Record<string, unknown>)?.[selectedNode] ??
         ((displayConfig as Record<string, unknown>)?.stages as Record<string, unknown>)?.[
@@ -55,13 +51,17 @@ export const ConfigTab = React.memo(() => {
         ] ??
         displayConfig)
       : displayConfig;
-    if (!data) return "";
-    try {
-      return JSON.stringify(data, null, 2);
-    } catch {
-      return String(data);
-    }
+    return data;
   }, [displayConfig, selectedNode]);
+
+  const configJson = useMemo(() => {
+    if (!configDataObject) return "";
+    try {
+      return JSON.stringify(configDataObject, null, 2);
+    } catch {
+      return String(configDataObject);
+    }
+  }, [configDataObject]);
 
   // For diff: compare against previous snapshot or selected compare index
   const previousJson = useMemo(() => {
@@ -118,10 +118,12 @@ export const ConfigTab = React.memo(() => {
 
   if (!state.configData.current) {
     return (
-      <EmptyState
-        icon={Settings2}
-        message={t("config.noConfig")}
-      />
+      <div className="h-full w-full">
+        <EmptyState
+          icon={Settings2}
+          message={t("config.noConfig")}
+        />
+      </div>
     );
   }
 
@@ -137,116 +139,116 @@ export const ConfigTab = React.memo(() => {
   const showDiffView = (showDiff || isComparing) && diffResult;
 
   return (
-    <div className="flex flex-col gap-3 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
-            {showDiffView ? t("config.diffView") : t("config.currentConfig")}
-          </h3>
-          {state.configData.taskName && (
-            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-              {state.configData.taskName}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {hasDiff && !isComparing && (
+    <div className="flex h-full flex-col p-4 min-w-0">
+      <div className="shrink-0 space-y-3 pb-3 min-w-0">
+        {/* Header */}
+        <div className="flex items-center justify-between min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 truncate">
+              {showDiffView ? t("config.diffView") : t("config.currentConfig")}
+            </h3>
+            {state.configData.taskName && (
+              <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                {state.configData.taskName}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            {hasDiff && !isComparing && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDiff(!showDiff)}
+                className={cn("h-7 gap-1 px-2 text-xs", showDiff && "bg-primary/10 text-primary")}
+              >
+                <GitCompareArrows className="h-3 w-3" />
+                Diff
+              </Button>
+            )}
             <Button
               variant="ghost"
-              size="sm"
-              onClick={() => setShowDiff(!showDiff)}
-              className={cn("h-7 gap-1 px-2 text-xs", showDiff && "bg-primary/10 text-primary")}
+              size="icon"
+              onClick={handleCopy}
+              className="h-7 w-7"
             >
-              <GitCompareArrows className="h-3 w-3" />
-              Diff
+              <Copy className="h-3 w-3" />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleCopy}
-            className="h-7 w-7"
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleExport}
-            className="h-7 w-7"
-          >
-            <Download className="h-3 w-3" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              className="h-7 w-7"
+            >
+              <Download className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
+
+        {/* Config History Timeline */}
+        <div className="min-w-0">
+          <ConfigTimeline
+            snapshots={snapshots}
+            selectedIndex={timelineIndex}
+            compareIndex={compareIndex}
+            onSelect={handleTimelineSelect}
+            onCompare={handleTimelineCompare}
+          />
+        </div>
+
+        {/* Pipeline Graph */}
+        <div className="min-w-0">
+          <PipelineGraph onNodeClick={handleNodeClick} />
+        </div>
+
+        {/* Selected node indicator */}
+        {selectedNode && (
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary truncate max-w-[150px]">
+              {selectedNode}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedNode(null)}
+              className="shrink-0 text-[10px] text-muted-foreground/50 hover:text-muted-foreground"
+            >
+              {t("config.showAll")}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Config History Timeline */}
-      <ConfigTimeline
-        snapshots={snapshots}
-        selectedIndex={timelineIndex}
-        compareIndex={compareIndex}
-        onSelect={handleTimelineSelect}
-        onCompare={handleTimelineCompare}
-      />
-
-      {/* Pipeline Graph */}
-      <PipelineGraph onNodeClick={handleNodeClick} />
-
-      {/* Selected node indicator */}
-      {selectedNode && (
-        <div className="flex items-center gap-2">
-          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-            {selectedNode}
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedNode(null)}
-            className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground"
-          >
-            {t("config.showAll")}
-          </button>
-        </div>
-      )}
-
       {/* Content */}
-      {showDiffView ? (
-        <div className="overflow-auto rounded-lg border border-border/40 bg-muted/10 p-0">
-          <pre className="m-0 p-4 font-mono text-[11px] leading-relaxed">
-            {diffResult.map((part: Change, i: number) => (
-              <span
-                key={`${part.added ? "a" : part.removed ? "r" : "u"}-${i}`}
-                className={cn(
-                  part.added &&
-                    "bg-[color:color-mix(in_srgb,var(--color-success),transparent_80%)] text-[var(--color-success)]",
-                  part.removed &&
-                    "bg-[color:color-mix(in_srgb,var(--color-error),transparent_80%)] text-destructive line-through",
-                )}
-              >
-                {part.value}
-              </span>
-            ))}
-          </pre>
-        </div>
-      ) : (
-        <div className="overflow-auto rounded-lg border border-border/40">
-          <SyntaxHighlighter
-            language="json"
-            style={syntaxStyle}
-            customStyle={{
-              margin: 0,
-              padding: "1rem",
-              fontSize: "11px",
-              lineHeight: "1.6",
-              background: "transparent",
-              borderRadius: "0.5rem",
-            }}
-            wrapLongLines
-          >
-            {configJson}
-          </SyntaxHighlighter>
-        </div>
-      )}
+      <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border/40 bg-zinc-950/5 dark:bg-zinc-950/50">
+        <ScrollArea className="h-full w-full">
+          {showDiffView ? (
+            <pre className="m-0 p-4 font-mono text-[11px] leading-relaxed">
+              {diffResult.map((part: Change, i: number) => (
+                <span
+                  key={`${part.added ? "a" : part.removed ? "r" : "u"}-${i}`}
+                  className={cn(
+                    part.added &&
+                      "bg-[color:color-mix(in_srgb,var(--color-success),transparent_80%)] text-[var(--color-success)]",
+                    part.removed &&
+                      "bg-[color:color-mix(in_srgb,var(--color-error),transparent_80%)] text-destructive line-through",
+                  )}
+                >
+                  {part.value}
+                </span>
+              ))}
+            </pre>
+          ) : (
+            <div className="p-4">
+              <JsonView
+                value={configDataObject as object}
+                style={resolvedTheme === "dark" ? vscodeTheme : lightTheme}
+                className="bg-transparent! text-[11px]"
+                displayDataTypes={false}
+                displayObjectSize={false}
+              />
+            </div>
+          )}
+        </ScrollArea>
+      </div>
     </div>
   );
 });

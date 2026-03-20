@@ -4,6 +4,7 @@ import { AlertCircle, AlertTriangle, CheckCircle2, Filter, Info, ScrollText } fr
 import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { detectAntiCrawl } from "@/app/utils/tool-result-parser";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { type LogEntry, useInspector } from "../inspector-context";
 import { AntiCrawlAlert } from "../widgets/AntiCrawlAlert";
@@ -32,7 +33,7 @@ export const LogTab = React.memo(() => {
   // Auto-scroll to bottom on new logs
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [state.logEntries.length]);
+  }, []);
 
   // Detect anti-crawl patterns in recent logs
   const antiCrawl = useMemo(() => {
@@ -49,70 +50,73 @@ export const LogTab = React.memo(() => {
 
   if (!hasLogs && !hasValidation) {
     return (
-      <EmptyState
-        icon={ScrollText}
-        message={t("log.noLogs")}
-      />
+      <div className="h-full w-full">
+        <EmptyState
+          icon={ScrollText}
+          message={t("log.noLogs")}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4">
-      {/* Validation Result */}
-      {hasValidation && state.validationResult && (
-        <div
-          className={cn(
-            "rounded-lg border p-3",
-            state.validationResult.valid
-              ? "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)] bg-[color:color-mix(in_srgb,var(--color-success),transparent_93%)]"
-              : "border-[color:color-mix(in_srgb,var(--color-error),transparent_70%)] bg-[color:color-mix(in_srgb,var(--color-error),transparent_93%)]",
-          )}
-        >
-          <div className="mb-2 flex items-center gap-2">
-            {state.validationResult.valid ? (
-              <CheckCircle2 className="h-4 w-4 text-[var(--color-success)]" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-destructive" />
+    <div className="flex h-full flex-col p-4">
+      {/* Fixed Header Area */}
+      <div className="shrink-0 space-y-3 pb-3">
+        {/* Validation Result */}
+        {hasValidation && state.validationResult && (
+          <div
+            className={cn(
+              "rounded-lg border p-3",
+              state.validationResult.valid
+                ? "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)] bg-[color:color-mix(in_srgb,var(--color-success),transparent_93%)]"
+                : "border-[color:color-mix(in_srgb,var(--color-error),transparent_70%)] bg-[color:color-mix(in_srgb,var(--color-error),transparent_93%)]",
             )}
-            <span className="text-xs font-bold uppercase tracking-widest">
-              {state.validationResult.valid
-                ? t("validation.passed")
-                : t("validation.failed", { count: state.validationResult.errors.length })}
-            </span>
+          >
+            <div className="mb-2 flex items-center gap-2">
+              {state.validationResult.valid ? (
+                <CheckCircle2 className="h-4 w-4 text-[var(--color-success)]" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              )}
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {state.validationResult.valid
+                  ? t("validation.passed")
+                  : t("validation.failed", { count: state.validationResult.errors.length })}
+              </span>
+            </div>
+            {state.validationResult.errors.length > 0 && (
+              <ul className="ml-6 list-disc space-y-0.5">
+                {state.validationResult.errors.map((err) => (
+                  <li
+                    key={err}
+                    className="text-[11px] text-destructive"
+                  >
+                    {err}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {state.validationResult.warnings.length > 0 && (
+              <ul className="ml-6 mt-2 list-disc space-y-0.5">
+                {state.validationResult.warnings.map((w) => (
+                  <li
+                    key={w}
+                    className="text-[11px] text-[var(--color-warning)]"
+                  >
+                    {w}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {state.validationResult.errors.length > 0 && (
-            <ul className="ml-6 list-disc space-y-0.5">
-              {state.validationResult.errors.map((err, i) => (
-                <li
-                  key={i}
-                  className="text-[11px] text-destructive"
-                >
-                  {err}
-                </li>
-              ))}
-            </ul>
-          )}
-          {state.validationResult.warnings.length > 0 && (
-            <ul className="ml-6 mt-2 list-disc space-y-0.5">
-              {state.validationResult.warnings.map((w, i) => (
-                <li
-                  key={i}
-                  className="text-[11px] text-[var(--color-warning)]"
-                >
-                  {w}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* Anti-crawl alert */}
-      {antiCrawl && <AntiCrawlAlert detection={antiCrawl} />}
+        {/* Anti-crawl alert */}
+        {antiCrawl && <AntiCrawlAlert detection={antiCrawl} />}
 
-      {/* Log filter */}
-      {hasLogs && (
-        <>
+        {/* Log filter */}
+        {hasLogs && (
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
               {t("log.title")}
@@ -140,29 +144,35 @@ export const LogTab = React.memo(() => {
               ))}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Log entries */}
-          <div className="space-y-0.5 rounded-lg border border-border/40 bg-zinc-950/5 p-2 font-mono dark:bg-zinc-950/50">
-            {filteredLogs.map((entry) => (
+      {/* Log entries */}
+      {hasLogs && (
+        <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border/40 bg-zinc-950/5 font-mono dark:bg-zinc-950/50">
+          <ScrollArea className="h-full w-full p-2">
+            <div className="space-y-0.5">
+              {filteredLogs.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={cn(
+                    "flex items-start gap-2 rounded px-2 py-1 text-[11px] leading-relaxed",
+                    entry.level === "error" && "bg-destructive/5",
+                    entry.level === "warn" &&
+                      "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_93%)]",
+                  )}
+                >
+                  <span className="mt-0.5 shrink-0">{LEVEL_ICONS[entry.level]}</span>
+                  <span className="min-w-0 break-all text-foreground/80">{entry.content}</span>
+                </div>
+              ))}
               <div
-                key={entry.id}
-                className={cn(
-                  "flex items-start gap-2 rounded px-2 py-1 text-[11px] leading-relaxed",
-                  entry.level === "error" && "bg-destructive/5",
-                  entry.level === "warn" &&
-                    "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_93%)]",
-                )}
-              >
-                <span className="mt-0.5 shrink-0">{LEVEL_ICONS[entry.level]}</span>
-                <span className="min-w-0 break-all text-foreground/80">{entry.content}</span>
-              </div>
-            ))}
-            <div
-              ref={bottomRef}
-              className="h-px"
-            />
-          </div>
-        </>
+                ref={bottomRef}
+                className="h-px"
+              />
+            </div>
+          </ScrollArea>
+        </div>
       )}
     </div>
   );
