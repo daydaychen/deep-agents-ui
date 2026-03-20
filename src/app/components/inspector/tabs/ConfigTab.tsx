@@ -4,13 +4,14 @@ import { type Change, diffLines } from "diff";
 import { Copy, Download, GitCompareArrows, Settings2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { atomOneDark, atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useInspector } from "../inspector-context";
+import { ConfigTimeline } from "../widgets/ConfigTimeline";
 import { PipelineGraph } from "../widgets/PipelineGraph";
 
 export const ConfigTab = React.memo(() => {
@@ -19,41 +20,92 @@ export const ConfigTab = React.memo(() => {
   const { resolvedTheme } = useTheme();
   const [showDiff, setShowDiff] = useState(false);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  // Timeline state: null = show current, number = show snapshot at index
+  const [timelineIndex, setTimelineIndex] = useState<number | null>(null);
+  const [compareIndex, setCompareIndex] = useState<number | null>(null);
 
   const isDark = resolvedTheme === "dark";
   const syntaxStyle = isDark ? atomOneDark : atomOneLight;
 
+  // Get the snapshots for the current task
+  const snapshots = useMemo(() => {
+    const taskName = state.configData.taskName;
+    if (!taskName) return [];
+    return state.configHistory[taskName] ?? [];
+  }, [state.configData.taskName, state.configHistory]);
+
+  // Determine which config to display: timeline selection or current
+  const displayConfig = useMemo(() => {
+    if (timelineIndex !== null && snapshots[timelineIndex]) {
+      return snapshots[timelineIndex].config;
+    }
+    return state.configData.current;
+  }, [timelineIndex, snapshots, state.configData.current]);
+
   const configJson = useMemo(() => {
     const data = selectedNode
-      ? ((state.configData.current as Record<string, unknown>)?.[selectedNode] ??
-        (
-          (state.configData.current as Record<string, unknown>)?.stages as Record<string, unknown>
-        )?.[selectedNode] ??
-        state.configData.current)
-      : state.configData.current;
+      ? ((displayConfig as Record<string, unknown>)?.[selectedNode] ??
+        ((displayConfig as Record<string, unknown>)?.stages as Record<string, unknown>)?.[
+          selectedNode
+        ] ??
+        displayConfig)
+      : displayConfig;
     if (!data) return "";
     try {
       return JSON.stringify(data, null, 2);
     } catch {
       return String(data);
     }
-  }, [state.configData.current, selectedNode]);
+  }, [displayConfig, selectedNode]);
 
+  // For diff: compare against previous snapshot or selected compare index
   const previousJson = useMemo(() => {
+    if (compareIndex !== null && snapshots[compareIndex]) {
+      try {
+        return JSON.stringify(snapshots[compareIndex].config, null, 2);
+      } catch {
+        return "";
+      }
+    }
     if (!state.configData.previous) return "";
     try {
       return JSON.stringify(state.configData.previous, null, 2);
     } catch {
       return String(state.configData.previous);
     }
-  }, [state.configData.previous]);
+  }, [compareIndex, snapshots, state.configData.previous]);
 
-  const hasDiff = !!state.configData.previous && !!state.configData.current;
+  const hasDiff = previousJson.length > 0 && configJson.length > 0;
+  const isComparing = compareIndex !== null;
 
   const diffResult = useMemo(() => {
-    if (!hasDiff || !showDiff) return null;
+    if (!hasDiff || (!showDiff && !isComparing)) return null;
     return diffLines(previousJson, configJson);
-  }, [hasDiff, showDiff, previousJson, configJson]);
+  }, [hasDiff, showDiff, isComparing, previousJson, configJson]);
+
+  const handleTimelineSelect = useCallback(
+    (index: number) => {
+      setCompareIndex(null);
+      if (index === snapshots.length - 1) {
+        // Selecting latest = show current
+        setTimelineIndex(null);
+      } else {
+        setTimelineIndex(index);
+      }
+    },
+    [snapshots.length],
+  );
+
+  const handleTimelineCompare = useCallback(
+    (index: number) => {
+      if (compareIndex === index) {
+        setCompareIndex(null);
+      } else {
+        setCompareIndex(index);
+      }
+    },
+    [compareIndex],
+  );
 
   if (!state.configData.current) {
     return (
@@ -84,13 +136,15 @@ export const ConfigTab = React.memo(() => {
     URL.revokeObjectURL(url);
   };
 
+  const showDiffView = (showDiff || isComparing) && diffResult;
+
   return (
     <div className="flex flex-col gap-3 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
-            {showDiff ? t("config.diffView") : t("config.currentConfig")}
+            {showDiffView ? t("config.diffView") : t("config.currentConfig")}
           </h3>
           {state.configData.taskName && (
             <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
@@ -99,7 +153,7 @@ export const ConfigTab = React.memo(() => {
           )}
         </div>
         <div className="flex items-center gap-1">
-          {hasDiff && (
+          {hasDiff && !isComparing && (
             <Button
               variant="ghost"
               size="sm"
@@ -129,6 +183,15 @@ export const ConfigTab = React.memo(() => {
         </div>
       </div>
 
+      {/* Config History Timeline */}
+      <ConfigTimeline
+        snapshots={snapshots}
+        selectedIndex={timelineIndex}
+        compareIndex={compareIndex}
+        onSelect={handleTimelineSelect}
+        onCompare={handleTimelineCompare}
+      />
+
       {/* Pipeline Graph */}
       <PipelineGraph
         onNodeClick={(name) => {
@@ -153,7 +216,7 @@ export const ConfigTab = React.memo(() => {
       )}
 
       {/* Content */}
-      {showDiff && diffResult ? (
+      {showDiffView ? (
         <div className="overflow-auto rounded-lg border border-border/40 bg-muted/10 p-0">
           <pre className="m-0 p-4 font-mono text-[11px] leading-relaxed">
             {diffResult.map((part: Change, i: number) => (

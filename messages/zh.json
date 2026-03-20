@@ -318,7 +318,14 @@
       "nodeCount": "{count} 个节点",
       "pipeline": "流水线",
       "fields": "字段",
-      "showAll": "显示全部"
+      "showAll": "显示全部",
+      "history": "变更历史",
+      "versions": "个版本",
+      "latest": "最新",
+      "clickToView": "点击查看",
+      "clickToCompare": "点击对比",
+      "comparingVersions": "Shift+点击另一个版本进行对比 · 点击取消选择",
+      "viewingVersion": "正在查看历史版本 · 点击最新版本返回"
     },
     "data": {
       "noData": "暂无数据",
@@ -333,7 +340,9 @@
       "filterWarnings": "警告"
     },
     "screenshot": {
-      "noScreenshots": "暂无截图"
+      "noScreenshots": "暂无截图",
+      "zoom": "放大查看",
+      "download": "下载"
     },
     "validation": {
       "passed": "验证通过",

@@ -318,7 +318,14 @@
       "nodeCount": "{count} nodes",
       "pipeline": "Pipeline",
       "fields": "fields",
-      "showAll": "Show all"
+      "showAll": "Show all",
+      "history": "History",
+      "versions": "versions",
+      "latest": "Latest",
+      "clickToView": "Click to view",
+      "clickToCompare": "Click to compare",
+      "comparingVersions": "Shift+click another version to compare · Click to deselect",
+      "viewingVersion": "Viewing historical version · Click latest to return"
     },
     "data": {
       "noData": "No data yet",
@@ -333,7 +340,9 @@
       "filterWarnings": "Warnings"
     },
     "screenshot": {
-      "noScreenshots": "No screenshots yet"
+      "noScreenshots": "No screenshots yet",
+      "zoom": "Zoom in",
+      "download": "Download"
     },
     "validation": {
       "passed": "Validation Passed",
