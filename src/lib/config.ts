@@ -16,7 +16,7 @@ interface StoredConfig {
 }
 
 // Cache for config to avoid repeated localStorage reads
-let configCache: StandaloneConfig | null | undefined = undefined;
+let configCache: StandaloneConfig | null | undefined;
 
 export function getConfig(): StandaloneConfig | null {
   if (typeof window === "undefined") return null;
