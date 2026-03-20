@@ -292,5 +292,66 @@
     "input": "输入:",
     "output": "输出:",
     "total": "总计:"
+  },
+  "inspector": {
+    "title": "检查器",
+    "tabs": {
+      "data": "数据",
+      "config": "配置",
+      "log": "日志",
+      "screenshot": "截图"
+    },
+    "actions": {
+      "exportJSON": "导出 JSON",
+      "exportCSV": "导出 CSV",
+      "copy": "已复制",
+      "saveTemplate": "保存为模板",
+      "viewInInspector": "在检查器中查看",
+      "runTest": "运行测试",
+      "validate": "验证配置",
+      "startTask": "启动任务"
+    },
+    "config": {
+      "currentConfig": "当前配置",
+      "diffView": "变更对比",
+      "noConfig": "暂无配置数据",
+      "nodeCount": "{count} 个节点"
+    },
+    "data": {
+      "noData": "暂无数据",
+      "structuredData": "结构化数据",
+      "rows": "行"
+    },
+    "log": {
+      "noLogs": "暂无日志",
+      "streaming": "实时接收中...",
+      "filterAll": "全部",
+      "filterErrors": "仅错误",
+      "filterWarnings": "警告"
+    },
+    "screenshot": {
+      "noScreenshots": "暂无截图"
+    },
+    "validation": {
+      "passed": "验证通过",
+      "failed": "{count} 个错误",
+      "warnings": "{count} 个警告"
+    },
+    "antiCrawl": {
+      "title": "反爬检测",
+      "suggestion": "建议操作",
+      "switchBrowser": "切换 Browser Mode",
+      "addProxy": "添加代理",
+      "changeUA": "修改 User-Agent",
+      "reduceThrottle": "降低并发"
+    },
+    "toolCategory": {
+      "task": "任务配置",
+      "test": "测试",
+      "hook": "Hook",
+      "template": "模板",
+      "browser": "浏览器",
+      "unknown": "工具"
+    }
   }
 }

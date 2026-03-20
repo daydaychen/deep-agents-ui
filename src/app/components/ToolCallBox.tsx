@@ -1,22 +1,39 @@
 "use client";
 
-import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
-import { ActionRequest, ReviewConfig, ToolCall, UiComponent } from "@/app/types/types";
-import { cn } from "@/lib/utils";
 import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
 import {
   AlertCircle,
   ChevronDown,
   CircleCheckBigIcon,
+  FileStack,
+  FlaskConical,
+  Globe,
   Loader2,
+  PanelRightOpen,
   StopCircle,
   Terminal,
+  Wrench,
+  Zap,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import React, { useState, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
+import type {
+  LogEntry,
+  Screenshot,
+  ValidationResult,
+} from "@/app/components/inspector/inspector-context";
+import { useInspectorOptional } from "@/app/components/inspector/inspector-context";
+import { ToolApprovalInterrupt } from "@/app/components/ToolApprovalInterrupt";
+import { ActionRequest, ReviewConfig, ToolCall, UiComponent } from "@/app/types/types";
+import {
+  getToolCategory,
+  getToolSummary,
+  parseToolResult,
+  type ToolCategory,
+} from "@/app/utils/tool-result-parser";
+import { cn } from "@/lib/utils";
 
 // Static icon components - hoisted outside to avoid recreation on every render
-// Using CSS variables for consistent theming across light/dark modes
 const CompletedIcon = (
   <CircleCheckBigIcon
     size={13}
@@ -51,10 +68,38 @@ const DefaultIcon = (
   />
 );
 
+// Tool category badge config
+const CATEGORY_CONFIG: Record<ToolCategory, { icon: React.ReactNode; colorClass: string }> = {
+  task: {
+    icon: <Wrench className="h-2.5 w-2.5" />,
+    colorClass: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+  },
+  test: {
+    icon: <FlaskConical className="h-2.5 w-2.5" />,
+    colorClass: "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+  },
+  hook: {
+    icon: <Zap className="h-2.5 w-2.5" />,
+    colorClass: "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400",
+  },
+  template: {
+    icon: <FileStack className="h-2.5 w-2.5" />,
+    colorClass: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400",
+  },
+  browser: {
+    icon: <Globe className="h-2.5 w-2.5" />,
+    colorClass: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20 dark:text-cyan-400",
+  },
+  unknown: {
+    icon: <Terminal className="h-2.5 w-2.5" />,
+    colorClass: "bg-muted text-muted-foreground border-border/30",
+  },
+};
+
 interface ToolCallBoxProps {
   toolCall: ToolCall;
   uiComponent?: UiComponent;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: LangGraph SDK stream type
   stream?: any;
   graphId?: string;
   actionRequest?: ActionRequest;
@@ -77,9 +122,9 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     messageId,
   }) => {
     const t = useTranslations("toolCall");
-    const [isExpanded, setIsExpanded] = useState(
-      () => !!uiComponent || !!actionRequest
-    );
+    const tInspector = useTranslations("inspector");
+    const inspector = useInspectorOptional();
+    const [isExpanded, setIsExpanded] = useState(() => !!uiComponent || !!actionRequest);
 
     const hasUiComponent = !!uiComponent;
     const hasActionRequest = !!actionRequest;
@@ -91,16 +136,9 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
 
     // Auto-expand/collapse based on status
     React.useEffect(() => {
-      // 1. If currently active or waiting for input, ensure it's expanded
-      if (
-        toolCall.status === "pending" ||
-        toolCall.status === "interrupted" ||
-        hasActionRequest
-      ) {
+      if (toolCall.status === "pending" || toolCall.status === "interrupted" || hasActionRequest) {
         setIsExpanded(true);
-      }
-      // 2. If finished successfully or with error, auto-collapse unless it has a UI component or active request
-      else if (
+      } else if (
         (toolCall.status === "completed" || toolCall.status === "error") &&
         !hasUiComponent &&
         !hasActionRequest
@@ -109,9 +147,52 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       }
     }, [toolCall.status, hasUiComponent, hasActionRequest]);
 
-    const [expandedArgs, setExpandedArgs] = useState<Record<string, boolean>>(
-      {}
-    );
+    // Auto-push to Inspector when tool completes
+    const hasPushedRef = React.useRef<string | null>(null);
+    React.useEffect(() => {
+      if (!inspector || toolCall.status !== "completed" || !toolCall.result) return;
+      // Avoid duplicate pushes for same tool call
+      const pushKey = `${toolCall.id}-${toolCall.status}`;
+      if (hasPushedRef.current === pushKey) return;
+
+      const parsed = parseToolResult(toolCall.name, toolCall.result, toolCall.id);
+      if (!parsed) return;
+
+      hasPushedRef.current = pushKey;
+
+      switch (parsed.type) {
+        case "config":
+          inspector.dispatch({
+            type: "PUSH_CONFIG",
+            payload: {
+              config: parsed.data as Record<string, unknown>,
+              taskName: parsed.metadata?.taskName || toolCall.name,
+              toolCallId: toolCall.id,
+            },
+          });
+          break;
+        case "validation":
+          inspector.dispatch({
+            type: "PUSH_VALIDATION",
+            payload: parsed.data as ValidationResult,
+          });
+          break;
+        case "test_log":
+          inspector.dispatch({
+            type: "PUSH_LOG",
+            payload: parsed.data as LogEntry[],
+          });
+          break;
+        case "screenshot":
+          inspector.dispatch({
+            type: "PUSH_SCREENSHOT",
+            payload: parsed.data as Screenshot,
+          });
+          break;
+      }
+    }, [inspector, toolCall.id, toolCall.status, toolCall.result, toolCall.name]);
+
+    const [expandedArgs, setExpandedArgs] = useState<Record<string, boolean>>({});
 
     // Deep Arg Extraction
     const finalArgs = useMemo(() => {
@@ -121,16 +202,9 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
         toolCallAny.input ??
         (toolCallAny.function as Record<string, unknown>)?.arguments ??
         toolCallAny.arguments;
-
-      // Early exit for falsy values
       if (!raw) return {};
-
-      // Early exit for plain objects
       if (typeof raw === "object" && !Array.isArray(raw)) return raw;
-
-      // Handle string values
       if (typeof raw !== "string" || (raw as string).trim() === "") return {};
-
       try {
         const parsed = JSON.parse(raw);
         return typeof parsed === "object" ? parsed : { value: parsed };
@@ -148,17 +222,45 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           .map(([key, value]) => {
             let valStr = "";
             if (value === null || value === undefined) valStr = "null";
-            else if (typeof value === "object")
-              valStr = Array.isArray(value) ? "[...]" : "{...}";
+            else if (typeof value === "object") valStr = Array.isArray(value) ? "[...]" : "{...}";
             else valStr = String(value);
             return `${key}: ${valStr}`;
           })
           .join(", ");
-        return preview.length > 80 ? preview.substring(0, 80) + "…" : preview;
+        return preview.length > 80 ? `${preview.substring(0, 80)}…` : preview;
       } catch {
         return "";
       }
     }, [finalArgs]);
+
+    // Tool category and summary
+    const category = useMemo(() => getToolCategory(toolCall.name), [toolCall.name]);
+    const categoryConfig = CATEGORY_CONFIG[category];
+
+    const summary = useMemo(
+      () =>
+        toolCall.status === "completed" ? getToolSummary(toolCall.name, toolCall.result) : null,
+      [toolCall.name, toolCall.result, toolCall.status],
+    );
+
+    // Can this tool push to inspector?
+    const canInspect = useMemo(() => {
+      if (!inspector || !toolCall.result || toolCall.status !== "completed") return false;
+      return parseToolResult(toolCall.name, toolCall.result, toolCall.id) !== null;
+    }, [inspector, toolCall.name, toolCall.result, toolCall.status, toolCall.id]);
+
+    const handleViewInInspector = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!inspector || !toolCall.result) return;
+        const parsed = parseToolResult(toolCall.name, toolCall.result, toolCall.id);
+        if (!parsed) return;
+
+        // Open inspector to the appropriate tab
+        inspector.dispatch({ type: "OPEN_PANEL", payload: parsed.inspectorTab });
+      },
+      [inspector, toolCall.name, toolCall.result, toolCall.id],
+    );
 
     const name = toolCall.name || "Unknown Tool";
     const status = toolCall.status || "completed";
@@ -180,7 +282,6 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
     };
     const statusIcon = getStatusIcon(status);
 
-    // Memoize status-based styles to prevent recalculation on every render
     const statusStyles = useMemo(() => {
       switch (status) {
         case "completed":
@@ -190,7 +291,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-success),transparent_88%)]",
             iconBg: "bg-[color:color-mix(in_srgb,var(--color-success),transparent_85%)]",
             iconBorder: "border-[color:color-mix(in_srgb,var(--color-success),transparent_70%)]",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-success),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-success),transparent_95%)]",
           };
         case "error":
           return {
@@ -208,7 +310,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-primary),transparent_88%)]",
             iconBg: "bg-[color:color-mix(in_srgb,var(--color-primary),transparent_85%)]",
             iconBorder: "border-[color:color-mix(in_srgb,var(--color-primary),transparent_70%)]",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-primary),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-primary),transparent_95%)]",
           };
         case "interrupted":
           return {
@@ -217,7 +320,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             hoverBg: "hover:bg-[color:color-mix(in_srgb,var(--color-warning),transparent_88%)]",
             iconBg: "bg-[color:color-mix(in_srgb,var(--color-warning),transparent_85%)]",
             iconBorder: "border-[color:color-mix(in_srgb,var(--color-warning),transparent_70%)]",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-warning),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-warning),transparent_95%)]",
           };
         default:
           return {
@@ -226,7 +330,8 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
             hoverBg: "hover:bg-muted/50",
             iconBg: "bg-muted/40",
             iconBorder: "border-border/50",
-            darkBorder: "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
+            darkBorder:
+              "dark:border-[color:color-mix(in_srgb,var(--color-foreground),transparent_95%)]",
           };
       }
     }, [status]);
@@ -238,18 +343,19 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
           statusStyles.border,
           statusStyles.bg,
           statusStyles.hoverBg,
-          statusStyles.darkBorder, // 5% border in dark mode instead of total suppression
-          isExpanded && hasContent && "shadow-md ring-1 ring-border/20 dark:ring-white/[0.01]"
+          statusStyles.darkBorder,
+          isExpanded && hasContent && "shadow-md ring-1 ring-border/20 dark:ring-white/[0.01]",
         )}
       >
         {/* Header */}
         <button
+          type="button"
           onClick={() => hasContent && setIsExpanded(!isExpanded)}
           disabled={!hasContent}
           aria-expanded={isExpanded}
           className={cn(
             "grid w-full min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 text-left transition-colors",
-            hasContent ? "cursor-pointer hover:bg-muted/30" : "cursor-default"
+            hasContent ? "cursor-pointer hover:bg-muted/30" : "cursor-default",
           )}
         >
           {/* Tool Status & Name */}
@@ -258,32 +364,64 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
               className={cn(
                 "flex h-6 w-6 items-center justify-center rounded-md border shadow-inner",
                 statusStyles.iconBorder,
-                statusStyles.iconBg
+                statusStyles.iconBg,
               )}
             >
               {statusIcon}
             </div>
           </div>
 
-          {/* Arguments Preview - CLI Style */}
-          <div className="flex min-w-0 flex-1 items-center overflow-hidden px-2">
-            <div className="inline-block max-w-full truncate font-mono text-[11px] leading-none text-muted-foreground/70">
-              <span className="text-foreground font-bold">{name}</span>
-              <span className="text-muted-foreground/50 ml-1.5">(</span>
-              <span className="text-muted-foreground/60">
-                {argsPreview || t("noArgs")}
+          {/* Tool Name + Category Badge + Summary */}
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden px-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate font-mono text-[11px] font-bold leading-none text-foreground">
+                {name}
               </span>
-              <span className="text-muted-foreground/50">)</span>
+              {/* Category badge */}
+              {category !== "unknown" && (
+                <span
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wider",
+                    categoryConfig.colorClass,
+                  )}
+                >
+                  {categoryConfig.icon}
+                  {tInspector(`toolCategory.${category}`)}
+                </span>
+              )}
             </div>
+            {/* Result summary when collapsed */}
+            {!isExpanded && summary && (
+              <span className="truncate text-[10px] leading-none text-muted-foreground/60">
+                {summary}
+              </span>
+            )}
+            {/* Args preview when no summary */}
+            {!isExpanded && !summary && argsPreview && (
+              <span className="truncate font-mono text-[10px] leading-none text-muted-foreground/50">
+                ({argsPreview})
+              </span>
+            )}
           </div>
 
-          {/* Expand Icon */}
-          <div className="shrink-0">
+          {/* Actions */}
+          <div className="flex shrink-0 items-center gap-1">
+            {/* View in Inspector button */}
+            {canInspect && (
+              <button
+                type="button"
+                onClick={handleViewInInspector}
+                className="flex h-5 items-center gap-1 rounded-md bg-primary/10 px-1.5 text-[9px] font-medium text-primary transition-colors hover:bg-primary/20"
+                title={tInspector("actions.viewInInspector")}
+              >
+                <PanelRightOpen size={10} />
+              </button>
+            )}
             {hasContent && (
               <div
                 className={cn(
                   "flex h-5 w-5 items-center justify-center rounded-full bg-muted/40 text-muted-foreground/60 transition-transform duration-300",
-                  isExpanded && "rotate-180"
+                  isExpanded && "rotate-180",
                 )}
               >
                 <ChevronDown size={12} />
@@ -301,7 +439,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 <LoadExternalComponent
                   key={uiComponent.id}
                   stream={stream}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // biome-ignore lint/suspicious/noExplicitAny: LangGraph SDK type mismatch
                   message={uiComponent as any}
                   namespace={graphId}
                   meta={{
@@ -340,6 +478,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                           className="group overflow-hidden rounded-lg border border-border/40 bg-muted/10 transition-colors hover:border-border/80"
                         >
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setExpandedArgs((p) => ({
@@ -356,16 +495,14 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                               size={12}
                               className={cn(
                                 "text-muted-foreground/40 transition-transform",
-                                expandedArgs[key] && "rotate-180"
+                                expandedArgs[key] && "rotate-180",
                               )}
                             />
                           </button>
                           {expandedArgs[key] && (
                             <div className="border-t border-border/20 bg-muted/30 p-3 shadow-inner dark:bg-zinc-950">
                               <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/80 dark:text-zinc-300">
-                                {typeof value === "string"
-                                  ? value
-                                  : JSON.stringify(value, null, 2)}
+                                {typeof value === "string" ? value : JSON.stringify(value, null, 2)}
                               </pre>
                             </div>
                           )}
@@ -376,14 +513,27 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 )}
                 {toolCall.result && (
                   <div className="space-y-2 pt-2">
-                    <div className="flex items-center gap-2 px-1">
-                      <CircleCheckBigIcon
-                        size={10}
-                        className="text-[var(--color-success)]/50"
-                      />
-                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                        {t("executionResult")}
-                      </h4>
+                    <div className="flex items-center justify-between px-1">
+                      <div className="flex items-center gap-2">
+                        <CircleCheckBigIcon
+                          size={10}
+                          className="text-[var(--color-success)]/50"
+                        />
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                          {t("executionResult")}
+                        </h4>
+                      </div>
+                      {/* View in Inspector inside expanded view */}
+                      {canInspect && (
+                        <button
+                          type="button"
+                          onClick={handleViewInInspector}
+                          className="flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/10"
+                        >
+                          <PanelRightOpen size={10} />
+                          {tInspector("actions.viewInInspector")}
+                        </button>
+                      )}
                     </div>
                     <div className="border-[var(--color-success)]/10 overflow-x-auto rounded-lg border bg-muted/30 p-4 shadow-inner dark:bg-zinc-950">
                       <pre className="selection:bg-[var(--color-success)]/20 dark:text-[var(--color-success)]/90 m-0 whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/80">
@@ -400,7 +550,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 ToolCallBox.displayName = "ToolCallBox";

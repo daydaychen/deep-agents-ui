@@ -292,5 +292,66 @@
     "input": "Input:",
     "output": "Output:",
     "total": "Total:"
+  },
+  "inspector": {
+    "title": "Inspector",
+    "tabs": {
+      "data": "Data",
+      "config": "Config",
+      "log": "Log",
+      "screenshot": "Screenshot"
+    },
+    "actions": {
+      "exportJSON": "Export JSON",
+      "exportCSV": "Export CSV",
+      "copy": "Copied",
+      "saveTemplate": "Save as Template",
+      "viewInInspector": "View in Inspector",
+      "runTest": "Run Test",
+      "validate": "Validate",
+      "startTask": "Start Task"
+    },
+    "config": {
+      "currentConfig": "Current Config",
+      "diffView": "Diff View",
+      "noConfig": "No config data yet",
+      "nodeCount": "{count} nodes"
+    },
+    "data": {
+      "noData": "No data yet",
+      "structuredData": "Structured Data",
+      "rows": "rows"
+    },
+    "log": {
+      "noLogs": "No logs yet",
+      "streaming": "Streaming...",
+      "filterAll": "All",
+      "filterErrors": "Errors",
+      "filterWarnings": "Warnings"
+    },
+    "screenshot": {
+      "noScreenshots": "No screenshots yet"
+    },
+    "validation": {
+      "passed": "Validation Passed",
+      "failed": "{count} errors",
+      "warnings": "{count} warnings"
+    },
+    "antiCrawl": {
+      "title": "Anti-Crawl Detection",
+      "suggestion": "Suggested Actions",
+      "switchBrowser": "Switch to Browser Mode",
+      "addProxy": "Add Proxy",
+      "changeUA": "Change User-Agent",
+      "reduceThrottle": "Reduce Concurrency"
+    },
+    "toolCategory": {
+      "task": "Task Config",
+      "test": "Test",
+      "hook": "Hook",
+      "template": "Template",
+      "browser": "Browser",
+      "unknown": "Tool"
+    }
   }
 }

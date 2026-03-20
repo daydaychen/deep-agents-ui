@@ -1,34 +1,32 @@
 "use client";
 
+import { Assistant } from "@langchain/langgraph-sdk";
+import { AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
+import React, { FormEvent, useCallback, useMemo, useRef, useState } from "react";
+import { useStickToBottom } from "use-stick-to-bottom";
 import { AgentThinkingIndicator } from "@/app/components/AgentThinkingIndicator";
 import { ChatMessage } from "@/app/components/ChatMessage";
-import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import { ChatInput } from "@/app/components/chat/ChatInput";
 import { TasksSection } from "@/app/components/chat/TasksSection";
+import { ErrorBoundary } from "@/app/components/ErrorBoundary";
+import { InspectorPanel } from "@/app/components/inspector/InspectorPanel";
+import { InspectorProvider } from "@/app/components/inspector/InspectorProvider";
+import { useInspector } from "@/app/components/inspector/inspector-context";
 import { SubAgentPanel } from "@/app/components/message/SubAgentPanel";
 import { MessageSkeleton } from "@/app/components/ui/message-skeleton";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { useThrottledValue } from "@/app/hooks/useThrottledValue";
-import type { ActionRequest, ReviewConfig, ToolApprovalInterruptData, UiComponent } from "@/app/types/types";
+import type {
+  ActionRequest,
+  ReviewConfig,
+  ToolApprovalInterruptData,
+  UiComponent,
+} from "@/app/types/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
 import { useChatActions, useChatState } from "@/providers/chat-context";
-import { Assistant } from "@langchain/langgraph-sdk";
-import { AlertCircle } from "lucide-react";
-import { useTranslations } from "next-intl";
-import React, {
-  FormEvent,
-  useCallback,
-  useMemo,
-  useState,
-  useRef,
-} from "react";
-import { useStickToBottom } from "use-stick-to-bottom";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
 
 interface ChatInterfaceProps {
   assistant: Assistant | null;
@@ -36,7 +34,6 @@ interface ChatInterfaceProps {
 
 const loadingSkeletons = [1, 2, 3];
 
-// Static JSX elements - hoisted outside component to avoid recreation on every render
 const loadingSkeletonElements = (
   <div className="flex flex-col gap-4 p-6">
     {loadingSkeletons.map((i) => (
@@ -45,7 +42,8 @@ const loadingSkeletonElements = (
   </div>
 );
 
-export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
+// Inner component that consumes Inspector context
+const ChatInterfaceInner = React.memo<ChatInterfaceProps>(({ assistant }) => {
   const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
   const [input, setInput] = useState("");
   const { scrollRef, contentRef } = useStickToBottom({
@@ -80,6 +78,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     setFiles,
   } = useChatActions();
 
+  const { state: inspectorState } = useInspector();
+
   const submitDisabled = isLoading || !assistant;
   const handleSubmit = useCallback(
     (e?: FormEvent) => {
@@ -91,26 +91,17 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
       sendMessage(messageText);
       setInput("");
     },
-    [input, isLoading, sendMessage, setInput, submitDisabled]
+    [input, isLoading, sendMessage, submitDisabled],
   );
 
-  // Throttle messages updates to 100ms during streaming to prevent UI stutter/crashing
-  // Use messages immediately when NOT loading to ensure responsive history loading
   const throttledMessages = useThrottledValue(messages, isLoading ? 100 : 0);
 
-  // Use the extracted hook for processing messages
-  const processedMessages = useProcessedMessages(
-    throttledMessages,
-    subagentMessagesMap,
-    interrupt
-  );
+  const processedMessages = useProcessedMessages(throttledMessages, subagentMessagesMap, interrupt);
 
-  // Extract all subagents from all messages for the panel lookup
   const allSubAgents = useMemo(() => {
     return processedMessages.flatMap((m) => m.subAgents);
   }, [processedMessages]);
 
-  // Parse out any action requests or review configs from the interrupt
   const actionRequestsMap: Map<string, ActionRequest> | null = useMemo(() => {
     const value = interrupt?.value as ToolApprovalInterruptData | undefined;
     const actionRequests = value?.action_requests;
@@ -122,20 +113,14 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     const value = interrupt?.value as ToolApprovalInterruptData | undefined;
     const reviewConfigs = value?.review_configs;
     if (!reviewConfigs || !Array.isArray(reviewConfigs)) return new Map<string, ReviewConfig>();
-    return new Map(
-      reviewConfigs.map((rc: ReviewConfig) => [rc.action_name, rc])
-    );
+    return new Map(reviewConfigs.map((rc: ReviewConfig) => [rc.action_name, rc]));
   }, [interrupt]);
 
-  // Memoize UI components by message ID for O(1) lookup instead of O(n) filter per message
   const uiByMessageId = useMemo(() => {
     if (!ui) return new Map<string, UiComponent[]>();
-
-    // Type guard: check if ui is an array
     if (!Array.isArray(ui)) return new Map<string, UiComponent[]>();
-
     const map = new Map<string, UiComponent[]>();
-    for (const u of (ui as UiComponent[])) {
+    for (const u of ui as UiComponent[]) {
       const messageId = u.metadata?.message_id;
       if (messageId) {
         const existing = map.get(messageId) || [];
@@ -146,21 +131,30 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
     return map;
   }, [ui]);
 
-  // Track last active subagent id for smooth slide-out animation
   const lastActiveSubAgentIdRef = useRef<string | null>(null);
 
   if (activeSubAgentId) {
     lastActiveSubAgentIdRef.current = activeSubAgentId;
   }
 
-  const lastActiveSubAgentId =
-    activeSubAgentId ?? lastActiveSubAgentIdRef.current;
+  const lastActiveSubAgentId = activeSubAgentId ?? lastActiveSubAgentIdRef.current;
+
+  // Close Inspector when SubAgent panel opens (mutual exclusion)
+  const handleSetActiveSubAgentId = useCallback(
+    (id: string | null) => {
+      setActiveSubAgentId(id);
+    },
+    [setActiveSubAgentId],
+  );
 
   const tCommon = useTranslations("common");
 
+  // Determine if inspector is effectively visible (SubAgent and Inspector are mutually exclusive for overlay)
+  const inspectorVisible = inspectorState.isOpen && !activeSubAgentId;
+
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
-      {/* SubAgent Trace Overlay Panel */}
+      {/* SubAgent Trace Overlay Panel — only show when Inspector is NOT open */}
       <div className="pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] z-[300] flex overflow-hidden">
         <ResizablePanelGroup
           direction="horizontal"
@@ -177,7 +171,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
               "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
               activeSubAgentId
                 ? "pointer-events-auto z-50 -mr-1 cursor-col-resize opacity-100"
-                : "pointer-events-none opacity-0"
+                : "pointer-events-none opacity-0",
             )}
           />
 
@@ -189,7 +183,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
               "transition-[transform,opacity] duration-300 ease-out",
               activeSubAgentId
                 ? "pointer-events-auto translate-x-0 opacity-100"
-                : "pointer-events-none translate-x-[calc(100%+1rem)] opacity-0"
+                : "pointer-events-none translate-x-[calc(100%+1rem)] opacity-0",
             )}
           >
             <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
@@ -197,8 +191,51 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                 subAgentId={activeSubAgentId || lastActiveSubAgentId}
                 subAgents={allSubAgents}
                 subagentMessagesMap={subagentMessagesMap}
-                onClose={() => setActiveSubAgentId(null)}
+                onClose={() => handleSetActiveSubAgentId(null)}
               />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+
+      {/* Inspector Overlay Panel */}
+      <div
+        className={cn(
+          "pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] z-[290] flex overflow-hidden transition-all duration-300 ease-out",
+        )}
+      >
+        <ResizablePanelGroup
+          direction="horizontal"
+          id="inspector-panel-group"
+        >
+          <ResizablePanel
+            defaultSize={70}
+            className="pointer-events-none"
+          />
+
+          <ResizableHandle
+            withHandle
+            className={cn(
+              "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
+              inspectorVisible
+                ? "pointer-events-auto z-50 -mr-1 cursor-col-resize opacity-100"
+                : "pointer-events-none opacity-0",
+            )}
+          />
+
+          <ResizablePanel
+            defaultSize={30}
+            minSize={20}
+            maxSize={60}
+            className={cn(
+              "transition-[transform,opacity] duration-300 ease-out",
+              inspectorVisible
+                ? "pointer-events-auto translate-x-0 opacity-100"
+                : "pointer-events-none translate-x-[calc(100%+1rem)] opacity-0",
+            )}
+          >
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
+              <InspectorPanel />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -212,7 +249,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
         >
           <div
             className={cn(
-              "mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 transition-[padding,max-width,opacity] duration-200 ease-in-out md:px-4"
+              "mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 transition-[padding,max-width,opacity] duration-200 ease-in-out md:px-4",
             )}
             ref={contentRef}
             style={{ contentVisibility: "auto" }}
@@ -222,21 +259,15 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
             ) : (
               <>
                 {processedMessages.map((data, index) => {
-                  // O(1) lookup from memoized map instead of O(n) filter
                   const messageUi = data.message.id
                     ? uiByMessageId.get(data.message.id)
                     : undefined;
                   const isLastMessage = index === processedMessages.length - 1;
                   const isStreaming = isLastMessage && isLoading;
 
-                  // Get branch information for this message
-                  const branchInfo = getMessageBranchInfo?.(
-                    data.message,
-                    index
-                  );
+                  const branchInfo = getMessageBranchInfo?.(data.message, index);
                   const branchOptions = branchInfo?.branchOptions || [];
-                  const currentBranchIndex =
-                    branchInfo?.currentBranchIndex ?? 0;
+                  const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
                   const canRetry = branchInfo?.canRetry;
 
                   return (
@@ -252,12 +283,8 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                           subAgents={data.subAgents}
                           isLoading={isLoading}
                           isStreaming={isStreaming}
-                          actionRequestsMap={
-                            isLastMessage ? actionRequestsMap : undefined
-                          }
-                          reviewConfigsMap={
-                            isLastMessage ? reviewConfigsMap : undefined
-                          }
+                          actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
+                          reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
                           ui={messageUi}
                           stream={stream}
                           onResumeInterrupt={resumeInterrupt}
@@ -270,7 +297,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
                           currentBranchIndex={currentBranchIndex}
                           canRetry={!!canRetry}
                           activeSubAgentId={activeSubAgentId}
-                          setActiveSubAgentId={setActiveSubAgentId}
+                          setActiveSubAgentId={handleSetActiveSubAgentId}
                         />
                       </ErrorBoundary>
                     </div>
@@ -293,7 +320,6 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
 
         {/* Input Container */}
         <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent px-3 pb-4 pt-8 sm:px-4">
-          {/* Agent Thinking Indicator - Centralized loading signal */}
           <div className="mx-auto mb-2 flex max-w-[800px] justify-center">
             <AgentThinkingIndicator isActive={isLoading} />
           </div>
@@ -319,6 +345,17 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
         </div>
       </div>
     </div>
+  );
+});
+
+ChatInterfaceInner.displayName = "ChatInterfaceInner";
+
+// Outer component that provides Inspector context
+export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
+  return (
+    <InspectorProvider>
+      <ChatInterfaceInner assistant={assistant} />
+    </InspectorProvider>
   );
 });
 
