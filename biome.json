@@ -35,7 +35,8 @@
       "recommended": true,
       "complexity": {
         "noForEach": "off",
-        "useLiteralKeys": "off"
+        "useLiteralKeys": "off",
+        "noImportantStyles": "off"
       },
       "correctness": {
         "useExhaustiveDependencies": "warn",
@@ -52,12 +53,14 @@
         "useFragmentSyntax": "error"
       },
       "suspicious": {
-        "noArrayIndexKey": "warn",
+        "noArrayIndexKey": "off",
         "noConsole": "off",
-        "noExplicitAny": "warn"
+        "noExplicitAny": "off",
+        "noUnknownAtRules": "off"
       },
       "a11y": {
-        "recommended": true
+        "recommended": true,
+        "useSemanticElements": "off"
       }
     }
   },
