@@ -1,6 +1,6 @@
+import { useMemo } from "react";
 import type { ThreadGroupType } from "@/app/components/thread/ThreadGroup";
 import type { ThreadItem } from "@/app/hooks/useThreads";
-import { useMemo } from "react";
 
 export interface GroupedThreads {
   interrupted: ThreadItem[];

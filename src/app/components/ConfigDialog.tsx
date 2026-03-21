@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Assistant } from "@langchain/langgraph-sdk";
-import { Client } from "@langchain/langgraph-sdk";
 import {
   Calendar,
   Database,
@@ -52,13 +51,13 @@ import { DEFAULT_MESSAGE_LIMIT } from "@/lib/constants";
 import { parseJSON } from "@/lib/safe-json-parse";
 import { escapeHtml } from "@/lib/utils";
 import { createDuplicateKeyValidator } from "@/lib/validation";
+import { useClient } from "@/providers/client-context";
 
 interface ConfigDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (config: StandaloneConfig) => void;
   initialConfig?: StandaloneConfig;
-  currentDeploymentUrl?: string;
 }
 
 const assistantFormSchema = z
@@ -86,15 +85,9 @@ const assistantFormSchema = z
 
 type AssistantFormValues = z.infer<typeof assistantFormSchema>;
 
-export function ConfigDialog({
-  open,
-  onOpenChange,
-  onSave,
-  initialConfig,
-  currentDeploymentUrl,
-}: ConfigDialogProps) {
+export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: ConfigDialogProps) {
   const t = useTranslations("config");
-  const [deploymentUrl, setDeploymentUrl] = useState(initialConfig?.deploymentUrl || "");
+  const client = useClient();
   const [assistantId, setAssistantId] = useState(initialConfig?.assistantId || "");
   const [recursionLimit, setRecursionLimit] = useState(
     initialConfig?.recursionLimit?.toString() || "100",
@@ -127,7 +120,6 @@ export function ConfigDialog({
 
   useEffect(() => {
     if (open && initialConfig) {
-      setDeploymentUrl(initialConfig.deploymentUrl || "");
       setAssistantId(initialConfig.assistantId);
       setRecursionLimit(initialConfig.recursionLimit?.toString() || "100");
       setRecursionMultiplier(initialConfig.recursionMultiplier?.toString() || "6");
@@ -135,20 +127,14 @@ export function ConfigDialog({
     }
   }, [open, initialConfig]);
 
-  // Fetch assistants when deployment URL is available
+  // Fetch assistants when dialog opens
   useEffect(() => {
-    const urlToUse = deploymentUrl || currentDeploymentUrl;
-
-    if (!urlToUse || !open) {
+    if (!open) {
       return;
     }
 
     startLoadingAssistants(async () => {
       try {
-        const client = new Client({
-          apiUrl: urlToUse,
-        });
-
         const assistantsList = await client.assistants.search({
           limit: DEFAULT_MESSAGE_LIMIT,
         });
@@ -159,7 +145,7 @@ export function ConfigDialog({
         setAssistants([]);
       }
     });
-  }, [deploymentUrl, currentDeploymentUrl, open]);
+  }, [client, open]);
 
   // Map assistant to form data
   const mapToForm = useMemo(() => {
@@ -244,19 +230,13 @@ export function ConfigDialog({
 
   // Fetch selected assistant details
   useEffect(() => {
-    const urlToUse = deploymentUrl || currentDeploymentUrl;
-
-    if (!urlToUse || !assistantId || !open) {
+    if (!assistantId || !open) {
       setSelectedAssistant(null);
       return;
     }
 
     startLoadingDetails(async () => {
       try {
-        const client = new Client({
-          apiUrl: urlToUse,
-        });
-
         const assistant = await client.assistants.get(assistantId);
         setSelectedAssistant(assistant);
         reset(mapToForm(assistant));
@@ -265,21 +245,13 @@ export function ConfigDialog({
         setSelectedAssistant(null);
       }
     });
-  }, [assistantId, deploymentUrl, currentDeploymentUrl, open, reset, mapToForm]);
+  }, [assistantId, client, open, reset, mapToForm]);
 
   const handleDeleteAssistant = async () => {
     if (!selectedAssistant) return;
 
-    const urlToUse = deploymentUrl || currentDeploymentUrl;
-
-    if (!urlToUse) return;
-
     startDeleting(async () => {
       try {
-        const client = new Client({
-          apiUrl: urlToUse,
-        });
-
         await client.assistants.delete(selectedAssistant.assistant_id);
         toast.success(t("assistantDeleted"));
         setAssistantId("");
@@ -295,10 +267,6 @@ export function ConfigDialog({
   };
 
   const handleSave = async () => {
-    if (!deploymentUrl) {
-      toast.error(t("deploymentUrlRequired"));
-      return;
-    }
     if (!assistantId) {
       toast.error(t("assistantIdRequired"));
       return;
@@ -318,8 +286,6 @@ export function ConfigDialog({
 
     // Update assistant on server if details are modified
     if (selectedAssistant) {
-      const urlToUse = deploymentUrl || currentDeploymentUrl;
-
       // Check for auth mode change to Auto mode - require confirmation (must be outside transition)
       const formValues = methods.getValues();
       const { config, metadata } = mapFromForm(formValues);
@@ -345,10 +311,6 @@ export function ConfigDialog({
 
       startUpdatingAssistant(async () => {
         try {
-          const client = new Client({
-            apiUrl: urlToUse || "",
-          });
-
           // Sync the local recursionLimit state to the config sent to server
           config.recursion_limit = parseInt(recursionLimit, 10);
 
@@ -400,7 +362,6 @@ export function ConfigDialog({
     }
 
     onSave({
-      deploymentUrl: deploymentUrl || "",
       assistantId,
       recursionLimit: parsedRecursionLimit,
       recursionMultiplier: parsedRecursionMultiplier,
@@ -464,23 +425,6 @@ export function ConfigDialog({
             className="space-y-6 duration-300 animate-in fade-in-50"
           >
             <div className="grid gap-5 py-2">
-              <div className="grid gap-2">
-                <Label
-                  htmlFor="deploymentUrl"
-                  className="flex items-center gap-1.5"
-                >
-                  <Globe className="h-3.5 w-3.5" />
-                  {t("deploymentUrl")}
-                </Label>
-                <Input
-                  id="deploymentUrl"
-                  placeholder={t("deploymentUrlPlaceholder")}
-                  value={deploymentUrl}
-                  onChange={(e) => setDeploymentUrl(e.target.value)}
-                  className="h-9 bg-muted/30"
-                />
-              </div>
-
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
                   <Label

@@ -58,7 +58,7 @@ focus: open-ended
 **Downsides:** Highest complexity. Adds a network hop. Requires config migration from localStorage. The SSE streaming proxy needs careful buffering implementation.
 **Confidence:** 85%
 **Complexity:** High
-**Status:** Unexplored
+**Status:** Explored
 
 ### 5. Type-Safe LangGraph SDK Boundary
 **Description:** Define discriminated union types for message content (string | TextBlock[] | ToolUseBlock[]), interrupt payloads (ToolApprovalInterruptData | HumanInputInterruptData), and stream event metadata. Replace all 5 `as any` casts and 4 independent content-extraction implementations with exhaustive pattern matches. Include a sandboxed JSON parser (reviver rejecting `__proto__`/`constructor` keys) for all agent-generated content — addressing the P1 prototype pollution vector in `tryParseJSON`.
@@ -108,3 +108,4 @@ focus: open-ended
 - 2026-03-21: Brainstorming idea #1 (Extract Submit-Config Builder)
 - 2026-03-21: Brainstorming idea #2 (Fix IndexedDB Connection Abstraction)
 - 2026-03-21: Brainstorming idea #3 (Vitest + Critical-Path Test Suite)
+- 2026-03-21: Brainstorming idea #4 (Next.js BFF Credential Proxy)

@@ -1,15 +1,16 @@
 /* eslint-disable react-refresh/only-export-components */
-import { routing } from "@/i18n/routing";
+
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
-import { notFound } from "next/navigation";
-import { ThemeProvider } from "@/components/theme-provider";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Inter } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
 import { DeferredAnalytics } from "@/components/analytics";
-import type { Metadata, Viewport } from "next";
+import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { routing } from "@/i18n/routing";
 import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"] });

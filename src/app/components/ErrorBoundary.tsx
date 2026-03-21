@@ -1,8 +1,8 @@
 "use client";
 
+import { AlertCircle, RotateCcw } from "lucide-react";
 import React, { ErrorInfo, ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {

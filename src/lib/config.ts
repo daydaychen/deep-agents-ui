@@ -1,5 +1,4 @@
 export interface StandaloneConfig {
-  deploymentUrl: string;
   assistantId: string;
   recursionLimit?: number;
   recursionMultiplier?: number;
@@ -7,7 +6,7 @@ export interface StandaloneConfig {
 }
 
 const CONFIG_KEY = "databus-pilot-config";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 interface StoredConfig {
   version: number;

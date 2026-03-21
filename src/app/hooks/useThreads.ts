@@ -1,10 +1,10 @@
 import type { Message, Thread } from "@langchain/langgraph-sdk";
-import { Client } from "@langchain/langgraph-sdk";
 import useSWRInfinite from "swr/infinite";
 import { deleteThreadData } from "@/app/utils/db";
 import { getConfig } from "@/lib/config";
 import { DEFAULT_THREAD_LIMIT, THREAD_TITLE_MAX_LENGTH } from "@/lib/constants";
 import type { StateType } from "@/providers/chat-context";
+import { useClient } from "@/providers/client-context";
 
 export interface ThreadItem {
   id: string;
@@ -20,6 +20,7 @@ const DEFAULT_PAGE_SIZE = 20;
 
 export function useThreads(props: { status?: Thread["status"]; limit?: number }) {
   const pageSize = props.limit || DEFAULT_PAGE_SIZE;
+  const client = useClient();
 
   return useSWRInfinite(
     (pageIndex: number, previousPageData: ThreadItem[] | null) => {
@@ -38,13 +39,11 @@ export function useThreads(props: { status?: Thread["status"]; limit?: number })
         kind: "threads" as const,
         pageIndex,
         pageSize,
-        deploymentUrl: config.deploymentUrl,
         assistantId: config.assistantId,
         status: props?.status,
       };
     },
     async ({
-      deploymentUrl,
       assistantId,
       status,
       pageIndex,
@@ -53,14 +52,9 @@ export function useThreads(props: { status?: Thread["status"]; limit?: number })
       kind: "threads";
       pageIndex: number;
       pageSize: number;
-      deploymentUrl: string;
       assistantId: string;
       status?: Thread["status"];
     }) => {
-      const client = new Client({
-        apiUrl: deploymentUrl,
-      });
-
       // Check if assistantId is a UUID (deployed) or graph name (local)
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         assistantId,
@@ -146,18 +140,10 @@ export function useThreads(props: { status?: Thread["status"]; limit?: number })
 }
 
 export function useDeleteThread() {
-  const config = getConfig();
-
-  if (!config) {
-    throw new Error("Configuration not found");
-  }
+  const client = useClient();
 
   return {
     trigger: async ({ threadId }: { threadId: string }) => {
-      const client = new Client({
-        apiUrl: config.deploymentUrl,
-      });
-
       await client.threads.delete(threadId);
 
       // Also delete data from IndexedDB
@@ -172,25 +158,18 @@ export function useDeleteThread() {
 
 export function useMarkThreadAsResolved() {
   const config = getConfig();
-
-  if (!config) {
-    throw new Error("Configuration not found");
-  }
+  const client = useClient();
 
   return {
     trigger: async ({ threadId, assistantId }: { threadId: string; assistantId?: string }) => {
-      const client = new Client({
-        apiUrl: config.deploymentUrl,
-      });
-
       // Get the assistant ID from config if not provided
-      const finalAssistantId = assistantId || config.assistantId;
+      const finalAssistantId = assistantId || config?.assistantId || "";
 
       // Mark thread as resolved by sending a goto command
       await client.runs.create(threadId, finalAssistantId, {
         command: { goto: "__end__", update: null },
         metadata: {
-          langfuse_user_id: config.userId || "user",
+          langfuse_user_id: config?.userId || "user",
         },
       });
     },

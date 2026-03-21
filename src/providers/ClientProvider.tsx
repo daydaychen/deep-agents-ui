@@ -6,18 +6,24 @@ import { ClientContext } from "./client-context";
 
 interface ClientProviderProps {
   children: ReactNode;
-  deploymentUrl: string;
 }
 
-export function ClientProvider({ children, deploymentUrl }: ClientProviderProps) {
+function getProxyUrl(): string {
+  if (typeof window === "undefined") return "";
+  return `${window.location.origin}/api/langgraph`;
+}
+
+export function ClientProvider({ children }: ClientProviderProps) {
   const client = useMemo(() => {
+    const proxyUrl = getProxyUrl();
     return new Client({
-      apiUrl: deploymentUrl,
+      apiUrl: proxyUrl,
+      apiKey: null,
       defaultHeaders: {
         "Content-Type": "application/json",
       },
     });
-  }, [deploymentUrl]);
+  }, []);
 
   const value = useMemo(() => ({ client }), [client]);
 

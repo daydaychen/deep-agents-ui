@@ -1,9 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
-import ChatPage from "@/app/components/chat/ChatPage";
-import { routing } from "@/i18n/routing";
+
 import { setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
+import ChatPage from "@/app/components/chat/ChatPage";
 import { Skeleton } from "@/components/ui/skeleton";
+import { routing } from "@/i18n/routing";
 
 type Props = {
   params: Promise<{ locale: string }>;

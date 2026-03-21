@@ -114,7 +114,6 @@ function HomePageInner({
           onOpenChange={setConfigDialogOpen}
           onSave={handleSaveConfig}
           initialConfig={config}
-          currentDeploymentUrl={config.deploymentUrl}
         />
       )}
       <div className="flex h-screen flex-col">
@@ -393,7 +392,7 @@ export default function ChatPage() {
 
     // 确认无配置，显示欢迎页
     return (
-      <>
+      <ClientProvider>
         {configDialogOpen && (
           <ConfigDialog
             open={configDialogOpen}
@@ -413,12 +412,12 @@ export default function ChatPage() {
             </Button>
           </div>
         </div>
-      </>
+      </ClientProvider>
     );
   }
 
   return (
-    <ClientProvider deploymentUrl={config.deploymentUrl}>
+    <ClientProvider>
       <HomePageInner
         config={config}
         configDialogOpen={configDialogOpen}
