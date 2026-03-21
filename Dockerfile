@@ -31,15 +31,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# 从 builder 阶段复制必要文件
-COPY --from=builder /app/public ./public
-
-# 设置 standalone 输出目录（Next.js 优化）
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-# 更改文件所有权
-RUN chown -R nextjs:nodejs /app
+# 从 builder 阶段复制必要文件（复制时直接设置所有者，避免额外层）
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # 切换到非 root 用户
 USER nextjs
