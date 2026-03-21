@@ -42,7 +42,7 @@ focus: open-ended
 **Downsides:** Introducing a dependency like Dexie adds ~20KB. The TTL eviction policy needs careful tuning to avoid deleting data users expect to persist.
 **Confidence:** 90%
 **Complexity:** Medium
-**Status:** Unexplored
+**Status:** Explored
 
 ### 3. Vitest + Critical-Path Test Suite
 **Description:** Bootstrap Vitest with jsdom/happy-dom and write targeted tests for the three highest-risk pure-logic modules: (1) `safe-json-parse.ts` prototype pollution guard (currently bypassable — the depth check counts all `{` characters including those inside strings), (2) `tool-result-parser.ts` (18 code paths, feeds the Inspector), (3) `useProcessedMessages` (single-pass pipeline with mutable in-place mutations fragile under React strict mode).
@@ -106,3 +106,4 @@ focus: open-ended
 ## Session Log
 - 2026-03-21: Initial ideation — 48 raw ideas from 6 frames, ~20 unique after dedupe + 3 cross-cutting syntheses, 7 survivors
 - 2026-03-21: Brainstorming idea #1 (Extract Submit-Config Builder)
+- 2026-03-21: Brainstorming idea #2 (Fix IndexedDB Connection Abstraction)
