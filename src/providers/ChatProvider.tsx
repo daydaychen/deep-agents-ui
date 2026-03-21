@@ -2,15 +2,10 @@
 
 import { Assistant } from "@langchain/langgraph-sdk";
 import type { UseStreamThread } from "@langchain/langgraph-sdk/react";
-import { ReactNode, useMemo } from "react";
+import { type ReactNode, useEffect } from "react";
 import { type StateType, useChat } from "@/app/hooks/useChat";
 import type { StandaloneConfig } from "@/lib/config";
-import {
-  ChatActionsContext,
-  ChatActionsContextType,
-  ChatStateContext,
-  ChatStateContextType,
-} from "./chat-context";
+import { ChatStoreProvider, useChatStoreApi } from "./chat-store-provider";
 
 interface ChatProviderProps {
   children: ReactNode;
@@ -22,7 +17,11 @@ interface ChatProviderProps {
   config: StandaloneConfig;
 }
 
-export function ChatProvider({
+/**
+ * Inner component that calls useChat and syncs its output into the Zustand store.
+ * Must be rendered inside ChatStoreProvider.
+ */
+function ChatSync({
   children,
   activeAssistant,
   onHistoryRevalidateAction,
@@ -40,56 +39,20 @@ export function ChatProvider({
     config,
   });
 
-  // chat is already memoized in useChat hook, use it directly as single dependency
-  const state: ChatStateContextType = useMemo(
-    () => ({
-      stream: chat.stream,
-      todos: chat.todos,
-      files: chat.files,
-      email: chat.email,
-      ui: chat.ui,
-      messages: chat.messages,
-      subagents: chat.subagents,
-      subagentMessagesMap: chat.subagentMessagesMap,
-      activeSubAgentId: chat.activeSubAgentId,
-      isLoading: chat.isLoading,
-      isThreadLoading: chat.isThreadLoading,
-      interrupt: chat.interrupt,
-      getMessagesMetadata: chat.getMessagesMetadata,
-      error: chat.error,
-      branch: chat.branch,
-      history: chat.history,
-      getMessageBranchInfo: chat.getMessageBranchInfo,
-      overrideConfig: chat.overrideConfig,
-      config: chat.config,
-      threadId: chat.threadId,
-    }),
-    [chat],
-  );
+  const store = useChatStoreApi();
 
-  // chat is already memoized in useChat hook, use it directly as single dependency
-  // All action callbacks are stable references from useChat
-  const actions: ChatActionsContextType = useMemo(
-    () => ({
-      sendMessage: chat.sendMessage,
-      runSingleStep: chat.runSingleStep,
-      continueStream: chat.continueStream,
-      stopStream: chat.stopStream,
-      markCurrentThreadAsResolved: chat.markCurrentThreadAsResolved,
-      resumeInterrupt: chat.resumeInterrupt,
-      retryFromMessage: chat.retryFromMessage,
-      editMessage: chat.editMessage,
-      setFiles: chat.setFiles,
-      setActiveSubAgentId: chat.setActiveSubAgentId,
-      setBranch: chat.setBranch,
-      setOverrideConfig: chat.setOverrideConfig,
-    }),
-    [chat],
-  );
+  // Sync useChat output into Zustand store
+  useEffect(() => {
+    store.getState()._sync(chat);
+  }, [chat, store]);
 
+  return children;
+}
+
+export function ChatProvider(props: ChatProviderProps) {
   return (
-    <ChatActionsContext.Provider value={actions}>
-      <ChatStateContext.Provider value={state}>{children}</ChatStateContext.Provider>
-    </ChatActionsContext.Provider>
+    <ChatStoreProvider>
+      <ChatSync {...props} />
+    </ChatStoreProvider>
   );
 }

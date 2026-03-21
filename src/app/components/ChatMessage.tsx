@@ -21,7 +21,7 @@ import type {
 } from "@/app/types/types";
 import { extractStringFromMessageContent, formatDate } from "@/app/utils/utils";
 import { cn } from "@/lib/utils";
-import { useChatState } from "@/providers/chat-context";
+import { useChatStore } from "@/providers/chat-store-provider";
 
 const DEFAULT_SUB_AGENTS: SubAgent[] = [];
 const DEFAULT_BRANCH_OPTIONS: string[] = [];
@@ -77,7 +77,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     setActiveSubAgentId,
     getMessagesMetadata,
   }) => {
-    const { config } = useChatState();
+    const config = useChatStore((s) => s.config);
     const tChat = useTranslations("chat");
     const tCommon = useTranslations("common");
 

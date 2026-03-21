@@ -1,7 +1,6 @@
 "use client";
 
 import type { Assistant, Message } from "@langchain/langgraph-sdk";
-import { createContext, useContext } from "react";
 import type { useChat } from "@/app/hooks/useChat";
 import type { TodoItem } from "@/app/types/types";
 
@@ -39,7 +38,6 @@ export type OverrideConfig = {
 // Re-export Assistant type for convenience
 export type { Assistant };
 
-// 拆分 Context 以优化性能：State 频繁变化，Actions 基本稳定
 export type ChatStateContextType = Omit<
   ReturnType<typeof useChat>,
   | "sendMessage"
@@ -71,22 +69,3 @@ export type ChatActionsContextType = Pick<
   | "setBranch"
   | "setOverrideConfig"
 >;
-
-export const ChatStateContext = createContext<ChatStateContextType | undefined>(undefined);
-export const ChatActionsContext = createContext<ChatActionsContextType | undefined>(undefined);
-
-export function useChatState() {
-  const context = useContext(ChatStateContext);
-  if (context === undefined) {
-    throw new Error("useChatState must be used within a ChatProvider");
-  }
-  return context;
-}
-
-export function useChatActions() {
-  const context = useContext(ChatActionsContext);
-  if (context === undefined) {
-    throw new Error("useChatActions must be used within a ChatProvider");
-  }
-  return context;
-}

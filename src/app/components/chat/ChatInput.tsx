@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import React, { FormEvent, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useChatState } from "@/providers/chat-context";
+import { useChatStore } from "@/providers/chat-store-provider";
 import { DockToolbar } from "./DockToolbar";
 
 interface ChatInputProps {
@@ -23,7 +23,7 @@ export const ChatInput = React.memo<ChatInputProps>(
     const isComposingRef = useRef(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const { threadId } = useChatState();
+    const threadId = useChatStore((s) => s.threadId);
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

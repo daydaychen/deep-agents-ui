@@ -16,7 +16,7 @@ import { FileViewDialog } from "@/app/components/FileViewDialog";
 import type { FileItem, TodoItem } from "@/app/types/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { useChatState } from "@/providers/chat-context";
+import { useChatStoreShallow } from "@/providers/chat-store-provider";
 
 function FileListItem({
   filePath,
@@ -133,7 +133,10 @@ export const TasksFilesSidebar = React.memo<{
   setFiles: (files: Record<string, string>) => Promise<void>;
 }>(({ todos, files, setFiles }) => {
   const t = useTranslations("tasks");
-  const { isLoading, interrupt } = useChatState();
+  const { isLoading, interrupt } = useChatStoreShallow((s) => ({
+    isLoading: s.isLoading,
+    interrupt: s.interrupt,
+  }));
   const [tasksOpen, setTasksOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(true);
 

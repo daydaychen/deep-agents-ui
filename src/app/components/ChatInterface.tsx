@@ -27,7 +27,7 @@ import type {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
-import { useChatActions, useChatState } from "@/providers/chat-context";
+import { useChatStoreShallow } from "@/providers/chat-store-provider";
 
 interface ChatInterfaceProps {
   assistant: Assistant | null;
@@ -85,9 +85,6 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
       activeSubAgentId,
       getMessagesMetadata,
       getMessageBranchInfo,
-    } = useChatState();
-
-    const {
       sendMessage,
       stopStream,
       resumeInterrupt,
@@ -96,7 +93,29 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
       editMessage,
       setActiveSubAgentId,
       setFiles,
-    } = useChatActions();
+    } = useChatStoreShallow((s) => ({
+      stream: s.stream,
+      messages: s.messages,
+      todos: s.todos,
+      files: s.files,
+      ui: s.ui,
+      isLoading: s.isLoading,
+      isThreadLoading: s.isThreadLoading,
+      interrupt: s.interrupt,
+      error: s.error,
+      subagentMessagesMap: s.subagentMessagesMap,
+      activeSubAgentId: s.activeSubAgentId,
+      getMessagesMetadata: s.getMessagesMetadata,
+      getMessageBranchInfo: s.getMessageBranchInfo,
+      sendMessage: s.sendMessage,
+      stopStream: s.stopStream,
+      resumeInterrupt: s.resumeInterrupt,
+      retryFromMessage: s.retryFromMessage,
+      setBranch: s.setBranch,
+      editMessage: s.editMessage,
+      setActiveSubAgentId: s.setActiveSubAgentId,
+      setFiles: s.setFiles,
+    }));
 
     const { state: inspectorState, dispatch: inspectorDispatch } = useInspector();
 
@@ -441,7 +460,8 @@ ChatInterfaceInner.displayName = "ChatInterfaceInner";
 
 // Outer component that provides Inspector context
 export const ChatInterface = React.memo<ChatInterfaceProps>(({ assistant }) => {
-  const { sendMessage: chatSendMessage, setActiveSubAgentId } = useChatActions();
+  const chatSendMessage = useChatStoreShallow((s) => s.sendMessage);
+  const setActiveSubAgentId = useChatStoreShallow((s) => s.setActiveSubAgentId);
 
   // Side panel state lifted here so InspectorProvider callbacks can reference it
   const [sidePanelView, setSidePanelView] = useState<SidePanelView | null>(null);

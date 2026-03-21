@@ -82,7 +82,7 @@ focus: open-ended
 **Downsides:** Zustand adds a dependency and paradigm shift. Custom `useSyncExternalStore` selectors are dependency-free but more complex to implement.
 **Confidence:** 75%
 **Complexity:** Medium
-**Status:** Unexplored
+**Status:** Explored
 
 ## Rejection Summary
 
@@ -105,6 +105,7 @@ focus: open-ended
 
 ## Session Log
 - 2026-03-21: Initial ideation — 48 raw ideas from 6 frames, ~20 unique after dedupe + 3 cross-cutting syntheses, 7 survivors
+- 2026-03-21: Brainstorming idea #7 (ChatProvider Zustand Migration)
 - 2026-03-21: Brainstorming idea #1 (Extract Submit-Config Builder)
 - 2026-03-21: Brainstorming idea #2 (Fix IndexedDB Connection Abstraction)
 - 2026-03-21: Brainstorming idea #3 (Vitest + Critical-Path Test Suite)

@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MODEL_OPTIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { OverrideConfig, useChatActions, useChatState } from "@/providers/chat-context";
+import { OverrideConfig } from "@/providers/chat-context";
+import { useChatStore } from "@/providers/chat-store-provider";
 
 interface DockToolbarProps {
   onAction?: () => void;
@@ -20,8 +21,8 @@ interface DockToolbarProps {
 
 export const DockToolbar = React.memo(({ onAction }: DockToolbarProps) => {
   const t = useTranslations("chat");
-  const { overrideConfig } = useChatState();
-  const { setOverrideConfig } = useChatActions();
+  const overrideConfig = useChatStore((s) => s.overrideConfig);
+  const setOverrideConfig = useChatStore((s) => s.setOverrideConfig);
 
   const authMode = overrideConfig.authMode || "ask";
   const isThinking = overrideConfig.thinking ?? false;
