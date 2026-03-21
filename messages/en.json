@@ -21,6 +21,10 @@
     "info": "Info",
     "characters": "characters"
   },
+  "metadata": {
+    "title": "Databus Pilot | AI Agent Interface",
+    "description": "Advanced multi-agent orchestration and chat interface"
+  },
   "page": {
     "title": "Databus Pilot | AI Agent Interface",
     "description": "The intelligent Pilot for low-code scraping: Powering autonomous site analysis, configuration lifecycle, and incident resolution.",
@@ -218,6 +222,15 @@
     "forbidden": "Forbidden",
     "serverError": "Server error"
   },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "Could not find the requested resource",
+    "goHome": "Return Home"
+  },
+  "globalError": {
+    "title": "Something went wrong!",
+    "tryAgain": "Try again"
+  },
   "toast": {
     "copied": "Copied to clipboard",
     "saved": "Saved successfully",
@@ -251,7 +264,9 @@
     "inProgress": "In Progress",
     "completed": "Completed",
     "tasks": "Tasks",
-    "characters": "characters"
+    "characters": "characters",
+    "allTasksCompleted": "All tasks completed",
+    "taskProgress": "Task {current} of {total}"
   },
   "theme": {
     "switchToDark": "Switch to dark mode",

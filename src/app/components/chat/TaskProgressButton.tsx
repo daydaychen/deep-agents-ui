@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle, Circle, Clock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React from "react";
 import type { TodoItem } from "@/app/types/types";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ const getStatusIcon = (status: TodoItem["status"], className?: string) => {
 
 export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
   ({ todos, groupedTodos, onClick, isExpanded }) => {
+    const t = useTranslations("tasks");
     const activeTask = todos.find((t) => t.status === "in_progress");
     const totalTasks = todos.length;
     const remainingTasks = totalTasks - groupedTodos.pending.length;
@@ -68,7 +70,7 @@ export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
                 key="label"
                 className="ml-[1px] min-w-0 truncate text-sm"
               >
-                All tasks completed
+                {t("allTasksCompleted")}
               </span>,
             ];
           }
@@ -80,7 +82,10 @@ export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
                 key="label"
                 className="ml-[1px] min-w-0 truncate text-sm"
               >
-                Task {totalTasks - groupedTodos.pending.length} of {totalTasks}
+                {t("taskProgress", {
+                  current: totalTasks - groupedTodos.pending.length,
+                  total: totalTasks,
+                })}
               </span>,
               <span
                 key="content"
@@ -101,7 +106,10 @@ export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
               key="label"
               className="ml-[1px] min-w-0 truncate text-sm"
             >
-              Task {totalTasks - groupedTodos.pending.length} of {totalTasks}
+              {t("taskProgress", {
+                current: totalTasks - groupedTodos.pending.length,
+                total: totalTasks,
+              })}
             </span>,
           ];
         })()}

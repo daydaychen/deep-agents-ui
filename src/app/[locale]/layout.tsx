@@ -4,7 +4,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
 import { DeferredAnalytics } from "@/components/analytics";
@@ -15,11 +15,13 @@ import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Deep Agents UI",
-  description:
-    "A powerful AI agent chat interface for interacting with LangGraph-powered assistants",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations({ locale: routing.defaultLocale, namespace: "metadata" });
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

@@ -21,6 +21,10 @@
     "info": "信息",
     "characters": "字符"
   },
+  "metadata": {
+    "title": "Databus Pilot | AI Agent 界面",
+    "description": "高级多智能体编排和聊天界面"
+  },
   "page": {
     "title": "Databus Pilot | AI Agent 界面",
     "description": "赋能低代码抓取的智能 Pilot：实现从站点分析到配置自愈的全链路自动化运营。",
@@ -218,6 +222,15 @@
     "forbidden": "禁止访问",
     "serverError": "服务器错误"
   },
+  "notFound": {
+    "title": "页面未找到",
+    "description": "无法找到所请求的资源",
+    "goHome": "返回首页"
+  },
+  "globalError": {
+    "title": "出错了！",
+    "tryAgain": "重试"
+  },
   "toast": {
     "copied": "已复制到剪贴板",
     "saved": "保存成功",
@@ -251,7 +264,9 @@
     "inProgress": "进行中",
     "completed": "已完成",
     "tasks": "任务",
-    "characters": "字符"
+    "characters": "字符",
+    "allTasksCompleted": "所有任务已完成",
+    "taskProgress": "任务 {current} / {total}"
   },
   "theme": {
     "switchToDark": "切换到深色模式",
