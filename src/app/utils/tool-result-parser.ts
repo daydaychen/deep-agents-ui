@@ -3,6 +3,7 @@ import type {
   Screenshot,
   ValidationResult,
 } from "@/app/components/inspector/inspector-context";
+import { parseJSON } from "@/lib/safe-json-parse";
 
 // --- Types ---
 
@@ -67,7 +68,7 @@ export function getToolCategory(toolName: string): ToolCategory {
 
 function tryParseJSON(str: string): unknown | null {
   try {
-    return JSON.parse(str);
+    return parseJSON(str, { maxDepth: 50 });
   } catch {
     return null;
   }

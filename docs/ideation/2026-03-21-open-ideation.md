@@ -50,7 +50,7 @@ focus: open-ended
 **Downsides:** Initial setup cost. Mocking LangGraph SDK types requires understanding actual message shapes.
 **Confidence:** 90%
 **Complexity:** Medium
-**Status:** Unexplored
+**Status:** Explored
 
 ### 4. Next.js BFF Proxy Layer
 **Description:** Add a Next.js Route Handler (`/api/langgraph/[...path]`) that proxies requests to the LangGraph deployment URL, moving credentials server-side. The client-side `ClientProvider` would point at `/api/langgraph` instead of the raw deployment URL. Store sensitive config in environment variables or HTTP-only cookies instead of localStorage. This enables server-side rate limiting, audit logging (`audit-logger.ts` TODO finally gets a backend), and CORS lockdown.
@@ -107,3 +107,4 @@ focus: open-ended
 - 2026-03-21: Initial ideation — 48 raw ideas from 6 frames, ~20 unique after dedupe + 3 cross-cutting syntheses, 7 survivors
 - 2026-03-21: Brainstorming idea #1 (Extract Submit-Config Builder)
 - 2026-03-21: Brainstorming idea #2 (Fix IndexedDB Connection Abstraction)
+- 2026-03-21: Brainstorming idea #3 (Vitest + Critical-Path Test Suite)
