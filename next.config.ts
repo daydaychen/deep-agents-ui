@@ -3,6 +3,10 @@ import createNextIntlPlugin from "next-intl/plugin"
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Optimize font loading to avoid build failures when Google Fonts is unavailable
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   async headers() {
     return [
       {

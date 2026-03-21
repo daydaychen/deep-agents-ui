@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
@@ -13,7 +12,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// Use system font stack via CSS variable
+// This avoids build failures when Google Fonts is unavailable
+// Font stack is defined in tailwind.config.mjs fontFamily
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations({ locale: routing.defaultLocale, namespace: "metadata" });
@@ -63,9 +64,9 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className="bg-background"
+      className="bg-background font-sans"
     >
-      <body className={inter.className}>
+      <body>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

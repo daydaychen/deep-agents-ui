@@ -54,6 +54,16 @@ export default {
         ],
       },
       fontFamily: {
+        sans: [
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
         mono: [
           `"Fira Code"`,
           `ui-monospace`,
