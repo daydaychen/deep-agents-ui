@@ -200,6 +200,43 @@ export function useChat({
     return finalConfigurable;
   }, [activeAssistant, overrideConfig]);
 
+  // Build the complete submit options shared by all config-assembled submit paths.
+  const buildSubmitConfig = useCallback(() => {
+    const currentOverrideConfig = overrideConfigRef.current;
+    const currentMetadata = metadataRef.current;
+    const currentRecursionLimit = recursionLimitRef.current;
+    const currentRecursionMultiplier = recursionMultiplierRef.current;
+    const currentAssistantConfig = activeAssistantConfigRef.current;
+
+    const finalRecursionLimit =
+      (currentOverrideConfig.recursionLimit || currentRecursionLimit) * currentRecursionMultiplier;
+
+    const finalConfigurable = getFinalConfigurable();
+
+    return {
+      metadata: currentMetadata,
+      config: {
+        ...(currentAssistantConfig ?? {}),
+        recursion_limit: finalRecursionLimit,
+        configurable: {
+          ...finalConfigurable,
+          user_id: currentMetadata.user_id,
+          auth_mode: currentOverrideConfig.authMode ?? "ask",
+        },
+      },
+      streamMode: ["messages", "updates"] as ("messages" | "updates")[],
+      streamSubgraphs: true,
+      streamResumable: true,
+    };
+  }, [
+    getFinalConfigurable,
+    overrideConfigRef,
+    metadataRef,
+    recursionLimitRef,
+    recursionMultiplierRef,
+    activeAssistantConfigRef,
+  ]);
+
   // 消息持久化和缓存 - 返回 subagentMessagesMap
   const { subagentMessagesMap } = usePersistedMessages(
     threadId,
@@ -218,52 +255,19 @@ export function useChat({
       setActiveSubAgentId(null);
       const newMessage: Message = { id: generateId(), type: "human", content };
 
-      // Read current values from refs to avoid dependency on changing state
-      const currentOverrideConfig = overrideConfigRef.current;
-      const currentMetadata = metadataRef.current;
-      const currentRecursionLimit = recursionLimitRef.current;
-      const currentRecursionMultiplier = recursionMultiplierRef.current;
-      const currentAssistantConfig = activeAssistantConfigRef.current;
-
-      const finalRecursionLimit =
-        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
-        currentRecursionMultiplier;
-
-      // Cache getFinalConfigurable result to avoid repeated calls
-      const finalConfigurable = getFinalConfigurable();
+      const submitConfig = buildSubmitConfig();
 
       stream.submit(
         { messages: [newMessage] },
         {
+          ...submitConfig,
           optimisticValues: (prev) => ({
             messages: [...(prev.messages ?? []), newMessage],
           }),
-          metadata: currentMetadata,
-          config: {
-            ...(currentAssistantConfig ?? {}),
-            recursion_limit: finalRecursionLimit,
-            configurable: {
-              ...finalConfigurable,
-              user_id: currentMetadata.user_id,
-              // Pass auth_mode to backend for interrupt policy
-              auth_mode: currentOverrideConfig.authMode ?? "ask",
-            },
-          },
-          streamMode: ["messages", "updates"],
-          streamSubgraphs: true,
-          streamResumable: true,
         },
       );
     };
-  }, [
-    stream,
-    getFinalConfigurable,
-    overrideConfigRef,
-    metadataRef,
-    recursionLimitRef,
-    recursionMultiplierRef,
-    activeAssistantConfigRef,
-  ]);
+  }, [stream, buildSubmitConfig]);
 
   // Stable callback that delegates to ref
   const sendMessage = useCallback((content: string) => {
@@ -281,67 +285,19 @@ export function useChat({
       isSubmittingRef.current = true;
       setActiveSubAgentId(null);
 
-      // Read current values from refs to avoid dependency on changing state
-      const currentOverrideConfig = overrideConfigRef.current;
-      const currentMetadata = metadataRef.current;
-      const currentRecursionLimit = recursionLimitRef.current;
-      const currentRecursionMultiplier = recursionMultiplierRef.current;
-      const currentAssistantConfig = activeAssistantConfigRef.current;
-
-      const finalRecursionLimit =
-        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
-        currentRecursionMultiplier;
-
-      // Cache getFinalConfigurable result to avoid repeated calls
-      const finalConfigurable = getFinalConfigurable();
-
-      const assistantConfig = {
-        ...(currentAssistantConfig ?? {}),
-        configurable: {
-          ...finalConfigurable,
-          // Pass auth_mode to backend for interrupt policy
-          auth_mode: currentOverrideConfig.authMode ?? "ask",
-        },
-      };
+      const submitConfig = buildSubmitConfig();
 
       if (checkpoint) {
         stream.submit(undefined, {
+          ...submitConfig,
           ...(optimisticMessages ? { optimisticValues: { messages: optimisticMessages } } : {}),
-          metadata: currentMetadata,
-          config: {
-            ...assistantConfig,
-            recursion_limit: finalRecursionLimit,
-          },
           checkpoint: checkpoint,
-          streamMode: ["messages", "updates"],
-          streamSubgraphs: true,
-          streamResumable: true,
         });
       } else {
-        stream.submit(
-          { messages },
-          {
-            metadata: currentMetadata,
-            config: {
-              ...assistantConfig,
-              recursion_limit: finalRecursionLimit,
-            },
-            streamMode: ["messages", "updates"],
-            streamSubgraphs: true,
-            streamResumable: true,
-          },
-        );
+        stream.submit({ messages }, submitConfig);
       }
     },
-    [
-      stream,
-      getFinalConfigurable,
-      overrideConfigRef,
-      metadataRef,
-      recursionLimitRef,
-      recursionMultiplierRef,
-      activeAssistantConfigRef,
-    ],
+    [stream, buildSubmitConfig],
   );
 
   const setFiles = useCallback(
@@ -358,47 +314,8 @@ export function useChat({
     // We don't reset activeSubAgentId here because continue often means
     // resuming a subagent or the next step in the same chain
 
-    // Read current values from refs to avoid dependency on changing state
-    const currentOverrideConfig = overrideConfigRef.current;
-    const currentMetadata = metadataRef.current;
-    const currentRecursionLimit = recursionLimitRef.current;
-    const currentRecursionMultiplier = recursionMultiplierRef.current;
-    const currentAssistantConfig = activeAssistantConfigRef.current;
-
-    const finalRecursionLimit =
-      (currentOverrideConfig.recursionLimit || currentRecursionLimit) * currentRecursionMultiplier;
-
-    // Cache getFinalConfigurable result to avoid repeated calls
-    const finalConfigurable = getFinalConfigurable();
-
-    const assistantConfig = {
-      ...(currentAssistantConfig ?? {}),
-      configurable: {
-        ...finalConfigurable,
-        // Pass auth_mode to backend for interrupt policy
-        auth_mode: currentOverrideConfig.authMode ?? "ask",
-      },
-    };
-
-    stream.submit(undefined, {
-      metadata: currentMetadata,
-      config: {
-        ...assistantConfig,
-        recursion_limit: finalRecursionLimit,
-      },
-      streamMode: ["messages", "updates"],
-      streamSubgraphs: true,
-      streamResumable: true,
-    });
-  }, [
-    stream,
-    getFinalConfigurable,
-    overrideConfigRef,
-    metadataRef,
-    recursionLimitRef,
-    recursionMultiplierRef,
-    activeAssistantConfigRef,
-  ]);
+    stream.submit(undefined, buildSubmitConfig());
+  }, [stream, buildSubmitConfig]);
 
   const markCurrentThreadAsResolved = useCallback(() => {
     if (stream.isLoading || isSubmittingRef.current) return;
@@ -463,8 +380,8 @@ export function useChat({
 
       const indexToUse = resolveMessageIndex(message, index);
 
-      const metadata = stream.getMessagesMetadata(message, indexToUse);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+      const msgMetadata = stream.getMessagesMetadata(message, indexToUse);
+      const parentCheckpoint = msgMetadata?.firstSeenState?.parent_checkpoint;
 
       if (!parentCheckpoint) {
         console.warn("No parent checkpoint found for message", message.id);
@@ -473,49 +390,12 @@ export function useChat({
         return;
       }
 
-      // Read current values from refs to avoid dependency on changing state
-      const currentOverrideConfig = overrideConfigRef.current;
-      const currentRecursionLimit = recursionLimitRef.current;
-      const currentRecursionMultiplier = recursionMultiplierRef.current;
-      const currentAssistantConfig = activeAssistantConfigRef.current;
-
-      const finalRecursionLimit =
-        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
-        currentRecursionMultiplier;
-
-      // Cache getFinalConfigurable result to avoid repeated calls
-      const finalConfigurable = getFinalConfigurable();
-
-      const assistantConfig = {
-        ...(currentAssistantConfig ?? {}),
-        configurable: {
-          ...finalConfigurable,
-          // Pass auth_mode to backend for interrupt policy
-          auth_mode: currentOverrideConfig.authMode ?? "ask",
-        },
-      };
-
       stream.submit(undefined, {
+        ...buildSubmitConfig(),
         checkpoint: parentCheckpoint,
-        config: {
-          ...assistantConfig,
-          recursion_limit: finalRecursionLimit,
-        },
-        metadata,
-        streamMode: ["messages", "updates"],
-        streamSubgraphs: true,
-        streamResumable: true,
       });
     },
-    [
-      stream,
-      resolveMessageIndex,
-      getFinalConfigurable,
-      overrideConfigRef,
-      recursionLimitRef,
-      recursionMultiplierRef,
-      activeAssistantConfigRef,
-    ],
+    [stream, resolveMessageIndex, buildSubmitConfig],
   );
 
   const editMessage = useCallback(
@@ -542,54 +422,15 @@ export function useChat({
         content: message.content,
       };
 
-      // Read current values from refs to avoid dependency on changing state
-      const currentOverrideConfig = overrideConfigRef.current;
-      const currentMetadata = metadataRef.current;
-      const currentRecursionLimit = recursionLimitRef.current;
-      const currentRecursionMultiplier = recursionMultiplierRef.current;
-      const currentAssistantConfig = activeAssistantConfigRef.current;
-
-      const finalRecursionLimit =
-        (currentOverrideConfig.recursionLimit || currentRecursionLimit) *
-        currentRecursionMultiplier;
-
-      // Cache getFinalConfigurable result to avoid repeated calls
-      const finalConfigurable = getFinalConfigurable();
-
-      const assistantConfig = {
-        ...(currentAssistantConfig ?? {}),
-        configurable: {
-          ...finalConfigurable,
-          // Pass auth_mode to backend for interrupt policy
-          auth_mode: currentOverrideConfig.authMode ?? "ask",
-        },
-      };
-
       stream.submit(
         { messages: [newMessage] },
         {
+          ...buildSubmitConfig(),
           checkpoint: parentCheckpoint,
-          config: {
-            ...assistantConfig,
-            recursion_limit: finalRecursionLimit,
-          },
-          metadata: currentMetadata,
-          streamMode: ["messages", "updates"],
-          streamSubgraphs: true,
-          streamResumable: true,
         },
       );
     },
-    [
-      stream,
-      resolveMessageIndex,
-      getFinalConfigurable,
-      overrideConfigRef,
-      metadataRef,
-      recursionLimitRef,
-      recursionMultiplierRef,
-      activeAssistantConfigRef,
-    ],
+    [stream, resolveMessageIndex, buildSubmitConfig],
   );
 
   // Helper function to get branch information for a specific message
