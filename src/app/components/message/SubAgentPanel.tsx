@@ -1,13 +1,13 @@
 "use client";
 
 import { Message } from "@langchain/langgraph-sdk";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Loader2, Terminal } from "lucide-react";
 import React, { useEffect, useMemo, useRef } from "react";
 import { ToolCallBox } from "@/app/components/ToolCallBox";
 import { useProcessedMessages } from "@/app/hooks/chat/useProcessedMessages";
 import { SubAgent } from "@/app/types/types";
 import { extractStringFromMessageContent } from "@/app/utils/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { MessageContent } from "./MessageContent";
 
@@ -22,7 +22,7 @@ const EMPTY_MESSAGES: Message[] = [];
 
 export const SubAgentPanel = React.memo<SubAgentPanelProps>(
   ({ subAgentId, subAgents, subagentMessagesMap }) => {
-    const bottomRef = useRef<HTMLDivElement>(null);
+    const parentRef = useRef<HTMLDivElement>(null);
 
     const subAgent = useMemo(
       () => subAgents.find((s) => s.id === subAgentId),
@@ -44,13 +44,24 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
     // Use the hook to process subagent messages and extract tool calls
     const processedMessages = useProcessedMessages(rawMessages, undefined);
 
+    const virtualizer = useVirtualizer({
+      count: processedMessages.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 100,
+      overscan: 3,
+    });
+
     const status = subAgent?.status || "pending";
     const name = subAgent?.agentName || subAgent?.subAgentName || "Subagent";
 
-    // Auto-scroll to bottom when new messages or tool calls arrive
+    // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
-      if (processedMessages.length > 0) {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      if (processedMessages.length > 0 && parentRef.current) {
+        requestAnimationFrame(() => {
+          if (parentRef.current) {
+            parentRef.current.scrollTop = parentRef.current.scrollHeight;
+          }
+        });
       }
     }, [processedMessages.length]);
 
@@ -106,78 +117,95 @@ export const SubAgentPanel = React.memo<SubAgentPanelProps>(
         </div>
 
         {/* Content Stream - Scrollable Area */}
-        <div className="relative min-h-0 w-full flex-1 overflow-hidden">
-          <ScrollArea className="h-full w-full rounded-[inherit]">
-            <div className="flex w-full min-w-0 flex-col gap-8 overflow-hidden p-4 pb-20 md:p-6">
-              {processedMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center px-4 py-20 text-center opacity-40">
-                  <Terminal
-                    size={32}
-                    className="mb-4 text-muted-foreground/30"
-                  />
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    Waiting for activity…
-                  </p>
-                </div>
-              ) : (
-                processedMessages.map((data, idx) => {
-                  const isUser = data.message.type === "human";
-                  const messageContent = extractStringFromMessageContent(data.message);
-                  const hasContent = messageContent && messageContent.trim() !== "";
-                  const hasToolCalls = data.toolCalls.length > 0;
+        <div
+          ref={parentRef}
+          className="scrollbar-pretty relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden"
+        >
+          {processedMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center px-4 py-20 text-center opacity-40">
+              <Terminal
+                size={32}
+                className="mb-4 text-muted-foreground/30"
+              />
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Waiting for activity…
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                height: virtualizer.getTotalSize(),
+                width: "100%",
+                position: "relative",
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const idx = virtualRow.index;
+                const data = processedMessages[idx];
+                const isUser = data.message.type === "human";
+                const messageContent = extractStringFromMessageContent(data.message);
+                const hasContent = messageContent && messageContent.trim() !== "";
+                const hasToolCalls = data.toolCalls.length > 0;
 
-                  return (
-                    <div
-                      key={data.message.id || `proc-msg-${idx}`}
-                      className="flex w-full min-w-0 flex-col gap-3 overflow-hidden"
-                    >
-                      {/* Message Header Label */}
-                      <div className="flex shrink-0 items-center gap-2 px-1">
-                        <div
-                          className={cn(
-                            "h-1.5 w-1.5 rounded-full",
-                            isUser ? "bg-primary/40" : "bg-blue-500/40",
+                return (
+                  <div
+                    key={data.message.id || `proc-msg-${idx}`}
+                    data-index={idx}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <div className="p-4 pb-0 md:px-6">
+                      <div className="flex w-full min-w-0 flex-col gap-3 overflow-hidden">
+                        {/* Message Header Label */}
+                        <div className="flex shrink-0 items-center gap-2 px-1">
+                          <div
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              isUser ? "bg-primary/40" : "bg-blue-500/40",
+                            )}
+                          />
+                          <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">
+                            {isUser ? "Instruction" : "Action Trace"}
+                          </div>
+                        </div>
+
+                        <div className="ml-1 flex min-w-0 flex-1 flex-col gap-4 overflow-hidden border-l border-border/40 pl-3.5 pr-1.5 transition-colors hover:border-border/80">
+                          {/* Text Content */}
+                          {hasContent && (
+                            <div className="min-w-0 overflow-hidden">
+                              <MessageContent
+                                content={messageContent}
+                                isUser={isUser}
+                              />
+                            </div>
                           )}
-                        />
-                        <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">
-                          {isUser ? "Instruction" : "Action Trace"}
+
+                          {/* Tool Calls */}
+                          {hasToolCalls && (
+                            <div className="flex min-w-0 flex-col gap-3 overflow-hidden">
+                              {data.toolCalls.map((toolCall) => (
+                                <ToolCallBox
+                                  key={toolCall.id}
+                                  toolCall={toolCall}
+                                  isLoading={false}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      <div className="ml-1 flex min-w-0 flex-1 flex-col gap-4 overflow-hidden border-l border-border/40 pl-3.5 pr-1.5 transition-colors hover:border-border/80">
-                        {/* Text Content */}
-                        {hasContent && (
-                          <div className="min-w-0 overflow-hidden">
-                            <MessageContent
-                              content={messageContent}
-                              isUser={isUser}
-                            />
-                          </div>
-                        )}
-
-                        {/* Tool Calls */}
-                        {hasToolCalls && (
-                          <div className="flex min-w-0 flex-col gap-3 overflow-hidden">
-                            {data.toolCalls.map((toolCall) => (
-                              <ToolCallBox
-                                key={toolCall.id}
-                                toolCall={toolCall}
-                                isLoading={false}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  );
-                })
-              )}
-              <div
-                ref={bottomRef}
-                className="h-px w-full shrink-0"
-              />
+                  </div>
+                );
+              })}
             </div>
-          </ScrollArea>
+          )}
         </div>
 
         {/* Panel Footer - Fixed Height */}

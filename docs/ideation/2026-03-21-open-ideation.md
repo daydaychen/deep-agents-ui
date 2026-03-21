@@ -74,7 +74,7 @@ focus: open-ended
 **Downsides:** Variable-height messages make virtualization harder (need dynamic measurement). Branch switching may need special handling. Stick-to-bottom integration is a known friction point.
 **Confidence:** 80%
 **Complexity:** Medium
-**Status:** Unexplored
+**Status:** Explored
 
 ### 7. ChatProvider Selector-Based Subscriptions
 **Description:** Replace the dual-context split (ChatStateContext / ChatActionsContext) with a Zustand store or `useSyncExternalStore`-based selector pattern. Currently both contexts depend on `[chat]` as a single useMemo dependency (ChatProvider.tsx lines 44 and 72), so every stream tick re-renders all consumers. Selectors would let ChatInput subscribe only to `isLoading` and the message list subscribe only to `messages`.
@@ -110,3 +110,4 @@ focus: open-ended
 - 2026-03-21: Brainstorming idea #3 (Vitest + Critical-Path Test Suite)
 - 2026-03-21: Brainstorming idea #4 (Next.js BFF Credential Proxy)
 - 2026-03-21: Brainstorming idea #5 (Type-Safe LangGraph SDK Boundary)
+- 2026-03-21: Brainstorming idea #6 (Message List Virtualization)

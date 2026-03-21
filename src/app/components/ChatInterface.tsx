@@ -1,10 +1,10 @@
 "use client";
 
 import { Assistant } from "@langchain/langgraph-sdk";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useStickToBottom } from "use-stick-to-bottom";
 import { AgentThinkingIndicator } from "@/app/components/AgentThinkingIndicator";
 import { ChatMessage } from "@/app/components/ChatMessage";
 import { ChatInput } from "@/app/components/chat/ChatInput";
@@ -68,10 +68,8 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
   }) => {
     const [metaOpen, setMetaOpen] = useState<"tasks" | "files" | null>(null);
     const [input, setInput] = useState("");
-    const { scrollRef, contentRef } = useStickToBottom({
-      initial: "instant",
-      resize: "instant",
-    });
+    const parentRef = useRef<HTMLDivElement>(null);
+    const isAtBottomRef = useRef(true);
 
     const {
       stream,
@@ -123,6 +121,36 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
       subagentMessagesMap,
       interrupt,
     );
+
+    const virtualizer = useVirtualizer({
+      count: processedMessages.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 120,
+      overscan: 5,
+    });
+
+    // Track scroll position with ref (not state) to avoid render-frame gaps
+    useEffect(() => {
+      const el = parentRef.current;
+      if (!el) return;
+      const handleScroll = () => {
+        const threshold = 50;
+        isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+      };
+      el.addEventListener("scroll", handleScroll, { passive: true });
+      return () => el.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    // Auto-scroll to bottom when content changes and user is at bottom
+    useEffect(() => {
+      if (isAtBottomRef.current && processedMessages.length > 0) {
+        requestAnimationFrame(() => {
+          if (parentRef.current) {
+            parentRef.current.scrollTop = parentRef.current.scrollHeight;
+          }
+        });
+      }
+    }, [processedMessages]);
 
     const allSubAgents = useMemo(() => {
       return processedMessages.flatMap((m) => m.subAgents);
@@ -288,78 +316,94 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
         <div className="relative flex h-full flex-col overflow-hidden">
           <div
             className="scrollbar-pretty flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
-            ref={scrollRef}
+            ref={parentRef}
             style={{ touchAction: "pan-y" }}
           >
-            <div
-              className={cn(
-                "mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 transition-[padding,max-width,opacity] duration-200 ease-in-out md:px-4",
-              )}
-              ref={contentRef}
-              style={{ contentVisibility: "auto" }}
-            >
-              {isThreadLoading && processedMessages.length === 0 ? (
-                loadingSkeletonElements
-              ) : (
-                <>
-                  {processedMessages.map((data, index) => {
-                    const messageUi = data.message.id
-                      ? uiByMessageId.get(data.message.id)
-                      : undefined;
-                    const isLastMessage = index === processedMessages.length - 1;
-                    const isStreaming = isLastMessage && isLoading;
+            {isThreadLoading && processedMessages.length === 0 ? (
+              <div className="mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 md:px-4">
+                {loadingSkeletonElements}
+              </div>
+            ) : (
+              <div
+                style={{
+                  height: virtualizer.getTotalSize(),
+                  width: "100%",
+                  position: "relative",
+                }}
+              >
+                {virtualizer.getVirtualItems().map((virtualRow) => {
+                  const index = virtualRow.index;
+                  const data = processedMessages[index];
+                  const messageUi = data.message.id
+                    ? uiByMessageId.get(data.message.id)
+                    : undefined;
+                  const isLastMessage = index === processedMessages.length - 1;
+                  const isStreaming = isLastMessage && isLoading;
 
-                    const branchInfo = getMessageBranchInfo?.(data.message, index);
-                    const branchOptions = branchInfo?.branchOptions || [];
-                    const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
-                    const canRetry = branchInfo?.canRetry;
+                  const branchInfo = getMessageBranchInfo?.(data.message, index);
+                  const branchOptions = branchInfo?.branchOptions || [];
+                  const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
+                  const canRetry = branchInfo?.canRetry;
 
-                    return (
-                      <div
-                        key={data.message.id}
-                        className="flex flex-col"
-                      >
-                        <ErrorBoundary className="mb-4">
-                          <ChatMessage
-                            message={data.message}
-                            messageIndex={index}
-                            toolCalls={data.toolCalls}
-                            subAgents={data.subAgents}
-                            isLoading={isLoading}
-                            isStreaming={isStreaming}
-                            actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
-                            reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
-                            ui={messageUi}
-                            stream={stream}
-                            onResumeInterrupt={resumeInterrupt}
-                            onRetry={retryFromMessage}
-                            onEdit={editMessage}
-                            getMessagesMetadata={getMessagesMetadata}
-                            setBranch={setBranch}
-                            graphId={assistant?.graph_id}
-                            branchOptions={branchOptions}
-                            currentBranchIndex={currentBranchIndex}
-                            canRetry={!!canRetry}
-                            activeSubAgentId={activeSubAgentId}
-                            setActiveSubAgentId={handleSetActiveSubAgentId}
-                          />
-                        </ErrorBoundary>
-                      </div>
-                    );
-                  })}
-                  {error ? (
-                    <Alert
-                      variant="destructive"
-                      className="mb-4"
+                  return (
+                    <div
+                      key={data.message.id}
+                      data-index={index}
+                      ref={virtualizer.measureElement}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
                     >
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>{tCommon("error")}</AlertTitle>
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  ) : null}
-                </>
-              )}
-            </div>
+                      <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
+                        <div className="flex flex-col">
+                          <ErrorBoundary className="mb-4">
+                            <ChatMessage
+                              message={data.message}
+                              messageIndex={index}
+                              toolCalls={data.toolCalls}
+                              subAgents={data.subAgents}
+                              isLoading={isLoading}
+                              isStreaming={isStreaming}
+                              actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
+                              reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
+                              ui={messageUi}
+                              stream={stream}
+                              onResumeInterrupt={resumeInterrupt}
+                              onRetry={retryFromMessage}
+                              onEdit={editMessage}
+                              getMessagesMetadata={getMessagesMetadata}
+                              setBranch={setBranch}
+                              graphId={assistant?.graph_id}
+                              branchOptions={branchOptions}
+                              currentBranchIndex={currentBranchIndex}
+                              canRetry={!!canRetry}
+                              activeSubAgentId={activeSubAgentId}
+                              setActiveSubAgentId={handleSetActiveSubAgentId}
+                            />
+                          </ErrorBoundary>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {error ? (
+              <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
+                <Alert
+                  variant="destructive"
+                  className="mb-4"
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>{tCommon("error")}</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </div>
+            ) : null}
           </div>
 
           {/* Input Container */}
