@@ -66,7 +66,7 @@ focus: open-ended
 **Downsides:** Requires understanding actual SDK message shapes vs. declared types. May need `declare module` augmentation.
 **Confidence:** 85%
 **Complexity:** Medium
-**Status:** Unexplored
+**Status:** Explored
 
 ### 6. Message List Virtualization
 **Description:** Replace the flat `processedMessages.map()` in ChatInterface (lines 305-349) with `@tanstack/react-virtual`. Only render messages in the viewport plus overscan. Integrate with existing `useStickToBottom` for auto-scroll during streaming.
@@ -109,3 +109,4 @@ focus: open-ended
 - 2026-03-21: Brainstorming idea #2 (Fix IndexedDB Connection Abstraction)
 - 2026-03-21: Brainstorming idea #3 (Vitest + Critical-Path Test Suite)
 - 2026-03-21: Brainstorming idea #4 (Next.js BFF Credential Proxy)
+- 2026-03-21: Brainstorming idea #5 (Type-Safe LangGraph SDK Boundary)

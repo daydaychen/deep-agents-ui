@@ -1,7 +1,7 @@
 import { Message } from "@langchain/langgraph-sdk";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { SubAgent, ToolCall } from "@/app/types/types";
+import type { MessageWithMetadata, SubAgent, ToolCall } from "@/app/types/types";
 
 export function formatDate(date: string | number | Date): string {
   const d = new Date(date);
@@ -47,10 +47,9 @@ export function extractSubAgents(
     if (messages.length > 0) {
       // Check the first few messages for the actual agent name from metadata
       for (const msg of messages) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const msgAny = msg as any;
-        if (msgAny.metadata?.lc_agent_name) {
-          agentName = msgAny.metadata.lc_agent_name;
+        const msgWithMeta = msg as MessageWithMetadata;
+        if (msgWithMeta.metadata?.lc_agent_name) {
+          agentName = msgWithMeta.metadata.lc_agent_name;
           break;
         }
       }

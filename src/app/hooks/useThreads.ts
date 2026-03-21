@@ -1,6 +1,7 @@
 import type { Message, Thread } from "@langchain/langgraph-sdk";
 import useSWRInfinite from "swr/infinite";
 import { deleteThreadData } from "@/app/utils/db";
+import { extractStringFromMessageContent } from "@/app/utils/utils";
 import { getConfig } from "@/lib/config";
 import { DEFAULT_THREAD_LIMIT, THREAD_TITLE_MAX_LENGTH } from "@/lib/constants";
 import type { StateType } from "@/providers/chat-context";
@@ -98,21 +99,13 @@ export function useThreads(props: { status?: Thread["status"]; limit?: number })
             }
 
             if (firstHumanMessage?.content) {
-              const content =
-                typeof firstHumanMessage.content === "string"
-                  ? firstHumanMessage.content
-                  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (firstHumanMessage.content[0] as any)?.text || "";
+              const content = extractStringFromMessageContent(firstHumanMessage);
               title =
                 content.slice(0, THREAD_TITLE_MAX_LENGTH) +
                 (content.length > THREAD_TITLE_MAX_LENGTH ? "…" : "");
             }
             if (firstAiMessage?.content) {
-              const content =
-                typeof firstAiMessage.content === "string"
-                  ? firstAiMessage.content
-                  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (firstAiMessage.content[0] as any)?.text || "";
+              const content = extractStringFromMessageContent(firstAiMessage);
               description = content.slice(0, DEFAULT_THREAD_LIMIT);
             }
           }

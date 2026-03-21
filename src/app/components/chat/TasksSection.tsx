@@ -4,7 +4,7 @@ import { CheckCircle, Circle, Clock, FileIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { Fragment, useMemo, useRef } from "react";
 import { FilesPopover } from "@/app/components/TasksFilesSidebar";
-import type { TodoItem } from "@/app/types/types";
+import type { InterruptData, TodoItem } from "@/app/types/types";
 import { cn } from "@/lib/utils";
 import { TaskProgressButton } from "./TaskProgressButton";
 
@@ -13,7 +13,7 @@ interface TasksSectionProps {
   files: Record<string, string>;
   setFiles: (files: Record<string, string>) => Promise<void>;
   isLoading: boolean;
-  interrupt: any;
+  interrupt: InterruptData | undefined;
   metaOpen: "tasks" | "files" | null;
   setMetaOpen: React.Dispatch<React.SetStateAction<"tasks" | "files" | null>>;
 }

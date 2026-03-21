@@ -71,6 +71,11 @@ export interface MemoryItem {
   updatedAt?: string;
 }
 
+/** Extended Message type for messages that carry LangGraph stream metadata */
+export type MessageWithMetadata = Message & {
+  metadata?: { lc_agent_name?: string; [key: string]: unknown };
+};
+
 export interface UiComponent extends UIMessage {
   id: string;
   metadata?: {

@@ -1,6 +1,6 @@
 import { Message } from "@langchain/langgraph-sdk";
 import { useMemo } from "react";
-import type { SubAgent, ToolCall } from "@/app/types/types";
+import type { InterruptData, SubAgent, ToolCall } from "@/app/types/types";
 import { extractStringFromMessageContent, extractSubAgents } from "@/app/utils/utils";
 
 interface ProcessedMessage {
@@ -23,8 +23,7 @@ interface ProcessedMessage {
 export function useProcessedMessages(
   mainMessages: Message[],
   subagentMessagesMap?: Map<string, Message[]>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  interrupt?: any,
+  interrupt?: InterruptData,
 ): ProcessedMessage[] {
   return useMemo(() => {
     // Single-pass processing: build processed messages array directly

@@ -1,5 +1,6 @@
 "use client";
 
+import type { UIMessage } from "@langchain/langgraph-sdk/react-ui";
 import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
 import {
   AlertCircle,
@@ -434,7 +435,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
                 <LoadExternalComponent
                   key={uiComponent.id}
                   stream={stream}
-                  message={uiComponent as any}
+                  message={uiComponent as UIMessage}
                   namespace={graphId}
                   meta={{
                     status,

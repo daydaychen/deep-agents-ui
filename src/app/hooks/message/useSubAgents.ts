@@ -1,6 +1,6 @@
 import { Message } from "@langchain/langgraph-sdk";
 import { useMemo } from "react";
-import type { SubAgent, ToolCall } from "@/app/types/types";
+import type { MessageWithMetadata, SubAgent, ToolCall } from "@/app/types/types";
 
 /**
  * Extract subagent information from tool calls
@@ -35,9 +35,9 @@ export function useSubAgents(
       if (messages.length > 0) {
         // Check the first few messages for the actual agent name from metadata
         for (const msg of messages) {
-          const msgAny = msg as any;
-          if (msgAny.metadata?.lc_agent_name) {
-            agentName = msgAny.metadata.lc_agent_name;
+          const msgWithMeta = msg as MessageWithMetadata;
+          if (msgWithMeta.metadata?.lc_agent_name) {
+            agentName = msgWithMeta.metadata.lc_agent_name;
             break;
           }
         }
