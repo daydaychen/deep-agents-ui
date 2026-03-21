@@ -1,49 +1,30 @@
-# 使用 Node 20 Alpine 作为基础镜像
-FROM node:20-alpine AS base
-
-# 安装必要的系统依赖
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# 设置生产环境变量
-ENV NODE_ENV=production
-
-# 安装 pnpm
-RUN npm install -g pnpm
-
-# 为开发阶段设置环境变量
-ENV NEXT_TELEMETRY_DISABLED=1
+# 使用 Node 24 Alpine 作为基础镜像
+FROM node:24-alpine AS base
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# 第一阶段：依赖安装
-FROM base AS deps
-WORKDIR /app
-
-# 复制包管理文件
-COPY package.json pnpm-lock.yaml* ./
-# 使用 pnpm 安装依赖
-RUN pnpm install --frozen-lockfile
-
-# 第二阶段：构建
 FROM base AS builder
+
 WORKDIR /app
 
-# 从 deps 阶段复制 node_modules
-COPY --from=deps /app/node_modules ./node_modules
+# 为开发阶段设置环境变量
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
 # 复制源代码
 COPY . .
 
-# 设置构建环境变量
-ENV NEXT_TELEMETRY_DISABLED=1
+# 使用 pnpm 安装依赖（跳过 prepare 脚本避免 husky 错误）
+RUN npx pnpm install --frozen-lockfile --ignore-scripts
 
 # 构建应用
-RUN pnpm build
+RUN npx pnpm build
 
-# 第三阶段：运行
+# 第二阶段：运行
 FROM base AS runner
+
 WORKDIR /app
 
 # 设置生产环境变量
