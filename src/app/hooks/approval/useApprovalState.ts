@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type { ActionRequest } from "@/app/types/types";
+import { parseJSON } from "@/lib/safe-json-parse";
 
 export interface ApprovalState {
   rejectionMessage: string;
@@ -84,7 +85,9 @@ export function useApprovalState(
 
   const startEditing = useCallback(() => {
     setIsEditing(true);
-    setEditedArgs(JSON.parse(JSON.stringify(actionRequest.args)));
+    setEditedArgs(
+      parseJSON(JSON.stringify(actionRequest.args), { maxDepth: 50 }) as Record<string, unknown>,
+    );
     setShowRejectionInput(false);
   }, [actionRequest.args]);
 
@@ -96,7 +99,9 @@ export function useApprovalState(
   const updateEditedArg = useCallback((key: string, value: string) => {
     try {
       const parsedValue =
-        value.trim().startsWith("{") || value.trim().startsWith("[") ? JSON.parse(value) : value;
+        value.trim().startsWith("{") || value.trim().startsWith("[")
+          ? parseJSON(value, { maxDepth: 50 })
+          : value;
       setEditedArgs((prev) => ({ ...prev, [key]: parsedValue }));
     } catch {
       setEditedArgs((prev) => ({ ...prev, [key]: value }));
