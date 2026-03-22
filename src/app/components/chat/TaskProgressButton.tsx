@@ -46,10 +46,16 @@ const getStatusIcon = (status: TodoItem["status"], className?: string) => {
 export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
   ({ todos, groupedTodos, onClick, isExpanded }) => {
     const t = useTranslations("tasks");
-    const activeTask = todos.find((t) => t.status === "in_progress");
-    const totalTasks = todos.length;
-    const remainingTasks = totalTasks - groupedTodos.pending.length;
-    const isCompleted = totalTasks === remainingTasks;
+    const { activeTask, totalTasks, currentTaskCount, isCompleted } = React.useMemo(() => {
+      const total = todos.length;
+      const current = total - groupedTodos.pending.length;
+      return {
+        activeTask: todos.find((t) => t.status === "in_progress"),
+        totalTasks: total,
+        currentTaskCount: current,
+        isCompleted: total === current && total > 0,
+      };
+    }, [todos, groupedTodos.pending.length]);
 
     return (
       <button
@@ -83,7 +89,7 @@ export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
                 className="ml-[1px] min-w-0 truncate text-sm"
               >
                 {t("taskProgress", {
-                  current: totalTasks - groupedTodos.pending.length,
+                  current: currentTaskCount,
                   total: totalTasks,
                 })}
               </span>,
@@ -107,7 +113,7 @@ export const TaskProgressButton = React.memo<TaskProgressButtonProps>(
               className="ml-[1px] min-w-0 truncate text-sm"
             >
               {t("taskProgress", {
-                current: totalTasks - groupedTodos.pending.length,
+                current: currentTaskCount,
                 total: totalTasks,
               })}
             </span>,
