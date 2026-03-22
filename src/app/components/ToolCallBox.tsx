@@ -27,6 +27,7 @@ import {
   parseToolResult,
   type ToolCategory,
 } from "@/app/utils/tool-result-parser";
+import { parseJSON } from "@/lib/safe-json-parse";
 import { cn } from "@/lib/utils";
 
 // Static icon components - hoisted outside to avoid recreation on every render
@@ -200,7 +201,7 @@ export const ToolCallBox = React.memo<ToolCallBoxProps>(
       if (typeof raw === "object" && !Array.isArray(raw)) return raw;
       if (typeof raw !== "string" || (raw as string).trim() === "") return {};
       try {
-        const parsed = JSON.parse(raw);
+        const parsed = parseJSON(raw, { maxDepth: 50 });
         return typeof parsed === "object" ? parsed : { value: parsed };
       } catch {
         return { text: raw };

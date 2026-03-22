@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { parseJSON } from "@/lib/safe-json-parse";
 import type { ActionRequest } from "@/app/types/types";
 
 export interface ApprovalState {
@@ -96,7 +97,7 @@ export function useApprovalState(
   const updateEditedArg = useCallback((key: string, value: string) => {
     try {
       const parsedValue =
-        value.trim().startsWith("{") || value.trim().startsWith("[") ? JSON.parse(value) : value;
+        value.trim().startsWith("{") || value.trim().startsWith("[") ? (parseJSON(value) as any) : value;
       setEditedArgs((prev) => ({ ...prev, [key]: parsedValue }));
     } catch {
       setEditedArgs((prev) => ({ ...prev, [key]: value }));

@@ -18,6 +18,7 @@ import {
   ERROR_MESSAGE_TRUNCATION_LENGTH,
   TOAST_DURATION_MS,
 } from "@/lib/constants";
+import { parseJSON } from "@/lib/safe-json-parse";
 import { useLatest } from "@/lib/hooks/useLatest";
 import { generateId } from "@/lib/id-utils";
 import { LLMOverrideConfig, OverrideConfig, StateType } from "@/providers/chat-context";
@@ -509,7 +510,7 @@ export function useChat({
       }
 
       const jsonStr = errorMessage.substring(startIdx, endIdx);
-      const parsed = JSON.parse(jsonStr);
+      const parsed = parseJSON(jsonStr) as any;
 
       // Extract error message from parsed JSON with early exits
       if (parsed.detail) {
