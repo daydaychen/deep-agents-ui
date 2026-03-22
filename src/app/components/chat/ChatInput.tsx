@@ -103,7 +103,7 @@ export const ChatInput = React.memo<ChatInputProps>(
               }}
               placeholder={isLoading ? t("inputPlaceholderLoading") : t("inputPlaceholderDefault")}
               className={cn(
-                "w-full resize-none border-0 bg-transparent py-1.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40",
+                "w-full resize-none border-0 bg-transparent px-2 py-1.5 font-sans text-[15px] leading-relaxed text-foreground outline-none ring-0 placeholder:text-muted-foreground/40",
                 "max-h-[300px]",
               )}
             />
