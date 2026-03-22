@@ -44,8 +44,12 @@ export const SubAgentSection = React.memo<SubAgentSectionProps>(
         const next = new Set(prev);
         let changed = false;
 
+        const prevSubAgentsMap = new Map(
+          prevSubAgentsRef.current.map((sa) => [sa.id, sa]),
+        );
+
         subAgents.forEach((sa) => {
-          const prevSa = prevSubAgentsRef.current.find((p) => p.id === sa.id);
+          const prevSa = prevSubAgentsMap.get(sa.id);
           const prevStatus = prevSa?.status;
           const currentStatus = sa.status;
 
