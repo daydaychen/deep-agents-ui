@@ -1,4 +1,5 @@
 import type { Message } from "@langchain/langgraph-sdk";
+import { openDB, type IDBPDatabase } from "idb";
 
 export const DB_NAME = "deep-agents-ui";
 export const DB_VERSION = 3;
@@ -15,13 +16,15 @@ export interface PersistedSubagentMessage {
 
 // Singleton connection — lazily opened on first use, cached for app lifetime.
 // Follows the config.ts module-level cache pattern.
-let connectionPromise: Promise<IDBDatabase> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let connectionPromise: Promise<IDBPDatabase<any>> | null = null;
 
 /**
  * Get (or lazily open) the shared IndexedDB connection.
  * Multiple concurrent callers all await the same promise — no duplicate opens.
  */
-export function getConnection(): Promise<IDBDatabase> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getConnection(): Promise<IDBPDatabase<any>> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("IndexedDB is not available in SSR"));
   }
@@ -30,29 +33,8 @@ export function getConnection(): Promise<IDBDatabase> {
     return connectionPromise;
   }
 
-  connectionPromise = new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onerror = () => {
-      connectionPromise = null;
-      reject(request.error);
-    };
-
-    request.onsuccess = () => {
-      const db = request.result;
-
-      // If another tab upgrades the DB, close and invalidate so the next
-      // getConnection() call reopens with the new version.
-      db.onversionchange = () => {
-        db.close();
-        connectionPromise = null;
-      };
-
-      resolve(db);
-    };
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
+  connectionPromise = openDB(DB_NAME, DB_VERSION, {
+    upgrade(db) {
       if (db.objectStoreNames.contains(STORE_NAME)) {
         db.deleteObjectStore(STORE_NAME);
       }
@@ -64,7 +46,24 @@ export function getConnection(): Promise<IDBDatabase> {
         unique: false,
       });
       objectStore.createIndex("timestamp", "timestamp", { unique: false });
-    };
+    },
+    blocked() {
+      // Wait for other tabs to close before upgrading
+    },
+    blocking() {
+      // If another tab upgrades the DB, close and invalidate so the next
+      // getConnection() call reopens with the new version.
+      if (connectionPromise) {
+        connectionPromise.then((db) => db.close());
+        connectionPromise = null;
+      }
+    },
+    terminated() {
+      connectionPromise = null;
+    },
+  }).catch((error) => {
+    connectionPromise = null;
+    throw error;
   });
 
   return connectionPromise;
@@ -76,15 +75,11 @@ export function getConnection(): Promise<IDBDatabase> {
 export async function loadThreadMessages(threadId: string): Promise<Map<string, Message[]>> {
   try {
     const db = await getConnection();
-    const transaction = db.transaction([STORE_NAME], "readonly");
-    const store = transaction.objectStore(STORE_NAME);
-    const index = store.index("threadId");
-
-    const result = await new Promise<PersistedSubagentMessage[]>((resolve, reject) => {
-      const request = index.getAll(threadId);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+    const result: PersistedSubagentMessage[] = await db.getAllFromIndex(
+      STORE_NAME,
+      "threadId",
+      threadId,
+    );
 
     const subagentMap = new Map<string, Message[]>();
     const sortedResult = result.toSorted((a, b) => a.timestamp - b.timestamp || a.index - b.index);
@@ -113,14 +108,13 @@ export async function saveThreadMessages(
 
   try {
     const db = await getConnection();
-    const transaction = db.transaction([STORE_NAME], "readwrite");
-    const store = transaction.objectStore(STORE_NAME);
+    const tx = db.transaction(STORE_NAME, "readwrite");
     const now = Date.now();
 
     messagesMap.forEach((msgs, toolCallId) => {
       msgs.forEach((message, idx) => {
         if (!message.id) return;
-        store.put({
+        tx.store.put({
           threadId,
           messageId: message.id,
           toolCallId,
@@ -131,10 +125,7 @@ export async function saveThreadMessages(
       });
     });
 
-    await new Promise<void>((resolve, reject) => {
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
+    await tx.done;
   } catch (error) {
     console.error("Failed to batch save subagent messages:", error);
   }
@@ -145,29 +136,14 @@ export async function saveThreadMessages(
  */
 export async function deleteThreadData(threadId: string): Promise<void> {
   const db = await getConnection();
-  const transaction = db.transaction([STORE_NAME], "readwrite");
-  const store = transaction.objectStore(STORE_NAME);
-  const index = store.index("threadId");
-
-  const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
-    const request = index.getAllKeys(threadId);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  const keys = await tx.store.index("threadId").getAllKeys(threadId);
 
   if (keys.length === 0) return;
 
-  await new Promise<void>((resolve, reject) => {
-    let deletedCount = 0;
-    for (const key of keys) {
-      const deleteRequest = store.delete(key);
-      deleteRequest.onsuccess = () => {
-        deletedCount++;
-        if (deletedCount === keys.length) {
-          resolve();
-        }
-      };
-      deleteRequest.onerror = () => reject(deleteRequest.error);
-    }
-  });
+  for (const key of keys) {
+    await tx.store.delete(key);
+  }
+
+  await tx.done;
 }
