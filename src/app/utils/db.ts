@@ -111,25 +111,34 @@ export async function saveThreadMessages(
 ): Promise<void> {
   if (messagesMap.size === 0) return;
 
+  const now = Date.now();
+  const records: PersistedSubagentMessage[] = [];
+
+  messagesMap.forEach((msgs, toolCallId) => {
+    for (let idx = 0; idx < msgs.length; idx++) {
+      const message = msgs[idx];
+      if (!message.id) continue;
+      records.push({
+        threadId,
+        messageId: message.id,
+        toolCallId,
+        message,
+        timestamp: now,
+        index: idx,
+      });
+    }
+  });
+
+  if (records.length === 0) return;
+
   try {
     const db = await getConnection();
     const transaction = db.transaction([STORE_NAME], "readwrite");
     const store = transaction.objectStore(STORE_NAME);
-    const now = Date.now();
 
-    messagesMap.forEach((msgs, toolCallId) => {
-      msgs.forEach((message, idx) => {
-        if (!message.id) return;
-        store.put({
-          threadId,
-          messageId: message.id,
-          toolCallId,
-          message,
-          timestamp: now,
-          index: idx,
-        });
-      });
-    });
+    for (let i = 0; i < records.length; i++) {
+      store.put(records[i]);
+    }
 
     await new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => resolve();
