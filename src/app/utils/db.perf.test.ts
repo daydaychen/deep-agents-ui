@@ -1,14 +1,14 @@
-import { describe, it, expect, } from 'vitest';
-import { saveThreadMessages, loadThreadMessages, } from './db';
 import type { Message } from "@langchain/langgraph-sdk";
+import { describe, expect, it } from "vitest";
+import { loadThreadMessages, saveThreadMessages } from "./db";
 
 // Basic mock for indexedDB in test environment
-import 'fake-indexeddb/auto';
+import "fake-indexeddb/auto";
 
-describe('DB Performance', () => {
-  const THREAD_ID = 'test-perf-thread';
+describe("DB Performance", () => {
+  const THREAD_ID = "test-perf-thread";
 
-  it('measures performance of saveThreadMessages', async () => {
+  it("measures performance of saveThreadMessages", async () => {
     // Generate a large number of messages
     const NUM_TOOL_CALLS = 100;
     const NUM_MESSAGES_PER_CALL = 50;
@@ -22,7 +22,7 @@ describe('DB Performance', () => {
       for (let j = 0; j < NUM_MESSAGES_PER_CALL; j++) {
         msgs.push({
           id: `msg-${i}-${j}`,
-          type: 'human',
+          type: "human",
           content: `Test message ${i}-${j}`,
           additional_kwargs: {},
         } as unknown as Message);
@@ -36,7 +36,9 @@ describe('DB Performance', () => {
     const endTime = performance.now();
 
     const duration = endTime - startTime;
-    console.log(`⏱️ saveThreadMessages took ${duration.toFixed(2)}ms for ${NUM_TOOL_CALLS * NUM_MESSAGES_PER_CALL} messages`);
+    console.log(
+      `⏱️ saveThreadMessages took ${duration.toFixed(2)}ms for ${NUM_TOOL_CALLS * NUM_MESSAGES_PER_CALL} messages`,
+    );
 
     // Verify data was saved
     const loaded = await loadThreadMessages(THREAD_ID);

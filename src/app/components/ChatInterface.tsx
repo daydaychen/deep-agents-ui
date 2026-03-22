@@ -5,6 +5,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ImperativePanelHandle } from "react-resizable-panels";
 import { AgentThinkingIndicator } from "@/app/components/AgentThinkingIndicator";
 import { ChatMessage } from "@/app/components/ChatMessage";
 import { ChatInput } from "@/app/components/chat/ChatInput";
@@ -26,7 +27,6 @@ import type {
 } from "@/app/types/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { cn } from "@/lib/utils";
 import { useChatStoreShallow } from "@/providers/chat-store-provider";
 
 interface ChatInterfaceProps {
@@ -206,6 +206,16 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
     }, [ui]);
 
     const lastActiveSubAgentIdRef = useRef<string | null>(null);
+    const rightPanelRef = useRef<ImperativePanelHandle>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    useEffect(() => {
+      if (sidePanelView !== null) {
+        setTimeout(() => rightPanelRef.current?.expand(), 0);
+      } else {
+        rightPanelRef.current?.collapse();
+      }
+    }, [sidePanelView]);
 
     if (activeSubAgentId) {
       lastActiveSubAgentIdRef.current = activeSubAgentId;
@@ -274,183 +284,176 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
     const sidePanelVisible = sidePanelView !== null;
 
     return (
-      <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
-        {/* Unified Side Panel */}
-        <div className="pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] z-[300] flex overflow-hidden">
-          <ResizablePanelGroup
-            direction="horizontal"
-            id="side-panel-group"
+      <div className="relative flex flex-1 overflow-hidden bg-background">
+        <ResizablePanelGroup
+          direction="horizontal"
+          id="chat-interface-group"
+        >
+          <ResizablePanel
+            defaultSize={sidePanelVisible ? 60 : 100}
+            className={!isDragging ? "transition-all duration-300 ease-in-out" : ""}
           >
-            <ResizablePanel
-              defaultSize={70}
-              className="pointer-events-none"
-            />
+            <div className="relative flex h-full flex-col overflow-hidden w-full">
+              <div
+                className="scrollbar-pretty flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
+                ref={parentRef}
+                style={{ touchAction: "pan-y" }}
+              >
+                {isThreadLoading && processedMessages.length === 0 ? (
+                  <div className="mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 md:px-4">
+                    {loadingSkeletonElements}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      height: virtualizer.getTotalSize(),
+                      width: "100%",
+                      position: "relative",
+                    }}
+                  >
+                    {virtualizer.getVirtualItems().map((virtualRow) => {
+                      const index = virtualRow.index;
+                      const data = processedMessages[index];
+                      const messageUi = data.message.id
+                        ? uiByMessageId.get(data.message.id)
+                        : undefined;
+                      const isLastMessage = index === processedMessages.length - 1;
+                      const isStreaming = isLastMessage && isLoading;
 
-            <ResizableHandle
-              withHandle
-              className={cn(
-                "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
-                sidePanelVisible
-                  ? "pointer-events-auto z-50 -mr-1 cursor-col-resize opacity-100"
-                  : "pointer-events-none opacity-0",
-              )}
-            />
+                      const branchInfo = getMessageBranchInfo?.(data.message, index);
+                      const branchOptions = branchInfo?.branchOptions || [];
+                      const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
+                      const canRetry = branchInfo?.canRetry;
 
-            <ResizablePanel
-              defaultSize={30}
-              minSize={20}
-              maxSize={60}
-              className={cn(
-                "transition-[transform,opacity] duration-300 ease-out",
-                sidePanelVisible
-                  ? "pointer-events-auto translate-x-0 opacity-100"
-                  : "pointer-events-none translate-x-[calc(100%+1rem)] opacity-0",
-              )}
-            >
-              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
-                <SidePanelHeader
-                  activeView={sidePanelView ?? "inspector"}
-                  onSetView={handleSetSidePanelView}
-                  onClose={handleCloseSidePanel}
-                  agentBadge={agentTabBadge}
-                  inspectorBadge={inspectorTabBadge}
-                />
-                {sidePanelView === "agent" ? (
-                  <SubAgentPanel
-                    subAgentId={activeSubAgentId || lastActiveSubAgentId}
-                    subAgents={allSubAgents}
-                    subagentMessagesMap={subagentMessagesMap}
-                    onClose={handleCloseSidePanel}
-                  />
-                ) : sidePanelView === "inspector" ? (
-                  <ErrorBoundary>
-                    <InspectorPanel />
-                  </ErrorBoundary>
+                      return (
+                        <div
+                          key={data.message.id}
+                          data-index={index}
+                          ref={virtualizer.measureElement}
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            transform: `translateY(${virtualRow.start}px)`,
+                          }}
+                        >
+                          <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
+                            <div className="flex flex-col">
+                              <ErrorBoundary className="mb-4">
+                                <ChatMessage
+                                  message={data.message}
+                                  messageIndex={index}
+                                  toolCalls={data.toolCalls}
+                                  subAgents={data.subAgents}
+                                  isLoading={isLoading}
+                                  isStreaming={isStreaming}
+                                  actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
+                                  reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
+                                  ui={messageUi}
+                                  stream={stream}
+                                  onResumeInterrupt={resumeInterrupt}
+                                  onRetry={retryFromMessage}
+                                  onEdit={editMessage}
+                                  getMessagesMetadata={getMessagesMetadata}
+                                  setBranch={setBranch}
+                                  graphId={assistant?.graph_id}
+                                  branchOptions={branchOptions}
+                                  currentBranchIndex={currentBranchIndex}
+                                  canRetry={!!canRetry}
+                                  activeSubAgentId={activeSubAgentId}
+                                  setActiveSubAgentId={handleSetActiveSubAgentId}
+                                />
+                              </ErrorBoundary>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {error ? (
+                  <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
+                    <Alert
+                      variant="destructive"
+                      className="mb-4"
+                    >
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>{tCommon("error")}</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  </div>
                 ) : null}
               </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </div>
 
-        <div className="relative flex h-full flex-col overflow-hidden">
-          <div
-            className="scrollbar-pretty flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
-            ref={parentRef}
-            style={{ touchAction: "pan-y" }}
+              {/* Input Container */}
+              <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent px-3 pb-4 pt-8 sm:px-4">
+                <div className="mx-auto mb-2 flex max-w-[800px] justify-center">
+                  <AgentThinkingIndicator isActive={isLoading} />
+                </div>
+                <div className="focus-within:border-primary/30 mx-auto flex max-w-[800px] flex-col overflow-hidden rounded-[26px] border border-border bg-background shadow-2xl shadow-primary/5 transition-[border-color,box-shadow] duration-200 focus-within:shadow-primary/10">
+                  <TasksSection
+                    todos={todos}
+                    files={files}
+                    setFiles={setFiles}
+                    isLoading={isLoading}
+                    interrupt={interrupt}
+                    metaOpen={metaOpen}
+                    setMetaOpen={setMetaOpen}
+                  />
+                  <ChatInput
+                    input={input}
+                    setInput={setInput}
+                    isLoading={isLoading}
+                    submitDisabled={submitDisabled}
+                    onSubmit={handleSubmit}
+                    onStop={stopStream}
+                  />
+                </div>
+              </div>
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle
+            withHandle
+            onDragging={setIsDragging}
+            className={`transition-opacity duration-300 ${!sidePanelVisible ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}
+          />
+          <ResizablePanel
+            ref={rightPanelRef}
+            collapsible
+            collapsedSize={0}
+            defaultSize={sidePanelVisible ? 40 : 0}
+            minSize={30}
+            maxSize={60}
+            className={`${!isDragging ? "transition-all duration-300 ease-in-out" : ""} ${sidePanelVisible ? "opacity-100" : "opacity-0"}`}
+            onCollapse={() => {
+              if (sidePanelVisible) handleCloseSidePanel();
+            }}
           >
-            {isThreadLoading && processedMessages.length === 0 ? (
-              <div className="mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 md:px-4">
-                {loadingSkeletonElements}
-              </div>
-            ) : (
-              <div
-                style={{
-                  height: virtualizer.getTotalSize(),
-                  width: "100%",
-                  position: "relative",
-                }}
-              >
-                {virtualizer.getVirtualItems().map((virtualRow) => {
-                  const index = virtualRow.index;
-                  const data = processedMessages[index];
-                  const messageUi = data.message.id
-                    ? uiByMessageId.get(data.message.id)
-                    : undefined;
-                  const isLastMessage = index === processedMessages.length - 1;
-                  const isStreaming = isLastMessage && isLoading;
-
-                  const branchInfo = getMessageBranchInfo?.(data.message, index);
-                  const branchOptions = branchInfo?.branchOptions || [];
-                  const currentBranchIndex = branchInfo?.currentBranchIndex ?? 0;
-                  const canRetry = branchInfo?.canRetry;
-
-                  return (
-                    <div
-                      key={data.message.id}
-                      data-index={index}
-                      ref={virtualizer.measureElement}
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                    >
-                      <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
-                        <div className="flex flex-col">
-                          <ErrorBoundary className="mb-4">
-                            <ChatMessage
-                              message={data.message}
-                              messageIndex={index}
-                              toolCalls={data.toolCalls}
-                              subAgents={data.subAgents}
-                              isLoading={isLoading}
-                              isStreaming={isStreaming}
-                              actionRequestsMap={isLastMessage ? actionRequestsMap : undefined}
-                              reviewConfigsMap={isLastMessage ? reviewConfigsMap : undefined}
-                              ui={messageUi}
-                              stream={stream}
-                              onResumeInterrupt={resumeInterrupt}
-                              onRetry={retryFromMessage}
-                              onEdit={editMessage}
-                              getMessagesMetadata={getMessagesMetadata}
-                              setBranch={setBranch}
-                              graphId={assistant?.graph_id}
-                              branchOptions={branchOptions}
-                              currentBranchIndex={currentBranchIndex}
-                              canRetry={!!canRetry}
-                              activeSubAgentId={activeSubAgentId}
-                              setActiveSubAgentId={handleSetActiveSubAgentId}
-                            />
-                          </ErrorBoundary>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {error ? (
-              <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
-                <Alert
-                  variant="destructive"
-                  className="mb-4"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>{tCommon("error")}</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Input Container */}
-          <div className="flex-shrink-0 bg-gradient-to-t from-background via-background/95 to-transparent px-3 pb-4 pt-8 sm:px-4">
-            <div className="mx-auto mb-2 flex max-w-[800px] justify-center">
-              <AgentThinkingIndicator isActive={isLoading} />
-            </div>
-            <div className="focus-within:border-primary/30 mx-auto flex max-w-[800px] flex-col overflow-hidden rounded-[26px] border border-border bg-background shadow-2xl shadow-primary/5 transition-[border-color,box-shadow] duration-200 focus-within:shadow-primary/10">
-              <TasksSection
-                todos={todos}
-                files={files}
-                setFiles={setFiles}
-                isLoading={isLoading}
-                interrupt={interrupt}
-                metaOpen={metaOpen}
-                setMetaOpen={setMetaOpen}
+            <div className="flex h-full w-full flex-col overflow-hidden bg-background">
+              <SidePanelHeader
+                activeView={sidePanelView ?? "inspector"}
+                onSetView={handleSetSidePanelView}
+                onClose={handleCloseSidePanel}
+                agentBadge={agentTabBadge}
+                inspectorBadge={inspectorTabBadge}
               />
-              <ChatInput
-                input={input}
-                setInput={setInput}
-                isLoading={isLoading}
-                submitDisabled={submitDisabled}
-                onSubmit={handleSubmit}
-                onStop={stopStream}
-              />
+              {sidePanelView === "agent" ? (
+                <SubAgentPanel
+                  subAgentId={activeSubAgentId || lastActiveSubAgentId}
+                  subAgents={allSubAgents}
+                  subagentMessagesMap={subagentMessagesMap}
+                  onClose={handleCloseSidePanel}
+                />
+              ) : sidePanelView === "inspector" ? (
+                <ErrorBoundary>
+                  <InspectorPanel />
+                </ErrorBoundary>
+              ) : null}
             </div>
-          </div>
-        </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     );
   },

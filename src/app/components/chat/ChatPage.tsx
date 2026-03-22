@@ -5,7 +5,8 @@ import { Database, MessagesSquare, Settings, SquarePen, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { ImperativePanelHandle } from "react-resizable-panels";
 import useSWR from "swr";
 import { ChatInterface } from "@/app/components/ChatInterface";
 import { ConnectionStatusIndicator } from "@/app/components/ConnectionStatusIndicator";
@@ -16,7 +17,6 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getConfig, StandaloneConfig, saveConfig } from "@/lib/config";
 import { DEFAULT_MESSAGE_LIMIT } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 import { ChatProvider } from "@/providers/ChatProvider";
 import { ClientProvider } from "@/providers/ClientProvider";
 import { useClient } from "@/providers/client-context";
@@ -95,6 +95,16 @@ function HomePageInner({
 
   const [mutateThreads, setMutateThreads] = useState<(() => void) | null>(null);
   const [interruptCount, setInterruptCount] = useState(0);
+  const leftPanelRef = useRef<ImperativePanelHandle>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (sidebar || memorySidebar) {
+      setTimeout(() => leftPanelRef.current?.expand(), 0);
+    } else {
+      leftPanelRef.current?.collapse();
+    }
+  }, [sidebar, memorySidebar]);
 
   // 使用 SWR 替代 useEffect/useState 获取 Assistant
   const { data: assistant } = useSWR(
@@ -116,8 +126,8 @@ function HomePageInner({
           initialConfig={config}
         />
       )}
-      <div className="flex h-screen flex-col">
-        <header className="sticky left-4 right-4 top-4 z-sticky mx-4 flex h-11 items-center justify-between rounded-2xl border border-border bg-background/80 px-3 shadow-lg backdrop-blur-md sm:px-4 md:px-6">
+      <div className="flex h-screen flex-col bg-background">
+        <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-6 z-10 w-full">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <h1 className="truncate text-base font-semibold sm:text-xl">{tCommon("appName")}</h1>
             {!sidebar && (
@@ -209,141 +219,95 @@ function HomePageInner({
           </div>
         </header>
 
-        {/* Thread overlay panel */}
-        <div
-          className={cn(
-            "pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] flex overflow-hidden transition-all duration-300 ease-out",
-            sidebar ? "z-sidebar" : "z-sticky",
-          )}
-        >
+        {/* Main App Body with Resizable Split Panes */}
+        <main className="flex flex-1 overflow-hidden bg-background">
           <ResizablePanelGroup
             direction="horizontal"
-            id="thread-panel-group"
+            id="app-panel-group"
           >
             <ResizablePanel
-              defaultSize={20}
-              minSize={15}
+              ref={leftPanelRef}
+              collapsible
+              collapsedSize={0}
+              defaultSize={sidebar || memorySidebar ? 25 : 0}
+              minSize={20}
               maxSize={50}
-              className={cn(
-                "transition-[transform,opacity] duration-300 ease-out",
-                sidebar
-                  ? "pointer-events-auto translate-x-0 opacity-100"
-                  : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0",
-              )}
+              className={`${!isDragging ? "transition-all duration-300 ease-in-out" : ""} ${sidebar || memorySidebar ? "opacity-100" : "opacity-0"}`}
+              onCollapse={() => {
+                if (sidebar) setSidebar(null);
+                if (memorySidebar) setMemorySidebar(null);
+              }}
             >
-              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
-                <ThreadList
-                  onThreadSelect={async (id) => {
-                    await setThreadId(id);
-                  }}
-                  onMutateReady={(fn) => setMutateThreads(() => fn)}
-                  onClose={() => setSidebar(null)}
-                  onInterruptCountChange={setInterruptCount}
-                />
-              </div>
-            </ResizablePanel>
-
-            <ResizableHandle
-              withHandle
-              className={cn(
-                "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
-                sidebar
-                  ? "pointer-events-auto z-50 -ml-1 cursor-col-resize opacity-100"
-                  : "pointer-events-none opacity-0",
-              )}
-            />
-
-            <ResizablePanel
-              defaultSize={80}
-              className="pointer-events-none"
-            />
-          </ResizablePanelGroup>
-        </div>
-
-        {/* Memory overlay panel */}
-        <div
-          className={cn(
-            "pointer-events-none fixed bottom-4 left-4 right-4 top-[4.25rem] flex overflow-hidden transition-all duration-300 ease-out",
-            memorySidebar ? "z-sidebar" : "z-sticky",
-          )}
-        >
-          <ResizablePanelGroup
-            direction="horizontal"
-            id="memory-panel-group"
-          >
-            <ResizablePanel
-              defaultSize={20}
-              minSize={15}
-              maxSize={50}
-              className={cn(
-                "transition-[transform,opacity] duration-300 ease-out",
-                memorySidebar
-                  ? "pointer-events-auto translate-x-0 opacity-100"
-                  : "pointer-events-none -translate-x-[calc(100%+1rem)] opacity-0",
-              )}
-            >
-              <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background">
-                <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <Database className="h-4 w-4 text-primary" />
-                    <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
-                      {t("memory")}
-                    </h2>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMemorySidebar(null)}
-                    className="h-8 w-8"
-                    aria-label={tCommon("close")}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex-1 overflow-hidden p-4">
-                  <Memory
-                    config={config}
-                    assistantName={assistant?.name}
+              <div className="flex h-full w-full flex-col overflow-hidden bg-background">
+                {sidebar ? (
+                  <ThreadList
+                    onThreadSelect={async (id) => {
+                      await setThreadId(id);
+                    }}
+                    onMutateReady={(fn) => setMutateThreads(() => fn)}
+                    onClose={() => setSidebar(null)}
+                    onInterruptCountChange={setInterruptCount}
                   />
-                </div>
+                ) : memorySidebar ? (
+                  <>
+                    <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <Database className="h-4 w-4 text-primary" />
+                        <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
+                          {t("memory")}
+                        </h2>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setMemorySidebar(null)}
+                        className="h-8 w-8"
+                        aria-label={tCommon("close")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex-1 overflow-hidden p-4">
+                      <Memory
+                        config={config}
+                        assistantName={assistant?.name}
+                      />
+                    </div>
+                  </>
+                ) : null}
               </div>
             </ResizablePanel>
 
             <ResizableHandle
               withHandle
-              className={cn(
-                "hover:bg-primary/20 w-2 bg-transparent outline-none transition-all",
-                memorySidebar
-                  ? "pointer-events-auto z-50 -ml-1 cursor-col-resize opacity-100"
-                  : "pointer-events-none opacity-0",
-              )}
+              onDragging={setIsDragging}
+              className={`transition-opacity duration-300 ${!(sidebar || memorySidebar) ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}
             />
 
             <ResizablePanel
-              defaultSize={80}
-              className="pointer-events-none"
-            />
-          </ResizablePanelGroup>
-        </div>
-
-        {/* Main chat area — full width */}
-        <div className="mt-5 flex flex-1 flex-col overflow-hidden">
-          <Suspense
-            fallback={
-              <div className="flex flex-1 items-center justify-center">Loading chat...</div>
-            }
-          >
-            <ChatProvider
-              activeAssistant={assistant ?? null}
-              onHistoryRevalidateAction={() => mutateThreads?.()}
-              recursionLimit={config.recursionLimit}
-              recursionMultiplier={config.recursionMultiplier}
-              config={config}
+              defaultSize={sidebar || memorySidebar ? 75 : 100}
+              className={!isDragging ? "transition-all duration-300 ease-in-out" : ""}
             >
-              <ChatInterface assistant={assistant ?? null} />
-            </ChatProvider>
-          </Suspense>
-        </div>
+              <div className="flex h-full flex-col overflow-hidden bg-background">
+                <Suspense
+                  fallback={
+                    <div className="flex flex-1 items-center justify-center">Loading chat...</div>
+                  }
+                >
+                  <ChatProvider
+                    activeAssistant={assistant ?? null}
+                    onHistoryRevalidateAction={() => mutateThreads?.()}
+                    recursionLimit={config.recursionLimit}
+                    recursionMultiplier={config.recursionMultiplier}
+                    config={config}
+                  >
+                    <ChatInterface assistant={assistant ?? null} />
+                  </ChatProvider>
+                </Suspense>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </main>
       </div>
     </TooltipProvider>
   );

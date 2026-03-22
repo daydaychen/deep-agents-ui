@@ -1,9 +1,13 @@
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { useThreadGrouping, getThreadGroupKeys } from "./useThreadGrouping";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreadItem } from "@/app/hooks/useThreads";
+import { getThreadGroupKeys, useThreadGrouping } from "./useThreadGrouping";
 
-const mockThread = (id: string, updatedAt: Date, status: ThreadItem["status"] = "idle"): ThreadItem => ({
+const mockThread = (
+  id: string,
+  updatedAt: Date,
+  status: ThreadItem["status"] = "idle",
+): ThreadItem => ({
   id,
   updatedAt,
   status,
@@ -36,7 +40,11 @@ describe("useThreadGrouping", () => {
   });
 
   it("groups interrupted threads separately regardless of date", () => {
-    const interruptedThread = mockThread("1", new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), "interrupted");
+    const interruptedThread = mockThread(
+      "1",
+      new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+      "interrupted",
+    );
     const { result } = renderHook(() => useThreadGrouping([interruptedThread]));
 
     expect(result.current.interrupted).toHaveLength(1);
