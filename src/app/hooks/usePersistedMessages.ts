@@ -25,14 +25,6 @@ export function usePersistedMessages(
   // ============ 合并逻辑 (节流更新 UI) ============
   // Extract primitive dependencies from subagents Map to avoid unnecessary re-runs
   const subagentSize = subagents.size;
-  const subagentKeys = useMemo(() => Array.from(subagents.keys()), [subagents]);
-  const subagentMessageCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    subagents.forEach((subagent, key) => {
-      counts[key] = subagent.messages?.length || 0;
-    });
-    return counts;
-  }, [subagents]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <ignore reason>
   useEffect(() => {
@@ -69,7 +61,7 @@ export function usePersistedMessages(
         lastUpdateRef.current = now;
       }
     }
-  }, [isLoading, subagentSize, subagentKeys, subagentMessageCounts, subagents]);
+  }, [isLoading, subagentSize, subagents]);
 
   // Ensure UI is updated when loading finishes
   useEffect(() => {

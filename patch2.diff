@@ -1,0 +1,36 @@
+--- src/app/utils/db.ts
++++ src/app/utils/db.ts
+@@ -141,30 +141,10 @@
+
+   try {
+     const db = await getConnection();
+-<<<<<<< Updated upstream
+-    const transaction = db.transaction([STORE_NAME], "readwrite");
+-    const store = transaction.objectStore(STORE_NAME);
+-
+-    for (let i = 0; i < records.length; i++) {
+-      store.put(records[i]);
+-    }
+-=======
+     const tx = db.transaction(STORE_NAME, "readwrite");
+-    const now = Date.now();
+
+-    messagesMap.forEach((msgs, toolCallId) => {
+-      msgs.forEach((message, idx) => {
+-        if (!message.id) return;
+-        tx.store.put({
+-          threadId,
+-          messageId: message.id,
+-          toolCallId,
+-          message,
+-          timestamp: now,
+-          index: idx,
+-        });
+-      });
+-    });
+->>>>>>> Stashed changes
++    for (let i = 0; i < records.length; i++) {
++      tx.store.put(records[i]);
++    }
+
+     await tx.done;

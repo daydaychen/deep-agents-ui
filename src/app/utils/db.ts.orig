@@ -128,11 +128,31 @@ export async function saveThreadMessages(
 
   try {
     const db = await getConnection();
-    const tx = db.transaction(STORE_NAME, "readwrite");
+<<<<<<< Updated upstream
+    const transaction = db.transaction([STORE_NAME], "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
 
     for (let i = 0; i < records.length; i++) {
-      tx.store.put(records[i]);
+      store.put(records[i]);
     }
+=======
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const now = Date.now();
+
+    messagesMap.forEach((msgs, toolCallId) => {
+      msgs.forEach((message, idx) => {
+        if (!message.id) return;
+        tx.store.put({
+          threadId,
+          messageId: message.id,
+          toolCallId,
+          message,
+          timestamp: now,
+          index: idx,
+        });
+      });
+    });
+>>>>>>> Stashed changes
 
     await tx.done;
   } catch (error) {
