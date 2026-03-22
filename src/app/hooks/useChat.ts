@@ -20,6 +20,7 @@ import {
 } from "@/lib/constants";
 import { useLatest } from "@/lib/hooks/useLatest";
 import { generateId } from "@/lib/id-utils";
+import { parseJSON } from "@/lib/safe-json-parse";
 import { LLMOverrideConfig, OverrideConfig, StateType } from "@/providers/chat-context";
 import { useClient } from "@/providers/client-context";
 import { usePersistedMessages } from "./usePersistedMessages";
@@ -509,7 +510,7 @@ export function useChat({
       }
 
       const jsonStr = errorMessage.substring(startIdx, endIdx);
-      const parsed = JSON.parse(jsonStr);
+      const parsed = parseJSON(jsonStr, { maxDepth: 50 }) as any;
 
       // Extract error message from parsed JSON with early exits
       if (parsed.detail) {
