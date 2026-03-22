@@ -85,7 +85,8 @@ export function useApprovalState(
 
   const startEditing = useCallback(() => {
     setIsEditing(true);
-    setEditedArgs(JSON.parse(JSON.stringify(actionRequest.args)));
+    // Use parseJSON for safer deep cloning of arguments
+    setEditedArgs(parseJSON(JSON.stringify(actionRequest.args)) as Record<string, unknown>);
     setShowRejectionInput(false);
   }, [actionRequest.args]);
 
