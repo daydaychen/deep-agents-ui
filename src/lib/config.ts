@@ -1,3 +1,5 @@
+import { parseJSON } from "@/lib/safe-json-parse";
+
 export interface StandaloneConfig {
   assistantId: string;
   recursionLimit?: number;
@@ -32,7 +34,7 @@ export function getConfig(): StandaloneConfig | null {
   }
 
   try {
-    const parsed = JSON.parse(stored) as StoredConfig;
+    const parsed = parseJSON(stored) as StoredConfig;
     // Validate version
     if (parsed.version !== STORAGE_VERSION) {
       configCache = null;
