@@ -25,19 +25,6 @@ export function handleAsyncError(operation: string, error: unknown, context?: st
 }
 
 /**
- * Wrap an async function with error handling
- * Returns a tuple of [result, error] for easy error checking
- */
-export async function tryCatch<T>(fn: () => Promise<T>): Promise<[T, null] | [null, Error]> {
-  try {
-    const result = await fn();
-    return [result, null];
-  } catch (error) {
-    return [null, error instanceof Error ? error : new Error(String(error))];
-  }
-}
-
-/**
  * Wrap an async function with error handling and toast notification
  */
 export async function tryCatchWithToast<T>(
