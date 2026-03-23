@@ -80,7 +80,7 @@ export function createAuthModeChangeAuditEvent(
     action: "auth_mode_change",
     assistantId,
     changes: {
-      field: "authMode",
+      field: "auth_mode",
       oldValue: oldAuthMode,
       newValue: newAuthMode,
     },

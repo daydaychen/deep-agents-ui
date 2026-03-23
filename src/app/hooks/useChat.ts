@@ -71,7 +71,8 @@ export function useChat({
     activeAssistant?.config?.configurable?.thinking ?? activeAssistant?.metadata?.thinking;
   const assistantThinkingBoolean =
     typeof assistantThinking === "boolean" ? assistantThinking : false;
-  const assistantAuthMode = activeAssistant?.metadata?.authMode;
+  const assistantAuthMode =
+    activeAssistant?.metadata?.auth_mode ?? activeAssistant?.metadata?.authMode;
 
   // Sync overrideConfig with assistant defaults on change
   useEffect(() => {
@@ -102,8 +103,9 @@ export function useChat({
       langfuse_session_id: sessionId,
       langfuse_user_id: config.userId || "user",
       user_id: config.userId || "user",
+      auth_mode: overrideConfig.authMode || "ask",
     }),
-    [sessionId, config.userId],
+    [sessionId, config.userId, overrideConfig.authMode],
   );
 
   // Use useLatest to store frequently changing config values for stable callbacks

@@ -165,7 +165,7 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
       };
 
       const VALID_AUTH_MODES = new Set(["ask", "read", "auto"]);
-      const authModeValue = String(metadata.authMode || "");
+      const authModeValue = String(metadata.auth_mode || metadata.authMode || "");
       const authMode = VALID_AUTH_MODES.has(authModeValue)
         ? (authModeValue as "ask" | "read" | "auto")
         : "ask";
@@ -177,7 +177,7 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
         authMode,
         defaultModel,
         configurable: toEntries(configurable),
-        metadata: toEntries(metadata, ["authMode", "defaultModel"]),
+        metadata: toEntries(metadata, ["auth_mode", "authMode", "defaultModel"]),
       };
     };
   }, []);
@@ -215,7 +215,9 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
     };
 
     const metadata = fromEntries(values.metadata);
-    if (values.authMode) metadata.authMode = values.authMode;
+    if (values.authMode) {
+      metadata.auth_mode = values.authMode;
+    }
     if (values.defaultModel) metadata.defaultModel = values.defaultModel;
 
     return {
@@ -289,8 +291,9 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
       // Check for auth mode change to Auto mode - require confirmation (must be outside transition)
       const formValues = methods.getValues();
       const { config, metadata } = mapFromForm(formValues);
-      const oldAuthMode = selectedAssistant.metadata?.authMode as string | undefined;
-      const newAuthMode = metadata.authMode as string | undefined;
+      const oldAuthMode = (selectedAssistant.metadata?.auth_mode ||
+        selectedAssistant.metadata?.authMode) as string | undefined;
+      const newAuthMode = metadata.auth_mode as string | undefined;
 
       if (newAuthMode === "auto" && oldAuthMode !== "auto") {
         // Show warning confirmation dialog
@@ -346,7 +349,7 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
             // Log general config update audit event
             const configAuditEvent = createAssistantConfigAuditEvent(
               selectedAssistant.assistant_id,
-              { authMode: newAuthMode, defaultModel: metadata.defaultModel },
+              { auth_mode: newAuthMode, defaultModel: metadata.defaultModel },
               userId,
             );
             logAuditEvent(configAuditEvent);
