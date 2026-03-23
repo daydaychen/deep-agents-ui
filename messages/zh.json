@@ -22,20 +22,20 @@
     "characters": "字符"
   },
   "metadata": {
-    "title": "Databus Pilot | AI Agent 界面",
+    "title": "Databus Pilot | 智能体界面",
     "description": "高级多智能体编排和聊天界面"
   },
   "page": {
-    "title": "Databus Pilot | AI Agent 界面",
-    "description": "赋能低代码抓取的智能 Pilot：实现从站点分析到配置自愈的全链路自动化运营。",
+    "title": "Databus Pilot | 智能体界面",
+    "description": "赋予低代码爬虫智能：实现从站点分析到配置自愈的全链路自动化运营。",
     "welcome": {
       "title": "欢迎使用 Databus Pilot",
-      "description": "配置您的部署以开始使用",
-      "button": "打开配置"
+      "description": "完成配置，开启智能 Pilot 之旅",
+      "button": "开始配置"
     }
   },
   "header": {
-    "threads": "会话",
+    "threads": "会话历史",
     "memory": "记忆",
     "assistant": "助手",
     "newThread": "新会话"
@@ -52,7 +52,7 @@
     "copyCode": "复制代码",
     "coreExecution": "工具调用",
     "inputPlaceholderLoading": "AI 正在处理…",
-    "inputPlaceholderDefault": "发送消息给 Databus Pilot…",
+    "inputPlaceholderDefault": "向 Databus Pilot 寻求帮助…",
     "messageLabel": "向 AI 助手发送消息",
     "runOptions": "运行选项",
     "runtimeConfiguration": "运行时配置",
@@ -69,13 +69,13 @@
     "default": "默认",
     "defaultModel": "默认模型",
     "recursionLimit": "递归限制",
-    "stopCore": "停止运行",
+    "stopCore": "中止执行",
     "sendShortcut": "发送",
     "thinking": "推理",
     "thinkingOn": "推理：开启",
     "thinkingOff": "推理：关闭",
     "reasoningProcess": "思考过程",
-    "agentThinking": "智能体正在思考...",
+    "agentThinking": "智能体思考中...",
     "authMode": {
       "ask": "询问模式 (严格)",
       "read": "只读模式 (安全)",
@@ -114,6 +114,10 @@
       "read": "只读模式 (安全)",
       "auto": "自动模式 (快速)"
     },
+    "autoConfirm": "切换到自动模式将绕过所有安全审批。确定继续？",
+    "placeholderModel": "例如：gpt-4o",
+    "placeholderSelect": "选择模式",
+    "placeholderTag": "添加标签…",
     "saveSettings": "保存设置",
     "created": "创建时间",
     "updated": "更新时间",
@@ -136,9 +140,9 @@
     "key": "键名",
     "keyPlaceholder": "键名（例如：theme）",
     "value": "值",
-    "newItem": "新建项目",
+    "newItem": "新增记忆",
     "empty": "项目为空",
-    "loadError": "加载记忆失败",
+    "loadError": "获取记忆失败",
     "saveSuccess": "记忆保存成功",
     "saveError": "保存记忆失败",
     "deleteSuccess": "记忆删除成功",
@@ -167,7 +171,7 @@
     "copy": "复制",
     "download": "下载",
     "save": "保存",
-    "newItemTitle": "新建项目",
+    "newItemTitle": "新增记忆条目",
     "namespacePlaceholderShort": "命名空间（例如：user.preferences）",
     "keyPlaceholderShort": "键名",
     "jsonPlaceholder": "输入 JSON 值（例如：'{\"key\": \"value\"}'）",
@@ -180,7 +184,7 @@
     "reports": "报告 (reports)",
     "memories": "记忆 (memories)",
     "content": "内容",
-    "contentPlaceholder": "在此输入内容，Markdown 格式，每一行将被保存为数组的一个元素...",
+    "contentPlaceholder": "在此输入 Markdown 内容，每一行将作为数组元素保存...",
     "invalidKey": "键名必须以 / 开头",
     "selectId": "选择 ID",
     "user": "用户",
@@ -188,7 +192,7 @@
   },
   "thread": {
     "title": "会话",
-    "newThread": "新会话",
+    "newThread": "开启新会话",
     "deleteConfirm": "确定要删除此会话吗？",
     "deleteSuccess": "会话删除成功",
     "deleteError": "删除会话失败",
@@ -205,7 +209,7 @@
     "closeSidebar": "关闭会话侧边栏",
     "loading": "加载中…",
     "loadMore": "加载更多",
-    "noThreads": "暂无对话记录",
+    "noThreads": "尚无对话历史",
     "loadThreadsFailed": "加载对话失败",
     "markAsResolved": "标记为已解决",
     "deleteThread": "删除会话",
@@ -255,7 +259,7 @@
     "rejectionPlaceholder": "解释为什么拒绝此操作…"
   },
   "tasks": {
-    "title": "代理任务",
+    "title": "智能体任务",
     "fileSystem": "文件系统",
     "filesState": "文件（状态）",
     "noTasks": "没有分配的任务",
@@ -374,7 +378,7 @@
       "reduceThrottle": "降低并发"
     },
     "sidePanel": {
-      "agentTrace": "Agent 追踪",
+      "agentTrace": "智能体追踪",
       "inspector": "检查器"
     },
     "toolCategory": {

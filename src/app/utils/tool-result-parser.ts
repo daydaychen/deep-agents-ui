@@ -92,17 +92,17 @@ function summarizeTaskValidate(parsed: Record<string, unknown>): string {
 }
 
 function summarizeStageConfig(parsed: Record<string, unknown>): string {
-  if (parsed.success === false) return "修改失败";
-  return "配置修改成功";
+  if (parsed.success === false) return "配置更新失败";
+  return "配置已成功更新";
 }
 
 function summarizeStageAdd(parsed: Record<string, unknown>): string {
-  return `节点创建成功: ${parsed.vfs_path || parsed.stage_name || ""}`;
+  return `成功创建节点: ${parsed.vfs_path || parsed.stage_name || ""}`;
 }
 
 function summarizeParserFields(parsed: Record<string, unknown>): string {
   const count = parsed.fields_count ?? (Array.isArray(parsed.fields) ? parsed.fields.length : "?");
-  return `${count} 个字段已配置`;
+  return `已成功配置 ${count} 个字段`;
 }
 
 function summarizeTestPipeline(raw: string): string {
@@ -119,16 +119,16 @@ function summarizeTestPipeline(raw: string): string {
       return line.substring(0, 80);
     }
   }
-  return `测试完成 (${lines.length} 行日志)`;
+  return `执行完成 (${lines.length} 条日志)`;
 }
 
 function summarizeTaskStart(parsed: Record<string, unknown>): string {
-  if (parsed.success) return `任务启动成功 (ID: ${parsed.task_id || ""})`;
-  return "启动失败";
+  if (parsed.success) return `任务已成功启动 (ID: ${parsed.task_id || ""})`;
+  return "任务启动失败";
 }
 
 function summarizeTaskStop(parsed: Record<string, unknown>): string {
-  return String(parsed.message || "任务已停止");
+  return String(parsed.message || "任务执行已中止");
 }
 
 function summarizeHookCreate(parsed: Record<string, unknown>): string {
@@ -145,16 +145,16 @@ function summarizeHookAttach(parsed: Record<string, unknown>): string {
 }
 
 function summarizeTemplateApply(_parsed: Record<string, unknown>): string {
-  return "基于模板创建任务成功";
+  return "已成功从模板初始化任务";
 }
 
 function summarizeBrowserScreenshot(_raw: string): string {
-  return "浏览器截图";
+  return "查看浏览器截图";
 }
 
 function summarizeStagesGet(parsed: Record<string, unknown>): string {
   const count = typeof parsed === "object" ? Object.keys(parsed).length : 0;
-  return `配置包含 ${count} 个节点`;
+  return `加载了 ${count} 个配置节点`;
 }
 
 // --- Summary dispatch ---

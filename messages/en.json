@@ -27,15 +27,15 @@
   },
   "page": {
     "title": "Databus Pilot | AI Agent Interface",
-    "description": "The intelligent Pilot for low-code scraping: Powering autonomous site analysis, configuration lifecycle, and incident resolution.",
+    "description": "Smart browsing automation: Powering autonomous site analysis, configuration lifecycle, and automated healing.",
     "welcome": {
       "title": "Welcome to Databus Pilot",
-      "description": "Configure your deployment to get started",
-      "button": "Open Configuration"
+      "description": "Complete setup to start your Pilot journey",
+      "button": "Configure Start"
     }
   },
   "header": {
-    "threads": "Threads",
+    "threads": "History",
     "memory": "Memory",
     "assistant": "Assistant",
     "newThread": "New Thread"
@@ -52,7 +52,7 @@
     "copyCode": "Copy Code",
     "coreExecution": "Tool Execution",
     "inputPlaceholderLoading": "AI is processing…",
-    "inputPlaceholderDefault": "Send message to Databus Pilot…",
+    "inputPlaceholderDefault": "Ask Databus Pilot anything…",
     "messageLabel": "Message AI assistant",
     "runOptions": "Run Options",
     "runtimeConfiguration": "Runtime Configuration",
@@ -114,6 +114,10 @@
       "read": "Read Mode (Safe)",
       "auto": "Auto Mode (Fast)"
     },
+    "autoConfirm": "Switching to Auto mode will bypass all security approvals. Are you sure you want to continue?",
+    "placeholderModel": "e.g. gpt-4o",
+    "placeholderSelect": "Select mode",
+    "placeholderTag": "Add tag...",
     "saveSettings": "Save Settings",
     "created": "Created",
     "updated": "Updated",
@@ -136,9 +140,9 @@
     "key": "Key",
     "keyPlaceholder": "Key (e.g., theme)",
     "value": "Value",
-    "newItem": "New Item",
-    "empty": "No items",
-    "loadError": "Failed to load memory",
+    "newItem": "Add Memory",
+    "empty": "No memory items found",
+    "loadError": "Could not load memory",
     "saveSuccess": "Memory saved successfully",
     "saveError": "Failed to save memory",
     "deleteSuccess": "Memory deleted successfully",
@@ -167,7 +171,7 @@
     "copy": "Copy",
     "download": "Download",
     "save": "Save",
-    "newItemTitle": "New Item",
+    "newItemTitle": "New Memory Entry",
     "namespacePlaceholderShort": "Namespace (e.g., user.preferences)",
     "keyPlaceholderShort": "Key",
     "jsonPlaceholder": "Enter JSON value (e.g., '{\"key\": \"value\"}')",
@@ -188,7 +192,7 @@
   },
   "thread": {
     "title": "Threads",
-    "newThread": "New Thread",
+    "newThread": "Start New Conversation",
     "deleteConfirm": "Are you sure you want to delete this thread?",
     "deleteSuccess": "Thread deleted successfully",
     "deleteError": "Failed to delete thread",
@@ -344,7 +348,7 @@
     },
     "data": {
       "noData": "No data yet",
-      "structuredData": "Structured Data",
+      "structuredData": "Execution Data",
       "rows": "rows"
     },
     "log": {

@@ -294,7 +294,7 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
 
       if (newAuthMode === "auto" && oldAuthMode !== "auto") {
         // Show warning confirmation dialog
-        const confirmed = window.confirm("切换到 Auto 模式将绕过所有安全审批。确定继续？");
+        const confirmed = window.confirm(t("autoConfirm"));
         if (!confirmed) {
           return;
         }
@@ -651,7 +651,7 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
                         }
                       >
                         <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Select mode" />
+                          <SelectValue placeholder={t("placeholderSelect")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="ask">🛡️ {t("authMode.ask")}</SelectItem>
@@ -668,7 +668,7 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
                       <Input
                         value={watch("defaultModel")}
                         onChange={(e) => setValue("defaultModel", e.target.value)}
-                        placeholder="e.g. gpt-4o"
+                        placeholder={t("placeholderModel")}
                         className="h-9"
                       />
                     </div>
@@ -682,7 +682,7 @@ export function ConfigDialog({ open, onOpenChange, onSave, initialConfig }: Conf
                     <TagInput
                       tags={watch("tags")}
                       onChange={(tags) => setValue("tags", tags)}
-                      placeholder="Add tag..."
+                      placeholder={t("placeholderTag")}
                     />
                   </div>
 
