@@ -300,7 +300,7 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
                 style={{ touchAction: "pan-y" }}
               >
                 {isThreadLoading && processedMessages.length === 0 ? (
-                  <div className="mx-auto w-full max-w-[900px] px-3 pb-4 pt-2 md:px-4">
+                  <div className="mx-auto w-full max-w-[800px] px-3 pb-4 pt-2 md:px-4">
                     {loadingSkeletonElements}
                   </div>
                 ) : (
@@ -338,7 +338,7 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
                             transform: `translateY(${virtualRow.start}px)`,
                           }}
                         >
-                          <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
+                          <div className="mx-auto w-full max-w-[800px] px-3 md:px-4">
                             <div className="flex flex-col">
                               <ErrorBoundary className="mb-4">
                                 <ChatMessage
@@ -373,7 +373,7 @@ const ChatInterfaceInner = React.memo<ChatInterfaceInnerProps>(
                   </div>
                 )}
                 {error ? (
-                  <div className="mx-auto w-full max-w-[900px] px-3 md:px-4">
+                  <div className="mx-auto w-full max-w-[800px] px-3 md:px-4">
                     <Alert
                       variant="destructive"
                       className="mb-4"

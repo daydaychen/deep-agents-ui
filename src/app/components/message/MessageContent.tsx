@@ -58,15 +58,14 @@ export const MessageContent = React.memo<MessageContentProps>(
         {content && content.trim() !== "" && (
           <div
             className={cn(
-              "mt-0.5 overflow-hidden break-words text-sm font-normal leading-relaxed",
-              isUser
-                ? "border-primary/20 dark:border-primary/30 rounded-2xl rounded-tr-none border bg-user-message px-3 py-2 text-foreground shadow-sm"
-                : "rounded-2xl rounded-tl-none bg-accent/30 px-4 py-3 text-primary",
+              "mt-0.5 break-words text-[15px] font-normal leading-relaxed text-foreground",
             )}
           >
             {isUser ? (
               <div className="flex flex-col gap-2">
-                <p className="m-0 whitespace-pre-wrap break-words leading-relaxed">{content}</p>
+                <p className="m-0 whitespace-pre-wrap break-words leading-relaxed text-[15px]">
+                  {content}
+                </p>
               </div>
             ) : (
               <MarkdownContent
